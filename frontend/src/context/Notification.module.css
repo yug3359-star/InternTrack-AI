@@ -1,0 +1,67 @@
+.notificationContainer {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 420px;
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-sm);
+  background-color: var(--color-surface);
+  color: var(--color-text-primary);
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: 0 2px 6px rgba(28, 31, 38, 0.08);
+}
+
+.info {
+  border-left: 4px solid var(--color-primary);
+}
+
+.success {
+  border-left: 4px solid var(--color-success);
+  background-color: var(--color-success-bg);
+}
+
+.error, .danger {
+  border-left: 4px solid var(--color-danger);
+  background-color: var(--color-danger-bg);
+}
+
+.warning {
+  border-left: 4px solid var(--color-warning);
+  background-color: var(--color-warning-bg);
+}
+
+.messageText {
+  flex: 1;
+  margin-right: 12px;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.closeButton {
+  background: transparent;
+  border: none;
+  color: var(--color-text-secondary);
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+}
+
+.closeButton:hover {
+  background: transparent;
+  color: var(--color-text-primary);
+  border: none;
+}

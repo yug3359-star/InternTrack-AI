@@ -1,0 +1,77 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--border-radius-sm); /* 4px radius per design system */
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+.statusDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+/* Applied / Pending Approval: Gray */
+.badgeApplied {
+  background-color: #F1F5F9;
+  color: #4B5563;
+  border: 1px solid #CBD5E1;
+}
+
+.badgeApplied .statusDot {
+  background-color: #64748B;
+}
+
+/* Approved-not-yet-ongoing: Amber #C08A2E */
+.badgeApproved {
+  background-color: #FEF3C7;
+  color: #C08A2E;
+  border: 1px solid #F59E0B;
+}
+
+.badgeApproved .statusDot {
+  background-color: #D97706;
+}
+
+/* Ongoing: Blue #2B5C8A */
+.badgeOngoing {
+  background-color: #E0F2FE;
+  color: #2B5C8A;
+  border: 1px solid #0284C7;
+}
+
+.badgeOngoing .statusDot {
+  background-color: #0284C7;
+}
+
+/* Completed: Green #2F7A4F */
+.badgeCompleted {
+  background-color: #D1FAE5;
+  color: #2F7A4F;
+  border: 1px solid #059669;
+}
+
+.badgeCompleted .statusDot {
+  background-color: #059669;
+}
+
+/* Rejected: Red #B3423A */
+.badgeRejected {
+  background-color: #FEE2E2;
+  color: #B3423A;
+  border: 1px solid #DC2626;
+}
+
+.badgeRejected .statusDot {
+  background-color: #DC2626;
+}

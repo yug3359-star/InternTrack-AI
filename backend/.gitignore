@@ -1,0 +1,25 @@
+# Maven build output and compiled artifacts
+target/
+*.class
+
+# IDE and Project Files
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+
+# Environmental Secrets & Service Account Keys
+firebase-service-account.json
+**/firebase-service-account.json
+*.p12
+*.pem
+*.key
+.env
+*.env
+application-secret.properties
+application-secret.yml
+
+# OS Generated Files
+.DS_Store
+Thumbs.db

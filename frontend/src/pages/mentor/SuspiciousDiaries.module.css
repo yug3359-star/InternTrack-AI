@@ -1,0 +1,244 @@
+/* InternTrack AI — Faculty Suspicious Diary Review Institutional Styles (Module 7) */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 1.5rem 0;
+  font-family: var(--font-sans, 'Source Sans 3', sans-serif);
+  color: var(--color-text-primary, #1E293B);
+}
+
+.headerArea {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: var(--color-surface, #FFFFFF);
+  border: 1px solid var(--color-border, #E2E8F0);
+  border-radius: var(--border-radius-sm, 4px);
+  padding: 18px 24px;
+  border-top: 4px solid #2B5C8A;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.titleSection {
+  flex: 1;
+}
+
+.title {
+  font-family: var(--font-serif, 'IBM Plex Serif', serif);
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #1E293B;
+  margin: 0 0 6px 0;
+}
+
+.subText {
+  font-size: 0.925rem;
+  color: #4B5563;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.badgeCounter {
+  background-color: #FEF2F2;
+  color: #991B1B;
+  border: 1px solid #EF4444;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 0.925rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.tableCard {
+  background-color: var(--color-surface, #FFFFFF);
+  border: 1px solid var(--color-border, #E2E8F0);
+  border-radius: var(--border-radius-sm, 4px);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+.tableResponsive {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.th {
+  background-color: #F8FAFC;
+  color: #475569;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 14px 18px;
+  border-bottom: 2px solid #E2E8F0;
+}
+
+.tr {
+  border-bottom: 1px solid #E2E8F0;
+  transition: background-color 0.15s ease;
+}
+
+.tr:hover {
+  background-color: #F8FAFC;
+}
+
+.td {
+  padding: 16px 18px;
+  vertical-align: top;
+  color: #1E293B;
+  font-size: 0.95rem;
+}
+
+.studentInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.studentName {
+  font-weight: 700;
+  color: #0F172A;
+  font-size: 1rem;
+}
+
+.studentUid {
+  font-size: 0.825rem;
+  color: #64748B;
+  font-family: monospace;
+}
+
+.dateText {
+  font-weight: 700;
+  color: #2B5C8A;
+  white-space: nowrap;
+}
+
+.entryText {
+  color: #334155;
+  font-size: 0.925rem;
+  line-height: 1.5;
+  background-color: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  padding: 12px 14px;
+  border-radius: 4px;
+  max-width: 380px;
+  white-space: pre-wrap;
+}
+
+.reasonBox {
+  background-color: #FEF2F2;
+  color: #991B1B;
+  border-left: 4px solid #DC2626;
+  border-top: 1px solid #FECACA;
+  border-right: 1px solid #FECACA;
+  border-bottom: 1px solid #FECACA;
+  padding: 10px 14px;
+  border-radius: 0 4px 4px 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  font-weight: 500;
+  max-width: 300px;
+}
+
+.timestamp {
+  font-size: 0.8rem;
+  color: #64748B;
+  margin-top: 6px;
+  display: block;
+  font-weight: 500;
+}
+
+.actionCell {
+  white-space: nowrap;
+}
+
+.actionButtons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.acceptBtn {
+  background-color: #10B981;
+  color: #FFFFFF;
+  border: 1px solid #059669;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.acceptBtn:hover:not(:disabled) {
+  background-color: #059669;
+}
+
+.deleteBtn {
+  background-color: #FEF2F2;
+  color: #B91C1C;
+  border: 1px solid #EF4444;
+  padding: 7px 15px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.deleteBtn:hover:not(:disabled) {
+  background-color: #EF4444;
+  color: #FFFFFF;
+}
+
+.emptyState {
+  padding: 4rem 2rem;
+  text-align: center;
+  color: #64748B;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.emptyIcon {
+  font-size: 2.5rem;
+  color: #10B981;
+}
+
+.emptyText {
+  font-family: var(--font-serif, 'IBM Plex Serif', serif);
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #1E293B;
+}
+
+.emptySub {
+  font-size: 0.95rem;
+  color: #4B5563;
+  max-width: 450px;
+  line-height: 1.5;
+}
+
+@media (max-width: 768px) {
+  .container { padding: 1rem 0; }
+  .headerArea, .td, .th { padding: 14px; }
+  .title { font-size: 1.35rem; }
+}

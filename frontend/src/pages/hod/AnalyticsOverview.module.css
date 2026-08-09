@@ -1,0 +1,107 @@
+.container {
+  padding: 24px 32px;
+  background-color: #F7F8FA;
+  min-height: 100vh;
+  font-family: 'Source Sans 3', sans-serif;
+  color: #1A1D20;
+}
+
+.header {
+  border-bottom: 2px solid #E2E5EA;
+  padding-bottom: 16px;
+  margin-bottom: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.title {
+  font-family: 'IBM Plex Serif', serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #2B5C8A;
+  margin: 0;
+}
+
+.subtitle {
+  font-size: 0.9rem;
+  color: #4A5158;
+  margin-top: 4px;
+  display: block;
+}
+
+.syncTag {
+  font-family: monospace;
+  font-size: 0.8rem;
+  background-color: #E2E5EA;
+  color: #2B5C8A;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.kpiGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.kpiCard {
+  background-color: #FFFFFF;
+  border: 1px solid #E2E5EA;
+  border-radius: 4px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.kpiTitle {
+  font-size: 0.82rem;
+  color: #5A626A;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.kpiNumber {
+  font-family: monospace;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #2B5C8A;
+}
+
+.kpiSub {
+  font-size: 0.78rem;
+  color: #6A727A;
+}
+
+.chartSection {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+  gap: 20px;
+}
+
+.chartWrapper {
+  background-color: #FFFFFF;
+  border: 1px solid #E2E5EA;
+  border-radius: 4px;
+  padding: 20px;
+}
+
+.chartHeader {
+  border-bottom: 1px solid #E2E5EA;
+  padding-bottom: 10px;
+  margin-bottom: 16px;
+  font-family: 'IBM Plex Serif', serif;
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: #2B5C8A;
+}
+
+.emptyState {
+  padding: 48px;
+  text-align: center;
+  color: #6A727A;
+  font-style: italic;
+}

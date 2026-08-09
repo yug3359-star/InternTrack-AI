@@ -1,0 +1,41 @@
+.appWrapper {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: var(--color-bg);
+}
+
+.dashboardLayout {
+  display: flex;
+  flex: 1;
+  width: 100%;
+}
+
+.standaloneLayout {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  width: 100%;
+}
+
+.dashboardMain {
+  flex: 1;
+  padding: 24px 32px;
+  max-width: calc(100% - var(--sidebar-width));
+  overflow-y: auto;
+}
+
+@media (max-width: 800px) {
+  .dashboardLayout {
+    flex-direction: column;
+  }
+  .dashboardMain {
+    max-width: 100%;
+    padding: 16px;
+  }
+}
+
+.standaloneMain {
+  flex: 1;
+  width: 100%;
+}

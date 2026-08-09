@@ -1,0 +1,180 @@
+/* InternTrack AI — Mentor Borderline Review Table Styles (Module 5a) */
+
+.container {
+  padding: 2rem;
+  max-width: 1300px;
+  margin: 0 auto;
+  font-family: var(--font-sans, 'Source Sans 3', sans-serif);
+  color: #1E293B;
+}
+
+.header {
+  border-bottom: 2px solid #2B5C8A;
+  padding-bottom: 1rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.title {
+  font-family: var(--font-serif, 'IBM Plex Serif', serif);
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #1E293B;
+  margin: 0;
+}
+
+.subtitle {
+  font-size: 0.95rem;
+  color: #4B5563;
+  margin-top: 4px;
+}
+
+.backLink {
+  background-color: #2B5C8A;
+  color: #FFFFFF;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 8px 16px;
+  border-radius: 4px;
+  transition: background-color 0.15s ease;
+  border: 1px solid #1E4060;
+}
+
+.backLink:hover {
+  background-color: #1E4060;
+}
+
+.reviewCard {
+  background-color: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 4px;
+  margin-bottom: 1.5rem;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #E2E8F0;
+  padding-bottom: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.studentInfo h3 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #1E293B;
+}
+
+.studentInfo span {
+  font-size: 0.85rem;
+  color: #64748B;
+}
+
+.scoreBadge {
+  background-color: #FEF3C7;
+  color: #B45309;
+  border: 1px solid #F59E0B;
+  border-radius: 4px;
+  padding: 4px 12px;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.photoComparisonGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin-bottom: 1.5rem;
+}
+
+@media (max-width: 768px) {
+  .photoComparisonGrid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+}
+
+.photoBox {
+  background-color: #F8FAFC;
+  border: 1px solid #CBD5E1;
+  border-radius: 4px;
+  padding: 1rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.photoTitle {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #334155;
+  margin-bottom: 8px;
+}
+
+.photoImage {
+  width: 180px;
+  height: 180px;
+  object-fit: cover;
+  border: 2px solid #E2E8F0;
+  border-radius: 4px;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  border-top: 1px solid #F1F5F9;
+  padding-top: 1rem;
+}
+
+.approveBtn {
+  background-color: #2F7A4F;
+  color: #FFFFFF;
+  border: 1px solid #266340;
+  border-radius: 4px;
+  padding: 10px 20px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.approveBtn:hover {
+  background-color: #266340;
+}
+
+.rejectBtn {
+  background-color: #DC2626;
+  color: #FFFFFF;
+  border: 1px solid #B91C1C;
+  border-radius: 4px;
+  padding: 10px 20px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.rejectBtn:hover {
+  background-color: #B91C1C;
+}
+
+.emptyState {
+  background-color: #F8FAFC;
+  border: 1px dashed #CBD5E1;
+  border-radius: 4px;
+  padding: 3rem;
+  text-align: center;
+  color: #64748B;
+  font-size: 1.1rem;
+}

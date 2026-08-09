@@ -1,0 +1,30 @@
+# Enterprise Security & Secrets Management (.gitignore)
+# Strict institutional exclusion policy preventing accidental credential or API token commits
+
+# Environment variables and private config files
+.env
+.env.*
+!.env.example
+*.env
+
+# Firebase Admin credentials & private service account tokens
+*service-account*.json
+*firebase-adminsdk*.json
+firebase-service-account.json
+secrets/
+private/
+*.pem
+*.key
+
+# Build and IDE generated binaries
+**/target/
+**/node_modules/
+**/dist/
+**/build/
+**/.idea/
+**/.vscode/
+
+# Logs and runtime databases
+*.log
+*.db
+/logs/

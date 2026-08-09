@@ -1,0 +1,217 @@
+/* InternTrack AI — Mentor Student Detail & Formal Attendance Ledger Styles (Module 5b) */
+
+.container {
+  padding: 2.5rem;
+  max-width: 1280px;
+  margin: 0 auto;
+  font-family: var(--font-sans, 'Source Sans 3', sans-serif);
+  color: #1E293B;
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid #1E3A8A;
+  padding-bottom: 1.25rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.title {
+  font-family: var(--font-serif, 'IBM Plex Serif', Georgia, serif);
+  font-size: 1.85rem;
+  font-weight: 700;
+  color: #0F172A;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.subtitle {
+  font-size: 1rem;
+  color: #475569;
+  margin: 6px 0 0 0;
+}
+
+.backLink {
+  background-color: #1E293B;
+  color: #FFFFFF;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 0.65rem 1.25rem;
+  border-radius: 6px;
+  transition: background-color 0.2s;
+  border: 1px solid #334155;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.backLink:hover {
+  background-color: #334155;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2.5rem;
+}
+
+.statCard {
+  background: #FFFFFF;
+  border: 1px solid #CBD5E1;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.statCardPrimary {
+  border-left: 6px solid #16A34A;
+}
+
+.statCardInfo {
+  border-left: 6px solid #0284C7;
+}
+
+.statCardWarning {
+  border-left: 6px solid #D97706;
+}
+
+.statLabel {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #64748B;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.statValue {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #0F172A;
+  margin: 0;
+  font-family: 'Courier New', Courier, monospace;
+}
+
+.statNote {
+  font-size: 0.85rem;
+  color: #475569;
+  margin: 0;
+}
+
+.tableCard {
+  background-color: #FFFFFF;
+  border: 1px solid #CBD5E1;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+.tableHeading {
+  background-color: #F8FAFC;
+  padding: 1rem 1.5rem;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #0F172A;
+  border-bottom: 1px solid #E2E8F0;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.tableResponsive {
+  overflow-x: auto;
+}
+
+.ledgerTable {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.ledgerTable th {
+  background-color: #F1F5F9;
+  padding: 0.85rem 1.25rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #475569;
+  text-transform: uppercase;
+  border-bottom: 1px solid #CBD5E1;
+  letter-spacing: 0.5px;
+}
+
+.ledgerTable td {
+  padding: 1rem 1.25rem;
+  font-size: 0.95rem;
+  border-bottom: 1px solid #E2E8F0;
+  color: #1E293B;
+}
+
+.ledgerTable tr:hover {
+  background-color: #F8FAFC;
+}
+
+.tagApproved {
+  background-color: #DCFCE7;
+  color: #166534;
+  border: 1px solid #86EFAC;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  display: inline-block;
+  text-transform: uppercase;
+}
+
+.tagExcused {
+  background-color: #E0F2FE;
+  color: #0369A1;
+  border: 1px solid #7DD3FC;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  display: inline-block;
+  text-transform: uppercase;
+}
+
+.tagMissed {
+  background-color: #FEE2E2;
+  color: #991B1B;
+  border: 1px solid #FCA5A5;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  display: inline-block;
+  text-transform: uppercase;
+}
+
+.emptyRow {
+  text-align: center;
+  padding: 3rem;
+  color: #64748B;
+  font-style: italic;
+}

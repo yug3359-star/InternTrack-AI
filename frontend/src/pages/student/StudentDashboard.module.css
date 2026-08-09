@@ -1,0 +1,471 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+}
+
+.headerArea {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-sm);
+  padding: 16px 20px;
+}
+
+.title {
+  font-family: var(--font-serif);
+  font-size: 21px;
+  color: var(--color-text-primary);
+  margin-bottom: 4px;
+}
+
+.subText {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
+.actionBtn {
+  height: 36px;
+  padding: 0 16px;
+}
+
+.metricsRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 900px) {
+  .metricsRow {
+    grid-template-columns: 1fr;
+  }
+}
+
+.metricCard {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-sm);
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 110px;
+}
+
+.cardTitle {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+  letter-spacing: 0.4px;
+}
+
+.metricValue {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin: 6px 0;
+}
+
+.progressBarWrap {
+  width: 100%;
+  height: 8px;
+  background-color: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progressBarFill {
+  height: 100%;
+  background-color: var(--color-success);
+}
+
+.metricStatus {
+  margin: 10px 0 6px;
+}
+
+.badgeInfo {
+  background-color: var(--color-warning-bg);
+  color: var(--color-warning);
+  border: 1px solid var(--color-warning);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: var(--border-radius-sm);
+  text-transform: uppercase;
+}
+
+.badgeSuccess {
+  background-color: var(--color-success-bg);
+  color: var(--color-success);
+  border: 1px solid var(--color-success);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: var(--border-radius-sm);
+  text-transform: uppercase;
+}
+
+.subNote {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.countsGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+  font-size: 14px;
+}
+
+.countsGrid div {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px dotted var(--color-border);
+  padding-bottom: 2px;
+}
+
+.formCard {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--border-radius-sm);
+  padding: 20px;
+}
+
+.formHeading {
+  font-family: var(--font-serif);
+  font-size: 18px;
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 10px;
+  margin-bottom: 16px;
+}
+
+.formLayout {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 14px;
+}
+
+@media (max-width: 700px) {
+  .formRow {
+    grid-template-columns: 1fr;
+  }
+}
+
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.inputGroup label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  text-transform: uppercase;
+}
+
+.standardInput, textarea {
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-sm);
+  padding: 8px 12px;
+  font-size: 14px;
+}
+
+.errorField {
+  border: 1px solid var(--color-danger);
+  background-color: var(--color-danger-bg);
+  padding: 8px 12px;
+  font-size: 14px;
+}
+
+.formActions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+.submitBtn {
+  background-color: var(--color-success);
+  border-color: var(--color-success);
+  padding: 8px 24px;
+}
+
+.submitBtn:hover {
+  background-color: #266340;
+  border-color: #266340;
+}
+
+.tableCard {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-sm);
+  padding: 16px 20px;
+}
+
+.tableHeading {
+  font-family: var(--font-serif);
+  font-size: 18px;
+  margin-bottom: 14px;
+}
+
+.tableResponsive {
+  overflow-x: auto;
+}
+
+.ledgerTable th, .ledgerTable td {
+  padding: 10px 14px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.dateCell {
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.numCell {
+  text-align: center;
+  font-weight: 700;
+}
+
+.summaryCell {
+  max-width: 320px;
+  line-height: 1.4;
+}
+
+.remarksCell {
+  color: var(--color-text-secondary);
+  font-style: italic;
+  max-width: 220px;
+  font-size: 13px;
+}
+
+.tagApproved {
+  background-color: var(--color-success-bg);
+  color: var(--color-success);
+  border: 1px solid var(--color-success);
+  padding: 2px 8px;
+  border-radius: var(--border-radius-sm);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.tagPending {
+  background-color: var(--color-warning-bg);
+  color: var(--color-warning);
+  border: 1px solid var(--color-warning);
+  padding: 2px 8px;
+  border-radius: var(--border-radius-sm);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.tagRejected {
+  background-color: var(--color-danger-bg);
+  color: var(--color-danger);
+  border: 1px solid var(--color-danger);
+  padding: 2px 8px;
+  border-radius: var(--border-radius-sm);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.emptyRow {
+  text-align: center;
+  padding: 24px !important;
+  color: var(--color-text-secondary);
+  font-style: italic;
+}
+
+/* Module 4: Status Lifecycle Tracking Card */
+.statusTrackerCard {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-left: 4px solid var(--color-primary);
+  border-radius: var(--border-radius-sm);
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.statusHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px dotted var(--color-border);
+  padding-bottom: 10px;
+}
+
+.statusHeadingText {
+  font-family: var(--font-serif);
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.statusGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  font-size: 13px;
+}
+
+@media (max-width: 900px) {
+  .statusGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.statusItem {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.statusItemLabel {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+  letter-spacing: 0.3px;
+}
+
+.statusItemVal {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+/* Module 5a: Notification Permission Banner & Engagement Quota Cards */
+.notifBanner {
+  background-color: #FEF3C7;
+  border: 1px solid #F59E0B;
+  border-radius: 4px;
+  padding: 12px 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  color: #92400E;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.notifBtn {
+  background-color: #D97706;
+  color: #FFFFFF;
+  border: 1px solid #B45309;
+  border-radius: 4px;
+  padding: 6px 14px;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.15s ease;
+}
+
+.notifBtn:hover {
+  background-color: #B45309;
+}
+
+.engagementSection {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.engagementHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  border-bottom: 1px solid #E2E8F0;
+  padding-bottom: 10px;
+}
+
+.engagementTitle {
+  font-family: var(--font-serif);
+  font-size: 18px;
+  font-weight: 700;
+  color: #1E293B;
+}
+
+.testTriggerBtn {
+  background-color: #2F7A4F;
+  color: #FFFFFF;
+  border: 1px solid #266340;
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.testTriggerBtn:hover {
+  background-color: #266340;
+}
+
+.quotaContainer {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 20px;
+  align-items: center;
+}
+
+@media (max-width: 768px) {
+  .quotaContainer {
+    grid-template-columns: 1fr;
+  }
+}
+
+.quotaBox {
+  background-color: #F8FAFC;
+  border: 1px solid #CBD5E1;
+  border-radius: 4px;
+  padding: 16px;
+  text-align: center;
+}
+
+.quotaCount {
+  font-size: 24px;
+  font-weight: 800;
+  color: #2B5C8A;
+  margin: 6px 0;
+}
+
+.progressBarOuter {
+  width: 100%;
+  background-color: #E2E8F0;
+  border-radius: 4px;
+  height: 10px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+
+.progressBarInner {
+  background-color: #2B5C8A;
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+

@@ -1,0 +1,42 @@
+/**
+ * InternTrack AI — Institutional Design Token Variables
+ * All interface components pull styles from these CSS custom properties.
+ * Hardcoded hexadecimal color values within individual component stylesheets are strictly forbidden.
+ */
+
+:root {
+  /* Color Palette - Academic Institutional Theme */
+  --color-bg: #F7F8FA;
+  --color-surface: #FFFFFF;
+  --color-border: #E2E5EA;
+  --color-border-focus: #2B5C8A;
+  
+  /* Primary Action & State Colors */
+  --color-primary: #2B5C8A;
+  --color-primary-hover: #1F4466;
+  --color-success: #2F7A4F;
+  --color-success-bg: #EAF4EE;
+  --color-danger: #B3423A;
+  --color-danger-bg: #FAEEED;
+  --color-warning: #C08A2E;
+  --color-warning-bg: #FAF5E8;
+
+  /* Typography Colors */
+  --color-text-primary: #1C1F26;
+  --color-text-secondary: #6B7280;
+  --color-text-inverse: #FFFFFF;
+  --color-text-muted: #8D96A2;
+
+  /* Typography Families */
+  --font-body: 'Source Sans 3', 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-serif: 'IBM Plex Serif', 'Lora', Georgia, serif;
+
+  /* Layout, Density, and Borders */
+  --font-size-base: 15px;
+  --border-radius-sm: 4px;
+  --padding-dense-card: 16px 20px;
+  --padding-dense-table-cell: 10px 14px;
+  --transition-fast: 150ms ease-in-out;
+  --header-height: 58px;
+  --sidebar-width: 240px;
+}

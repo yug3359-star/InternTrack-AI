@@ -1,0 +1,54 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // Helper authorization routines
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function hasRole(role) {
+      return isAuthenticated() && request.auth.token.role == role;
+    }
+
+    function isOwner(uid) {
+      return isAuthenticated() && request.auth.uid == uid;
+    }
+
+    function isMentorOrHod() {
+      return hasRole('MENTOR') || hasRole('HOD');
+    }
+
+    // 1. Reference Photos (Module 1 & 2): Baseline registration portraits used for AWS biometric comparisons
+    match /reference-photos/{uid}.jpg {
+      allow read: if isOwner(uid) || isMentorOrHod();
+      allow write: if isOwner(uid) && request.resource.size < 5 * 1024 * 1024 && request.resource.contentType.matches('image/.*');
+    }
+
+    // 2. Registration Documents (Module 2): Offer Letters and signed HOD Approval Letters
+    match /documents/{uid}/{allPaths=**} {
+      allow read: if isOwner(uid) || isMentorOrHod();
+      allow write: if isOwner(uid) && request.resource.size < 5 * 1024 * 1024;
+    }
+
+    // 3. Working-Hour Popup Captures (Module 5a): Live optical check-in surveillance photos
+    // Note: Backend Admin SDK executes verified server writes, bypassing client storage rules.
+    // Client write access is explicitly disabled to prevent image spoofing or bypass injection.
+    match /popup-captures/{uid}/{allPaths=**} {
+      allow read: if isMentorOrHod() || isOwner(uid);
+      allow write: if false;
+    }
+
+    // 4. Proctored Exam Captures (Module 5c): Proctored start and submit webcam surveillance frames
+    // Note: Committed strictly via server processing pipeline to guarantee examination integrity.
+    match /test-captures/{uid}/{allPaths=**} {
+      allow read: if isMentorOrHod() || isOwner(uid);
+      allow write: if false;
+    }
+
+    // Default Fallback Deny Rule — Rejects any access to unmapped storage buckets or arbitrary folders
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

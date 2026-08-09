@@ -1,0 +1,524 @@
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 32px 20px;
+  background-color: var(--color-bg);
+  min-height: calc(100vh - var(--header-height));
+}
+
+.formPanel {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-sm);
+  padding: 26px 30px;
+  width: 100%;
+  max-width: 780px;
+}
+
+.panelHeader {
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 14px;
+  margin-bottom: 20px;
+}
+
+.headerTitle {
+  font-family: var(--font-serif);
+  font-size: 22px;
+  color: var(--color-text-primary);
+  margin-bottom: 4px;
+}
+
+.headerSub {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
+/* Plain text / underline step indicator (no decorative glowing circles) */
+.stepNavigator {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 14px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.stepActive {
+  background: transparent;
+  border: none;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-primary);
+  text-decoration: underline;
+  text-underline-offset: 6px;
+  text-decoration-thickness: 2px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.stepInactive {
+  background: transparent;
+  border: none;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  padding: 0;
+}
+
+.stepInactive:hover {
+  color: var(--color-text-primary);
+}
+
+.stepSeparator {
+  color: var(--color-border);
+  font-weight: 700;
+  user-select: none;
+}
+
+.formLayout {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.stepSection {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.sectionHeading {
+  font-family: var(--font-serif);
+  font-size: 17px;
+  color: var(--color-text-primary);
+  border-bottom: 1px dotted var(--color-border);
+  padding-bottom: 8px;
+  margin-bottom: 4px;
+}
+
+.stepDescription {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+  margin: 0;
+}
+
+.subHeading {
+  font-family: var(--font-serif);
+  font-size: 15px;
+  color: var(--color-text-primary);
+  margin-bottom: 8px;
+}
+
+.fieldRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 680px) {
+  .fieldRow {
+    grid-template-columns: 1fr;
+  }
+}
+
+.fieldCol {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fieldLabel {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--color-text-primary);
+  letter-spacing: 0.4px;
+}
+
+.inputStandard, .selectStandard {
+  border: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+  padding: 8px 12px;
+  border-radius: var(--border-radius-sm);
+  font-size: 14px;
+  width: 100%;
+}
+
+.inputInvalid {
+  border: 1px solid var(--color-danger);
+  background-color: var(--color-danger-bg);
+  padding: 8px 12px;
+  border-radius: var(--border-radius-sm);
+  font-size: 14px;
+  width: 100%;
+}
+
+.errorText, .inlineError {
+  font-size: 12px;
+  color: var(--color-danger);
+  font-weight: 700;
+}
+
+.radioGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.radioLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--color-text-primary);
+  cursor: pointer;
+}
+
+.checkboxGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  background-color: var(--color-bg);
+  border: 1px solid var(--color-border);
+  padding: 10px 14px;
+  border-radius: var(--border-radius-sm);
+}
+
+@media (max-width: 600px) {
+  .checkboxGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.checkLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--color-text-primary);
+  cursor: pointer;
+}
+
+/* Module 2: Document Upload Components */
+.docUploadContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.docCard {
+  border: 1px solid var(--color-border);
+  background-color: var(--color-bg);
+  border-radius: var(--border-radius-sm);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.docHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.docTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.reqTag {
+  color: var(--color-danger);
+  font-weight: 700;
+  font-size: 12px;
+  margin-left: 6px;
+}
+
+.docSub {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.dropZone {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.uploadBtnLabel {
+  background-color: var(--color-surface);
+  border: 1px dashed var(--color-border);
+  color: var(--color-text-primary);
+  padding: 10px 16px;
+  border-radius: var(--border-radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-block;
+}
+
+.uploadBtnLabel:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background-color: #FFFFFF;
+}
+
+.fileInputHidden {
+  display: none;
+}
+
+.selectedFileBox {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  padding: 10px 14px;
+  border-radius: var(--border-radius-sm);
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.filePreviewArea {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.docThumbnail {
+  height: 60px;
+  width: auto;
+  max-width: 100px;
+  object-fit: cover;
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-sm);
+  background-color: var(--color-bg);
+}
+
+.pdfBadge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: #F1F5F9;
+  border: 1px solid var(--color-border);
+  padding: 6px 10px;
+  border-radius: var(--border-radius-sm);
+  min-width: 60px;
+  height: 60px;
+}
+
+.pdfIcon {
+  width: 24px;
+  height: 24px;
+  color: #991B1B;
+}
+
+.pdfLabel {
+  font-size: 10px;
+  font-weight: 700;
+  color: #334155;
+  margin-top: 2px;
+}
+
+.fileMetadata {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.fileNameText {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  word-break: break-all;
+}
+
+.fileSizeText {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.removeLink {
+  background: transparent;
+  border: none;
+  color: var(--color-danger);
+  font-size: 13px;
+  text-decoration: underline;
+  cursor: pointer;
+  font-weight: 600;
+  padding: 4px;
+}
+
+.removeLink:hover {
+  color: #991B1B;
+  background: transparent;
+}
+
+/* Module 2: Consent Checkbox & Verification Section */
+.captureBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.consentBlock {
+  border: 1px solid var(--color-border);
+  background-color: var(--color-bg);
+  border-left: 4px solid var(--color-primary);
+  padding: 16px;
+  border-radius: var(--border-radius-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.consentCheckboxLabel {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.consentCheckbox {
+  margin-top: 3px;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.consentText {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  line-height: 1.4;
+}
+
+.consentWarningText {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  font-style: italic;
+  padding-left: 26px;
+}
+
+.submitWrap {
+  display: inline-block;
+}
+
+/* Nav & Feedback Utilities */
+.navRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid var(--color-border);
+  padding-top: 18px;
+  margin-top: 8px;
+}
+
+.navBtn, .finalSubmitBtn {
+  background-color: var(--color-primary);
+  color: var(--color-text-inverse);
+  padding: 9px 20px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.navBtn:hover, .finalSubmitBtn:hover:not(:disabled) {
+  background-color: var(--color-primary-hover);
+}
+
+.finalSubmitBtn:disabled {
+  background-color: #9CA3AF;
+  cursor: not-allowed;
+  opacity: 0.8;
+}
+
+.backBtn {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-primary);
+  padding: 8px 16px;
+  font-size: 13px;
+}
+
+.backBtn:hover:not(:disabled) {
+  background-color: var(--color-bg);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.submittingSpan {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.inlineSpinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #FFFFFF;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.errorBanner {
+  background-color: var(--color-danger-bg);
+  border: 1px solid var(--color-danger);
+  color: var(--color-danger);
+  padding: 12px 14px;
+  border-radius: var(--border-radius-sm);
+  font-size: 13px;
+}
+
+.successBlock {
+  background-color: var(--color-success-bg);
+  border: 1px solid var(--color-success);
+  padding: 24px;
+  border-radius: var(--border-radius-sm);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+}
+
+.successTitle {
+  font-family: var(--font-serif);
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--color-success);
+}
+
+.redirectNotice {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.formFooter {
+  display: flex;
+  justify-content: space-between;
+  border-top: 1px solid var(--color-border);
+  padding-top: 16px;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.footerLink {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}

@@ -1,0 +1,250 @@
+/* Institutional Design System Styles for Privacy Notice */
+
+.container {
+  padding: 40px 24px;
+  background-color: #F7F8FA;
+  min-height: calc(100vh - 64px);
+  font-family: "Source Sans 3", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: #1E232A;
+  display: flex;
+  justify-content: center;
+}
+
+.documentPanel {
+  max-width: 900px;
+  width: 100%;
+  background-color: #FFFFFF;
+  border: 1px solid #E2E5EA;
+  border-radius: 4px;
+  padding: 36px 42px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.header {
+  border-bottom: 2px solid #2B5C8A;
+  padding-bottom: 20px;
+  margin-bottom: 28px;
+}
+
+.title {
+  font-family: "IBM Plex Serif", Georgia, serif;
+  font-size: 26px;
+  font-weight: 700;
+  color: #2B5C8A;
+  margin: 0 0 6px 0;
+  letter-spacing: -0.01em;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: #5A6573;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.metaRow {
+  display: flex;
+  justify-content: space-between;
+  background-color: #F0F4F8;
+  border: 1px solid #D0DDEB;
+  border-radius: 4px;
+  padding: 12px 18px;
+  font-size: 13px;
+  color: #334155;
+  margin-bottom: 30px;
+}
+
+.metaItem strong {
+  color: #2B5C8A;
+}
+
+.section {
+  margin-bottom: 32px;
+}
+
+.sectionTitle {
+  font-family: "IBM Plex Serif", Georgia, serif;
+  font-size: 19px;
+  font-weight: 700;
+  color: #1E232A;
+  border-bottom: 1px solid #E2E5EA;
+  padding-bottom: 8px;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sectionNumber {
+  color: #2B5C8A;
+  font-weight: 700;
+}
+
+.bodyText {
+  font-size: 15px;
+  line-height: 1.6;
+  color: #334155;
+  margin-bottom: 14px;
+}
+
+.dataList {
+  list-style-type: none;
+  padding: 0;
+  margin: 0 0 16px 0;
+}
+
+.dataItem {
+  border-left: 3px solid #2B5C8A;
+  background-color: #FAFAFB;
+  padding: 12px 16px;
+  margin-bottom: 12px;
+  border-radius: 0 4px 4px 0;
+  border-top: 1px solid #E2E5EA;
+  border-right: 1px solid #E2E5EA;
+  border-bottom: 1px solid #E2E5EA;
+}
+
+.dataItemTitle {
+  font-weight: 700;
+  color: #1E232A;
+  display: block;
+  margin-bottom: 4px;
+  font-size: 15px;
+}
+
+.dataItemDesc {
+  font-size: 14px;
+  color: #4A5568;
+  line-height: 1.5;
+}
+
+.retentionTable {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 12px;
+  margin-bottom: 20px;
+  font-size: 14px;
+}
+
+.retentionTable th {
+  background-color: #EFF4F9;
+  color: #2B5C8A;
+  font-weight: 700;
+  text-align: left;
+  padding: 10px 14px;
+  border: 1px solid #D1DFED;
+  font-family: "IBM Plex Serif", Georgia, serif;
+}
+
+.retentionTable td {
+  padding: 12px 14px;
+  border: 1px solid #E2E5EA;
+  color: #334155;
+}
+
+.retentionTable tr:nth-child(even) {
+  background-color: #FAFAFC;
+}
+
+.tagNormal {
+  display: inline-block;
+  padding: 3px 8px;
+  background-color: #E6F3ED;
+  color: #2F7A4F;
+  border: 1px solid #BCE3CE;
+  border-radius: 4px;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.tagPermanent {
+  display: inline-block;
+  padding: 3px 8px;
+  background-color: #FCEEEC;
+  color: #B3423A;
+  border: 1px solid #F5CCC7;
+  border-radius: 4px;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.accessGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.accessCard {
+  border: 1px solid #E2E5EA;
+  border-radius: 4px;
+  padding: 16px;
+  background-color: #FFFFFF;
+}
+
+.accessRole {
+  font-family: "IBM Plex Serif", Georgia, serif;
+  font-weight: 700;
+  color: #2B5C8A;
+  font-size: 16px;
+  margin-bottom: 8px;
+  display: block;
+  border-bottom: 1px dashed #D0DDEB;
+  padding-bottom: 6px;
+}
+
+.accessDetails {
+  font-size: 13px;
+  color: #4A5568;
+  line-height: 1.5;
+}
+
+.noticeBox {
+  background-color: #FFF9ED;
+  border: 1px solid #F3D9A2;
+  border-left: 4px solid #C08A2E;
+  padding: 14px 18px;
+  border-radius: 4px;
+  margin-top: 24px;
+  font-size: 14px;
+  color: #715118;
+}
+
+.footer {
+  margin-top: 40px;
+  padding-top: 20px;
+  border-top: 1px solid #E2E5EA;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  color: #64748B;
+}
+
+.backButton {
+  padding: 8px 16px;
+  background-color: #2B5C8A;
+  color: #FFFFFF;
+  border: 1px solid #1E4264;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  transition: background-color 0.15s;
+}
+
+.backButton:hover {
+  background-color: #1E4264;
+}
+
+@media (max-width: 640px) {
+  .accessGrid {
+    grid-template-columns: 1fr;
+  }
+  .documentPanel {
+    padding: 24px 20px;
+  }
+}

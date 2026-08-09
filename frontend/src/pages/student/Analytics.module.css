@@ -1,0 +1,147 @@
+.container {
+  padding: 24px 32px;
+  background-color: #F7F8FA;
+  min-height: 100vh;
+  font-family: 'Source Sans 3', sans-serif;
+  color: #1A1D20;
+}
+
+.header {
+  border-bottom: 2px solid #E2E5EA;
+  padding-bottom: 16px;
+  margin-bottom: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.title {
+  font-family: 'IBM Plex Serif', serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #2B5C8A;
+  margin: 0;
+}
+
+.subtitle {
+  font-size: 0.9rem;
+  color: #4A5158;
+  margin-top: 4px;
+  display: block;
+}
+
+.notificationCard {
+  background-color: #FFFFFF;
+  border: 1px solid #E2E5EA;
+  border-radius: 4px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.notifTitle {
+  font-weight: 700;
+  color: #2B5C8A;
+  font-size: 0.95rem;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.notifDesc {
+  font-size: 0.85rem;
+  color: #5A626A;
+}
+
+.toggleBtn {
+  padding: 8px 16px;
+  border-radius: 4px;
+  border: 1px solid #2B5C8A;
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.toggleBtnGranted {
+  background-color: #2F7A4F;
+  border-color: #2F7A4F;
+  color: #FFFFFF;
+}
+
+.toggleBtnDefault {
+  background-color: #2B5C8A;
+  color: #FFFFFF;
+}
+
+.toggleBtnDenied {
+  background-color: #F0F2F5;
+  border-color: #B3423A;
+  color: #B3423A;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.chartCard {
+  background-color: #FFFFFF;
+  border: 1px solid #E2E5EA;
+  border-radius: 4px;
+  padding: 20px;
+}
+
+.chartHeader {
+  border-bottom: 1px solid #E2E5EA;
+  padding-bottom: 10px;
+  margin-bottom: 16px;
+  font-family: 'IBM Plex Serif', serif;
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: #2B5C8A;
+}
+
+.emptyState {
+  padding: 48px 24px;
+  text-align: center;
+  color: #6A727A;
+  font-style: italic;
+  background-color: #FAFBFD;
+  border: 1px dashed #E2E5EA;
+  border-radius: 4px;
+}
+
+.kpiBar {
+  background-color: #FFFFFF;
+  border: 1px solid #E2E5EA;
+  border-radius: 4px;
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.kpiItem {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.kpiLabel {
+  font-size: 0.8rem;
+  color: #5A626A;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.kpiVal {
+  font-family: monospace;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1A1D20;
+}

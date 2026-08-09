@@ -1,0 +1,137 @@
+.topBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--header-height);
+  padding: 0 24px;
+  background-color: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.brandSection {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.portalLogo {
+  font-family: var(--font-serif);
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--color-primary);
+  letter-spacing: -0.2px;
+}
+
+.departmentSubtitle {
+  font-family: var(--font-body);
+  font-size: 15px;
+  color: var(--color-text-secondary);
+  border-left: 1px solid var(--color-border);
+  padding-left: 12px;
+  font-weight: 500;
+}
+
+.controlsArea {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.sessionMeta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.userEmail {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.roleSelectorWrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: var(--color-bg);
+  padding: 4px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-sm);
+}
+
+.roleLabel {
+  font-size: 12px;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--color-text-secondary);
+  letter-spacing: 0.5px;
+}
+
+.roleDropdown {
+  width: auto;
+  padding: 2px 8px;
+  font-size: 13px;
+  font-weight: 700;
+  border: none;
+  background-color: transparent;
+  color: var(--color-primary);
+  cursor: pointer;
+}
+
+.roleDropdown:focus {
+  outline: none;
+  text-decoration: underline;
+}
+
+.signOutBtn {
+  background-color: var(--color-surface);
+  color: var(--color-danger);
+  border: 1px solid var(--color-danger);
+  font-size: 13px;
+  padding: 5px 12px;
+  height: 32px;
+}
+
+.signOutBtn:hover {
+  background-color: var(--color-danger);
+  color: var(--color-text-inverse);
+  border-color: var(--color-danger);
+}
+
+.guestLinks {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.authLink {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+.registerLink {
+  display: inline-flex;
+  align-items: center;
+  background-color: var(--color-primary);
+  color: var(--color-text-inverse);
+  padding: 6px 14px;
+  border-radius: var(--border-radius-sm);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.registerLink:hover {
+  background-color: var(--color-primary-hover);
+  color: var(--color-text-inverse);
+  text-decoration: none;
+}
+
+@media (max-width: 768px) {
+  .departmentSubtitle {
+    display: none;
+  }
+}

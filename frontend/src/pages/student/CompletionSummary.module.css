@@ -1,0 +1,240 @@
+.container {
+  padding: 32px;
+  background-color: #F7F8FA;
+  min-height: 100vh;
+  font-family: 'Source Sans 3', sans-serif;
+  color: #1A1D20;
+}
+
+.reportBox {
+  max-width: 900px;
+  margin: 0 auto;
+  background-color: #FFFFFF;
+  border: 1px solid #E2E5EA;
+  border-radius: 4px;
+  padding: 36px 42px;
+}
+
+.reportHeader {
+  border-bottom: 2px solid #2B5C8A;
+  padding-bottom: 20px;
+  margin-bottom: 28px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.headerLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.institutionName {
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #5A626A;
+  letter-spacing: 0.5px;
+}
+
+.reportTitle {
+  font-family: 'IBM Plex Serif', serif;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #2B5C8A;
+  margin: 4px 0 0 0;
+}
+
+.reportSubtitle {
+  font-size: 0.95rem;
+  color: #4A5158;
+}
+
+.actionRow {
+  display: flex;
+  gap: 12px;
+}
+
+.pdfButton {
+  background-color: #2B5C8A;
+  color: #FFFFFF;
+  border: 1px solid #20466A;
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-family: 'Source Sans 3', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.pdfButton:hover {
+  background-color: #1E4466;
+}
+
+.backLink {
+  color: #2B5C8A;
+  text-decoration: underline;
+  font-weight: 600;
+  font-size: 0.9rem;
+  align-self: center;
+}
+
+.section {
+  margin-bottom: 32px;
+}
+
+.sectionHeader {
+  font-family: 'IBM Plex Serif', serif;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #2B5C8A;
+  border-bottom: 1px solid #E2E5EA;
+  padding-bottom: 8px;
+  margin-bottom: 16px;
+}
+
+.metaGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px 24px;
+  background-color: #FAFBFD;
+  border: 1px solid #E2E5EA;
+  border-radius: 4px;
+  padding: 16px 20px;
+}
+
+.metaItem {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.metaLabel {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #6A727A;
+  text-transform: uppercase;
+}
+
+.metaValue {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1A1D20;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.table th {
+  background-color: #F7F8FA;
+  border: 1px solid #E2E5EA;
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 700;
+  color: #3B424A;
+}
+
+.table td {
+  border: 1px solid #E2E5EA;
+  padding: 12px 16px;
+  vertical-align: middle;
+  color: #2A2E33;
+}
+
+.table tr:hover {
+  background-color: #FAFBFD;
+}
+
+.metricTitle {
+  font-weight: 700;
+  color: #1A1D20;
+}
+
+.metricSub {
+  font-size: 0.85rem;
+  color: #6A727A;
+  margin-top: 2px;
+}
+
+.metricFigure {
+  font-family: monospace;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.riskLow {
+  color: #2F7A4F;
+  font-weight: 700;
+}
+
+.riskMedium {
+  color: #C08A2E;
+  font-weight: 700;
+}
+
+.riskHigh {
+  color: #B3423A;
+  font-weight: 700;
+}
+
+.signatureSection {
+  margin-top: 48px;
+  padding-top: 24px;
+  border-top: 1px solid #E2E5EA;
+  display: flex;
+  justify-content: space-between;
+}
+
+.sigBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sigTitle {
+  font-weight: 700;
+  color: #1A1D20;
+  font-size: 0.95rem;
+}
+
+.sigDate {
+  font-size: 0.85rem;
+  color: #5A626A;
+}
+
+.errorBox {
+  max-width: 700px;
+  margin: 40px auto;
+  background-color: #FDF3F2;
+  color: #B3423A;
+  border: 1px solid #B3423A;
+  border-radius: 4px;
+  padding: 16px 20px;
+  font-weight: 600;
+}
+
+.loadingText {
+  padding: 48px;
+  text-align: center;
+  color: #4A5158;
+  font-style: italic;
+}
+
+@media print {
+  .container {
+    padding: 0;
+    background-color: #FFFFFF;
+  }
+  .reportBox {
+    border: none;
+    max-width: 100%;
+    padding: 20px;
+  }
+  .actionRow {
+    display: none;
+  }
+}

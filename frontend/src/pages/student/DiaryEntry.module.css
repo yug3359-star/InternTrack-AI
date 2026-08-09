@@ -1,0 +1,342 @@
+/* InternTrack AI — Student Daily Work Diary Institutional Styles (Module 6 & 7) */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.5rem 0;
+  font-family: var(--font-sans, 'Source Sans 3', sans-serif);
+  color: var(--color-text-primary, #1E293B);
+}
+
+.headerArea {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  background-color: var(--color-surface, #FFFFFF);
+  border: 1px solid var(--color-border, #E2E8F0);
+  border-radius: var(--border-radius-sm, 4px);
+  padding: 18px 24px;
+  border-top: 4px solid #2B5C8A;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.title {
+  font-family: var(--font-serif, 'IBM Plex Serif', serif);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1E293B;
+  margin: 0 0 6px 0;
+}
+
+.subText {
+  font-size: 0.925rem;
+  color: #4B5563;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.submissionCard {
+  background-color: var(--color-surface, #FFFFFF);
+  border: 1px solid var(--color-border, #E2E8F0);
+  border-radius: var(--border-radius-sm, 4px);
+  padding: 20px 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.formHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #E2E8F0;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.formTitle {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #1E293B;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dateBadge {
+  background-color: #E2E8F0;
+  color: #1E293B;
+  border: 1px solid #CBD5E1;
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.prefillContainer {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.prefillBtn {
+  background-color: #F8FAFC;
+  border: 1px solid #CBD5E1;
+  color: #334155;
+  padding: 6px 14px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.prefillBtn:hover {
+  background-color: #E2E8F0;
+  border-color: #94A3B8;
+  color: #0F172A;
+}
+
+.prefillOffTopic {
+  background-color: #FEF2F2;
+  border-color: #FCA5A5;
+  color: #991B1B;
+}
+
+.prefillOffTopic:hover {
+  background-color: #FEE2E2;
+  border-color: #EF4444;
+  color: #7F1D1D;
+}
+
+.textarea {
+  width: 100%;
+  height: 130px;
+  background-color: #FFFFFF;
+  border: 1px solid #CBD5E1;
+  border-radius: 4px;
+  padding: 12px 16px;
+  color: #1E293B;
+  font-size: 0.95rem;
+  font-family: inherit;
+  line-height: 1.5;
+  resize: vertical;
+  transition: border-color 0.15s ease;
+  box-sizing: border-box;
+  outline: none;
+}
+
+.textarea:focus {
+  border-color: #2B5C8A;
+  box-shadow: 0 0 0 2px rgba(43, 92, 138, 0.15);
+}
+
+.textarea:disabled {
+  background-color: #F1F5F9;
+  cursor: not-allowed;
+  color: #64748B;
+}
+
+.submitActions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+  align-items: center;
+  gap: 16px;
+}
+
+.alreadyEvaluatedText {
+  color: #B45309;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.submitButton {
+  background-color: #2B5C8A;
+  color: #FFFFFF;
+  border: 1px solid #1E4060;
+  padding: 10px 20px;
+  border-radius: 4px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.submitButton:hover:not(:disabled) {
+  background-color: #1E4060;
+}
+
+.submitButton:disabled {
+  background-color: #94A3B8;
+  border-color: #64748B;
+  cursor: not-allowed;
+}
+
+.historySection {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 10px;
+}
+
+.sectionHeading {
+  font-family: var(--font-serif, 'IBM Plex Serif', serif);
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #1E293B;
+  margin: 0;
+  border-bottom: 2px solid #2B5C8A;
+  padding-bottom: 8px;
+}
+
+.historyList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.logItem {
+  background-color: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 4px;
+  padding: 20px 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  position: relative;
+}
+
+.logItemAccepted {
+  border-left: 5px solid #059669;
+}
+
+.logItemRejected {
+  border-left: 5px solid #DC2626;
+}
+
+.logHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.logDate {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #1E293B;
+}
+
+.statusBadge {
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 0.825rem;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+
+.statusAccepted {
+  background-color: #ECFDF5;
+  color: #065F46;
+  border: 1px solid #10B981;
+}
+
+.statusRejected {
+  background-color: #FEF2F2;
+  color: #991B1B;
+  border: 1px solid #EF4444;
+}
+
+.logContent {
+  color: #334155;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  background-color: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  padding: 14px 16px;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  white-space: pre-wrap;
+}
+
+.auditReasonBox {
+  padding: 12px 16px;
+  border-radius: 4px;
+  margin-bottom: 16px;
+}
+
+.auditAccepted {
+  background-color: #F0FDF4;
+  border: 1px solid #BBF7D0;
+}
+
+.auditRejected {
+  background-color: #FFF5F5;
+  border: 1px solid #FECACA;
+}
+
+.auditTitle {
+  font-size: 0.775rem;
+  font-weight: 700;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin-bottom: 4px;
+}
+
+.auditText {
+  color: #1E293B;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  font-weight: 500;
+}
+
+.topicsContainer {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.topicsTitle {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #64748B;
+  text-transform: uppercase;
+  margin-right: 4px;
+}
+
+.topicTag {
+  background-color: #EFF6FF;
+  color: #1D4ED8;
+  border: 1px solid #BFDBFE;
+  padding: 3px 10px;
+  border-radius: 4px;
+  font-size: 0.825rem;
+  font-weight: 600;
+}
+
+.emptyState {
+  background-color: #FFFFFF;
+  border: 1px dashed #CBD5E1;
+  border-radius: 4px;
+  padding: 3rem 2rem;
+  text-align: center;
+  color: #64748B;
+  font-weight: 500;
+}
+
+@media (max-width: 768px) {
+  .container { padding: 1rem 0; }
+  .submissionCard, .logItem, .headerArea { padding: 16px; }
+  .title { font-size: 1.3rem; }
+}

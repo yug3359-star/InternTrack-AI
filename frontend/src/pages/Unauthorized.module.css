@@ -1,0 +1,115 @@
+.unauthorizedContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 80vh;
+  padding: 2rem;
+  background: #ffffff;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+.card {
+  max-width: 540px;
+  width: 100%;
+  background: white;
+  border: 1px solid #000000;
+  border-radius: 16px;
+  padding: 3rem 2.5rem;
+  text-align: center;
+}
+
+@keyframes slideFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(16px) scale(0.98);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.iconWrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #ef4444;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 0 16px rgba(239, 68, 68, 0.25);
+}
+
+.title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #000000;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.75rem;
+}
+
+.message {
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: #f87171;
+  margin-bottom: 1.25rem;
+  line-height: 1.5;
+}
+
+.description {
+  font-size: 0.95rem;
+  color: #94a3b8;
+  margin-bottom: 2rem;
+  line-height: 1.6;
+}
+
+.roleHighlight {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  color: #60a5fa;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 0.5rem;
+}
+
+.actions {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.homeButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.85rem 1.75rem;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: #ffffff;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  text-decoration: none;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.homeButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.55);
+  background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+}
+
+.homeButton:active {
+  transform: translateY(0);
+}

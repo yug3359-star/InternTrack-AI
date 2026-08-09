@@ -1,0 +1,172 @@
+/* InternTrack AI — Institutional Engagement Pop-up Styles (Module 5a) */
+
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(15, 23, 42, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 1rem;
+}
+
+.modalContent {
+  background-color: #FFFFFF;
+  border: 1px solid #CBD5E1;
+  border-radius: 4px;
+  width: 100%;
+  max-width: 540px;
+  padding: 1.5rem;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.header {
+  border-bottom: 2px solid #2B5C8A;
+  padding-bottom: 0.75rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.title {
+  font-family: var(--font-serif, 'IBM Plex Serif', serif);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1E293B;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.timerBadge {
+  background-color: #FEE2E2;
+  color: #B3423A;
+  border: 1px solid #DC2626;
+  border-radius: 4px;
+  padding: 4px 10px;
+  font-family: 'Courier New', Courier, monospace;
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: 1px;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.7; }
+  100% { opacity: 1; }
+}
+
+.description {
+  font-family: var(--font-sans, 'Source Sans 3', sans-serif);
+  font-size: 0.95rem;
+  color: #4B5563;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.webcamSection {
+  background-color: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 4px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.buttonGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.primaryBtn {
+  background-color: #2B5C8A;
+  color: #FFFFFF;
+  border: 1px solid #1E4060;
+  border-radius: 4px;
+  padding: 0.8rem 1.2rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background-color 0.15s ease;
+}
+
+.primaryBtn:hover:not(:disabled) {
+  background-color: #1E4060;
+}
+
+.primaryBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.secondaryBtn {
+  background-color: #F1F5F9;
+  color: #334155;
+  border: 1px solid #CBD5E1;
+  border-radius: 4px;
+  padding: 0.8rem 1.2rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: all 0.15s ease;
+}
+
+.secondaryBtn:hover:not(:disabled) {
+  background-color: #E2E8F0;
+  border-color: #94A3B8;
+}
+
+.secondaryBtn:disabled {
+  background-color: #F8FAFC;
+  color: #94A3B8;
+  cursor: not-allowed;
+}
+
+.quotaPill {
+  background-color: #E0F2FE;
+  color: #2B5C8A;
+  border: 1px solid #7DD3FC;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 2px 8px;
+}
+
+.quotaExhaustedPill {
+  background-color: #FEE2E2;
+  color: #DC2626;
+  border: 1px solid #F87171;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 2px 8px;
+}
+
+.footerNote {
+  font-size: 0.8rem;
+  color: #64748B;
+  text-align: center;
+  margin: 0;
+  border-top: 1px dashed #CBD5E1;
+  padding-top: 0.75rem;
+}

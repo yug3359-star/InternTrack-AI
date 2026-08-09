@@ -1,0 +1,232 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  width: 100%;
+}
+
+.topSection {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-sm);
+  padding: 16px 20px;
+}
+
+.pageTitle {
+  font-family: var(--font-serif);
+  font-size: 21px;
+  color: var(--color-text-primary);
+  margin-bottom: 4px;
+}
+
+.metaSub {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  margin: 0;
+  font-weight: 500;
+}
+
+.headerBadge {
+  background-color: var(--color-bg);
+  border: 1px solid var(--color-border);
+  padding: 8px 14px;
+  border-radius: var(--border-radius-sm);
+  font-size: 13px;
+  color: var(--color-primary);
+}
+
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 850px) {
+  .summaryGrid {
+    grid-template-columns: 1fr;
+  }
+  .topSection {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+}
+
+.statusBox {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-sm);
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.boxLabel {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.boxNum {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin: 8px 0;
+}
+
+.boxNumAlert {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--color-warning);
+  margin: 8px 0;
+}
+
+.boxNote {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.queueCard {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-sm);
+  padding: 18px 20px;
+}
+
+.cardHeaderRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 14px;
+  margin-bottom: 16px;
+}
+
+.sectionTitle {
+  font-family: var(--font-serif);
+  font-size: 18px;
+  margin: 0;
+}
+
+.searchWrap {
+  width: 280px;
+}
+
+.filterInput {
+  width: 100%;
+  padding: 6px 12px;
+  font-size: 13px;
+  border-radius: var(--border-radius-sm);
+}
+
+.tableContainer {
+  overflow-x: auto;
+}
+
+.queueTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.queueTable th, .queueTable td {
+  padding: 12px 14px;
+  vertical-align: middle;
+}
+
+.studentCell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.studentName {
+  font-size: 14px;
+  color: var(--color-text-primary);
+}
+
+.rollCode {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  font-family: monospace, var(--font-body);
+}
+
+.dateText {
+  white-space: nowrap;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.hoursText {
+  font-weight: 700;
+  text-align: center;
+}
+
+.lowHoursBadge {
+  background-color: var(--color-danger-bg);
+  color: var(--color-danger);
+  border: 1px solid var(--color-danger);
+  padding: 2px 6px;
+  border-radius: var(--border-radius-sm);
+  font-size: 12px;
+}
+
+.taskText {
+  max-width: 320px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.actionsHeader {
+  text-align: center;
+}
+
+.actionsCell {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.approveBtn {
+  background-color: var(--color-success);
+  border: 1px solid var(--color-success);
+  color: var(--color-text-inverse);
+  padding: 5px 12px;
+  font-size: 12px;
+  height: 30px;
+}
+
+.approveBtn:hover {
+  background-color: #245c3b;
+  border-color: #245c3b;
+}
+
+.rejectBtn {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-danger);
+  color: var(--color-danger);
+  padding: 5px 12px;
+  font-size: 12px;
+  height: 30px;
+}
+
+.rejectBtn:hover {
+  background-color: var(--color-danger);
+  color: var(--color-text-inverse);
+  border-color: var(--color-danger);
+}
+
+.rowWarning td {
+  background-color: #fff9f0;
+}
+
+.emptyNotice {
+  text-align: center;
+  padding: 32px !important;
+  color: var(--color-text-secondary);
+  font-style: italic;
+}

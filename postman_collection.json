@@ -1,0 +1,575 @@
+{
+  "info": {
+    "_postman_id": "interntrack-ai-collection-mod-0-15",
+    "name": "InternTrack AI — Institutional Production API Collection (Modules 0–15)",
+    "description": "Complete, pre-configured Postman testing collection covering every verified REST endpoint in the InternTrack AI Java Spring Boot backend across Modules 0-10 and 15. Includes environment variables {{baseUrl}} (http://localhost:8080) and {{firebaseToken}} for painless authentication and live testing against real Cloud Firestore repositories.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string",
+      "description": "Running Spring Boot backend base protocol and port"
+    },
+    {
+      "key": "firebaseToken",
+      "value": "PASTE_YOUR_LIVE_FIREBASE_ID_TOKEN_HERE",
+      "type": "string",
+      "description": "Firebase Authentication JWT Bearer Token (obtained via client getIdToken())"
+    },
+    {
+      "key": "testUid",
+      "value": "dev-stud-107",
+      "type": "string",
+      "description": "Target test candidate user identifier"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{firebaseToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "1. Auth & Registration",
+      "item": [
+        {
+          "name": "Register Candidate Account (POST /api/auth/register)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "fullName", "value": "Alex Vance", "type": "text" },
+                { "key": "collegeEmail", "value": "alex.vance@cs.college.edu", "type": "text" },
+                { "key": "password", "value": "SecurePassword123!", "type": "text" },
+                { "key": "branch", "value": "Computer Science & Engineering", "type": "text" },
+                { "key": "mentorName", "value": "Dr. Rajesh K.", "type": "text" },
+                { "key": "mentorEmail", "value": "rajesh.k@cs.college.edu", "type": "text" },
+                { "key": "internshipDomain", "value": "Cloud Infrastructure & DevOps", "type": "text" },
+                { "key": "joiningDate", "value": "2026-07-01", "type": "text" },
+                { "key": "completionDate", "value": "2026-12-31", "type": "text" },
+                { "key": "officeStartTime", "value": "09:00", "type": "text" },
+                { "key": "officeEndTime", "value": "17:00", "type": "text" },
+                { "key": "breakStartTime", "value": "13:00", "type": "text" },
+                { "key": "breakEndTime", "value": "14:00", "type": "text" },
+                { "key": "workingDays", "value": "Monday,Tuesday,Wednesday,Thursday,Friday", "type": "text" },
+                { "key": "deviceType", "value": "Laptop", "type": "text" },
+                { "key": "consentGiven", "value": "true", "type": "text" }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "register"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. HOD Approval",
+      "item": [
+        {
+          "name": "Get Pending Application Ledger (GET /api/hod/applications)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/hod/applications?page=1&status=PENDING",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "hod", "applications"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "status", "value": "PENDING" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Candidate Application Details (GET /api/hod/applications/{uid})",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/hod/applications/{{testUid}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "hod", "applications", "{{testUid}}"]
+            }
+          }
+        },
+        {
+          "name": "Approve Internship Application (PATCH /api/hod/applications/{uid}/approve)",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/api/hod/applications/{{testUid}}/approve",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "hod", "applications", "{{testUid}}", "approve"]
+            }
+          }
+        },
+        {
+          "name": "Reject Internship Application (PATCH /api/hod/applications/{uid}/reject)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Incomplete corporate offer letter documentation or unrecognized supervisor domain.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/hod/applications/{{testUid}}/reject",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "hod", "applications", "{{testUid}}", "reject"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Status Tracking",
+      "item": [
+        {
+          "name": "Get Student Lifecycle Status (GET /api/status/{uid})",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/status/{{testUid}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "status", "{{testUid}}"]
+            }
+          }
+        },
+        {
+          "name": "Trigger Manual Status & Completion Transition Job (POST /api/admin/run-status-job)",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/run-status-job",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "run-status-job"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Popups & Biometric Check-Ins",
+      "item": [
+        {
+          "name": "Submit Working Hour Engagement Check-In (POST /api/popups/{uid}/respond)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"popupId\": \"dev-stud-107_1785128000\",\n  \"action\": \"WORKING\",\n  \"webcamPhotoUrl\": \"https://firebasestorage.googleapis.com/v0/b/interntrack-dev.appspot.com/o/popup-captures%2Flive.jpg\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/popups/{{testUid}}/respond",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "popups", "{{testUid}}", "respond"]
+            }
+          }
+        },
+        {
+          "name": "Get Pending Borderline Mentor Reviews (GET /api/mentor/borderline-reviews)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/mentor/borderline-reviews",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mentor", "borderline-reviews"]
+            }
+          }
+        },
+        {
+          "name": "Resolve Borderline Review (PATCH /api/mentor/borderline-reviews/{reviewId}/resolve)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action\": \"APPROVE\",\n  \"notes\": \"Student verified wearing optical reading glasses in poorly lit cubicle.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/mentor/borderline-reviews/rev-107-alpha/resolve",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mentor", "borderline-reviews", "rev-107-alpha", "resolve"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Daily Attendance",
+      "item": [
+        {
+          "name": "Respond to Morning Attendance Window (POST /api/attendance/{attendanceId}/respond)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action\": \"present\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/attendance/dev-stud-107_2026-07-27/respond",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "attendance", "dev-stud-107_2026-07-27", "respond"]
+            }
+          }
+        },
+        {
+          "name": "Get Candidate Historical Attendance Roster (GET /api/attendance/history/{uid})",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/attendance/history/{{testUid}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "attendance", "history", "{{testUid}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Proctored Examinations",
+      "item": [
+        {
+          "name": "Start Proctored Evaluation Session (POST /api/test/{testId}/start)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"startPhotoUrl\": \"https://firebasestorage.googleapis.com/v0/b/interntrack-dev.appspot.com/o/test-captures%2Fstart.jpg\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/test/dev-stud-107_2026-07-27-test/start",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "test", "dev-stud-107_2026-07-27-test", "start"]
+            }
+          }
+        },
+        {
+          "name": "Submit Single Question Answer (POST /api/test/{testId}/submit-answer)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"questionIndex\": 0,\n  \"answer\": \"Asynchronous replication offers lower write latency but introduces RPO risk during broker failure...\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/test/dev-stud-107_2026-07-27-test/submit-answer",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "test", "dev-stud-107_2026-07-27-test", "submit-answer"]
+            }
+          }
+        },
+        {
+          "name": "Final Test Submission & Anti-Cheating Audit (POST /api/test/{testId}/submit)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"submitPhotoUrl\": \"https://firebasestorage.googleapis.com/v0/b/interntrack-dev.appspot.com/o/test-captures%2Fsubmit.jpg\",\n  \"tabSwitchCount\": 1,\n  \"answers\": {\n    \"0\": \"Asynchronous replication analysis...\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/test/dev-stud-107_2026-07-27-test/submit",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "test", "dev-stud-107_2026-07-27-test", "submit"]
+            }
+          }
+        },
+        {
+          "name": "Reschedule Proctored Exam via Meeting Quota (POST /api/test/{testId}/reschedule)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Emergency production database failover meeting with supervisor\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/test/dev-stud-107_2026-07-27-test/reschedule",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "test", "dev-stud-107_2026-07-27-test", "reschedule"]
+            }
+          }
+        },
+        {
+          "name": "Mentor Override Exam Status to Absent (POST /api/mentor/test/{testId}/override-absent)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Candidate left webcam optical surveillance frame for over 12 minutes during testing.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/mentor/test/dev-stud-107_2026-07-27-test/override-absent",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mentor", "test", "dev-stud-107_2026-07-27-test", "override-absent"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. AI Work Diaries",
+      "item": [
+        {
+          "name": "Submit Daily AI Work Activity Diary (POST /api/diaries/submit)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"uid\": \"dev-stud-107\",\n  \"date\": \"2026-07-27\",\n  \"entryText\": \"Implement Spring Security JWT authentication filter and Redis 5-minute TTL caching configuration for Module 10 analytics endpoints.\",\n  \"studentName\": \"Alex Vance (2023CSB104)\",\n  \"rejectedDueToFaceMismatch\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/diaries/submit",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "diaries", "submit"]
+            }
+          }
+        },
+        {
+          "name": "Get Candidate Work Diary Timeline (GET /api/diaries/student/{uid})",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/diaries/student/{{testUid}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "diaries", "student", "{{testUid}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "8. Mentor Review & Suspicious Diaries",
+      "item": [
+        {
+          "name": "Get Suspicious Diary Queue (GET /api/mentor/suspicious)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/mentor/suspicious?mentorEmail=rajesh.k@cs.college.edu",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mentor", "suspicious"],
+              "query": [
+                { "key": "mentorEmail", "value": "rajesh.k@cs.college.edu" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Suspicious Diary Queue [HOD Mirror] (GET /api/hod/suspicious)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/hod/suspicious",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "hod", "suspicious"]
+            }
+          }
+        },
+        {
+          "name": "Execute Decision Override on Suspicious Log (POST /api/mentor/suspicious/{id}/override)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action\": \"accept\",\n  \"mentorUid\": \"Dr. Rajesh K. (Faculty Supervisor)\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/mentor/suspicious/dev-stud-107_2026-07-25/override",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mentor", "suspicious", "dev-stud-107_2026-07-25", "override"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "9. Escalation & Highlighting",
+      "item": [
+        {
+          "name": "Get Highlighted Students Ledger (GET /api/hod/highlighted)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/hod/highlighted",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "hod", "highlighted"]
+            }
+          }
+        },
+        {
+          "name": "Get Student Escalation & Warning History (GET /api/hod/highlighted/{uid}/history)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/hod/highlighted/{{testUid}}/history",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "hod", "highlighted", "{{testUid}}", "history"]
+            }
+          }
+        },
+        {
+          "name": "Trigger Manual Escalation Audit Job (POST /api/admin/run-escalation-job)",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/run-escalation-job?month=2026-07",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "run-escalation-job"],
+              "query": [
+                { "key": "month", "value": "2026-07" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "10. Completion Certification",
+      "item": [
+        {
+          "name": "Get Student Final Completion Summary Certificate (GET /api/completion/{uid})",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/completion/{{testUid}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "completion", "{{testUid}}"]
+            }
+          }
+        },
+        {
+          "name": "Get All Completed Candidate Roster (GET /api/hod/completed)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/hod/completed",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "hod", "completed"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "11. Academic Analytics (Mod 10)",
+      "item": [
+        {
+          "name": "Get Student Longitudinal Analytics (GET /api/analytics/student/{uid})",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/analytics/student/{{testUid}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "analytics", "student", "{{testUid}}"]
+            }
+          }
+        },
+        {
+          "name": "Get HOD Institutional Overview (GET /api/analytics/hod/overview)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/analytics/hod/overview",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "analytics", "hod", "overview"]
+            }
+          }
+        },
+        {
+          "name": "Get Departmental Branch Comparison (GET /api/analytics/hod/branch-comparison)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/analytics/hod/branch-comparison",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "analytics", "hod", "branch-comparison"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "12. Health & Diagnostics",
+      "item": [
+        {
+          "name": "System Health & Operational Check (GET /api/health)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "health"]
+            }
+          }
+        },
+        {
+          "name": "Live Firebase Firestore Connection Audit (GET /api/health/firebase)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/health/firebase",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "health", "firebase"]
+            }
+          }
+        },
+        {
+          "name": "Session Token Authorization Status (GET /api/auth/status)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "status"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
