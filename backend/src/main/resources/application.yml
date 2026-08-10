@@ -39,12 +39,7 @@ interntrack:
     model: ${AI_MODEL:llama-3.1-8b-instant}
     url: ${LLM_API_URL:https://api.groq.com/openai/v1/chat/completions}
 
-aws:
-  rekognition:
-    access-key-id: ${AWS_ACCESS_KEY_ID:your_aws_access_key_id}
-    secret-access-key: ${AWS_SECRET_ACCESS_KEY:your_aws_secret_access_key}
-    region: ${AWS_REGION:us-east-1}
-    enabled: ${AWS_REKOGNITION_ENABLED:true}
+
 
 logging:
   level:
