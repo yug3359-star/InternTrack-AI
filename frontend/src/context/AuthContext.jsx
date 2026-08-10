@@ -94,7 +94,8 @@ export const AuthProvider = ({ children }) => {
       if (firebaseUser) {
         try {
           const tokenResult = await firebaseUser.getIdTokenResult();
-          const userRole = tokenResult.claims.role || 'STUDENT';
+          let userRole = tokenResult.claims.role || 'STUDENT';
+          userRole = userRole.toUpperCase();
           dispatch({
             type: ACTIONS.SET_AUTH_STATE,
             payload: { user: firebaseUser, role: userRole }
@@ -135,7 +136,7 @@ export const AuthProvider = ({ children }) => {
     }
 
     // Emulate login during demonstration if Firebase credentials aren't live
-    if (!auth || email.endsWith('.dev@college.edu') || selectedRole) {
+    if (!auth || email.endsWith('.dev@college.edu')) {
       const role = selectedRole || 'STUDENT';
       const devUser = {
         uid: `dev-${role.toLowerCase()}-id`,
@@ -154,7 +155,8 @@ export const AuthProvider = ({ children }) => {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const tokenResult = await userCredential.user.getIdTokenResult();
-      const role = tokenResult.claims.role || selectedRole || 'STUDENT';
+      let role = tokenResult.claims.role || selectedRole || 'STUDENT';
+      role = role.toUpperCase();
       
       dispatch({ type: ACTIONS.SET_AUTH_STATE, payload: { user: userCredential.user, role } });
       return { user: userCredential.user, role };

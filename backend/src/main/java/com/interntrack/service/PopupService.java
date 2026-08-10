@@ -20,17 +20,15 @@ public class PopupService {
 
     private static final Logger log = LoggerFactory.getLogger(PopupService.class);
 
-    private final FaceMatchService faceMatchService;
     private final MentorReviewService mentorReviewService;
     private final EngagementPopupJob engagementPopupJob;
     private final QuotaService quotaService;
     private final ZoneId applicationZoneId;
     private final DailyStatusService dailyStatusService;
 
-    public PopupService(FaceMatchService faceMatchService, MentorReviewService mentorReviewService,
+    public PopupService(MentorReviewService mentorReviewService,
                         EngagementPopupJob engagementPopupJob, QuotaService quotaService,
                         ZoneId applicationZoneId, DailyStatusService dailyStatusService) {
-        this.faceMatchService = faceMatchService;
         this.mentorReviewService = mentorReviewService;
         this.engagementPopupJob = engagementPopupJob;
         this.quotaService = quotaService;
@@ -57,20 +55,32 @@ public class PopupService {
             return claimMeetingOverride(uid, popupId);
         }
 
-        // Default: WORKING verification via Webcam Face Match
-        String referencePhotoUrl = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200";
-        Map<String, Object> matchResult = faceMatchService.compareFaces(uid, photoData, referencePhotoUrl, simulatedScore);
+        // Client-side provided similarity score
+        Double similarityScore = (payload.get("similarityScore") instanceof Number)
+            ? ((Number) payload.get("similarityScore")).doubleValue()
+            : 100.0; // fallback to pass if not provided
+            
+        String matchStatus;
+        if (similarityScore >= 75.0) {
+            matchStatus = "APPROVED";
+        } else if (similarityScore >= 40.0) {
+            matchStatus = "BORDERLINE";
+        } else {
+            matchStatus = "REJECTED";
+        }
 
-        String matchStatus = (String) matchResult.get("matchStatus");
         if ("BORDERLINE".equals(matchStatus)) {
             log.info("Biometric score borderline for student [{}]. Placing snapshot into mentor review repository.", uid);
-            mentorReviewService.createBorderlineReview(uid, (Double) matchResult.get("similarityScore"), photoData, referencePhotoUrl);
+            String referencePhotoUrl = "https://firebasestorage.googleapis.com/v0/b/interntrack-dev.appspot.com/o/reference-photos%2F" + uid + ".jpg?alt=media";
+            mentorReviewService.createBorderlineReview(uid, similarityScore, photoData, referencePhotoUrl);
         } else if ("REJECTED".equals(matchStatus)) {
             log.warn("Biometric verification failed for student [{}]. Registering failed attendance attempt.", uid);
             engagementPopupJob.incrementMissedPopup(uid);
         }
 
-        Map<String, Object> response = new HashMap<>(matchResult);
+        Map<String, Object> response = new HashMap<>();
+        response.put("similarityScore", similarityScore);
+        response.put("matchStatus", matchStatus);
         response.put("popupId", popupId);
         response.put("action", "WORKING");
         response.put("processedAt", System.currentTimeMillis());

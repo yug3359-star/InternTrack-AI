@@ -56,17 +56,17 @@ const Sidebar = () => {
             <li className={styles.categoryHeader}>Student Services</li>
             <li>
               <NavLink to="/student/dashboard" className={({ isActive }) => isActive ? styles.itemActive : styles.itemLink}>
-                Weekly Log Ledger
+                Dashboard
               </NavLink>
             </li>
             <li>
               <NavLink to="/student/diaries" className={({ isActive }) => isActive ? styles.itemActive : styles.itemLink}>
-                Daily AI Work Diaries
+                Daily Diary
               </NavLink>
             </li>
             <li>
               <NavLink to="/student/completion-summary" className={({ isActive }) => isActive ? styles.itemActive : styles.itemLink}>
-                Final Completion Report
+                Completion Report
               </NavLink>
             </li>
             <li>
@@ -93,12 +93,12 @@ const Sidebar = () => {
             <li className={styles.categoryHeader}>Faculty Validation</li>
             <li>
               <NavLink to="/mentor/dashboard" className={({ isActive }) => isActive ? styles.itemActive : styles.itemLink}>
-                Verification Queue
+                Dashboard
               </NavLink>
             </li>
             <li>
               <NavLink to="/mentor/suspicious-diaries" className={({ isActive }) => isActive ? styles.itemActive : styles.itemLink} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span>Suspicious Diaries</span>
+                <span>Diary Review</span>
                 {suspiciousCount > 0 && (
                   <span style={{ background: '#ef4444', color: '#fff', fontSize: '0.75rem', fontWeight: 800, padding: '0.15rem 0.55rem', borderRadius: '9999px', boxShadow: '0 0 10px rgba(239,68,68,0.5)' }}>
                     {suspiciousCount}
@@ -125,12 +125,12 @@ const Sidebar = () => {
             <li className={styles.categoryHeader}>Department Oversight</li>
             <li>
               <NavLink to="/hod/dashboard" className={({ isActive }) => isActive ? styles.itemActive : styles.itemLink}>
-                Executive Overview
+                Dashboard
               </NavLink>
             </li>
             <li>
               <NavLink to="/hod/analytics" className={({ isActive }) => isActive ? styles.itemActive : styles.itemLink}>
-                Program Analytics
+                Analytics
               </NavLink>
             </li>
             <li>
@@ -150,7 +150,7 @@ const Sidebar = () => {
             </li>
             <li>
               <NavLink to="/hod/highlighted" className={({ isActive }) => isActive ? styles.itemActive : styles.itemLink} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span>Highlighted</span>
+                <span>Highlighted Student</span>
                 {highlightedCount > 0 && (
                   <span style={{ background: '#B3423A', color: '#fff', fontSize: '0.75rem', fontWeight: 700, padding: '0.15rem 0.55rem', borderRadius: '4px' }}>
                     {highlightedCount}
@@ -160,7 +160,7 @@ const Sidebar = () => {
             </li>
             <li>
               <NavLink to="/hod/completed" className={({ isActive }) => isActive ? styles.itemActive : styles.itemLink}>
-                Completed Students (Mod 9)
+                Completed Students
               </NavLink>
             </li>
             <li>

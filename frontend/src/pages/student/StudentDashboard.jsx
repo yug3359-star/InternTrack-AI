@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
 import { useNotification } from '../../hooks/useNotification';
 import { useBrowserNotification } from '../../hooks/useBrowserNotification';
 import { usePopupListener } from '../../hooks/usePopupListener';
 import { useAttendanceListener } from '../../hooks/useAttendanceListener';
 import { useTestListener } from '../../hooks/useTestListener';
+import { useAuth } from '../../hooks/useAuth';
 import StatusBadge from '../../components/StatusBadge';
 import EngagementPopup from '../../components/EngagementPopup';
 import AttendanceCheckIn from '../../components/AttendanceCheckIn';
@@ -13,15 +13,12 @@ import { getStudentStatus } from '../../services/api';
 import axios from 'axios';
 import styles from './StudentDashboard.module.css';
 
-const initialLogs = [
-  { id: 101, weekStartDate: '2026-07-06', companyName: 'Infosys Innovation Lab', hoursLogged: 40, taskSummary: 'Optimized backend microservices endpoints and integrated REST payload logging.', status: 'APPROVED', mentorRemarks: 'Verified. Excellent system performance documentation.' },
-  { id: 102, weekStartDate: '2026-07-13', companyName: 'Infosys Innovation Lab', hoursLogged: 36, taskSummary: 'Developed React dashboard prototypes and refactored global state contexts.', status: 'APPROVED', mentorRemarks: 'Satisfactorily completed.' },
-  { id: 103, weekStartDate: '2026-07-20', companyName: 'Infosys Innovation Lab', hoursLogged: 36, taskSummary: 'Executed unit test coverage enhancements and resolved authorization edge bugs.', status: 'PENDING', mentorRemarks: 'Awaiting Friday verification cycle.' }
-];
-
 const StudentDashboard = () => {
   const { notify } = useNotification();
   const { requestPermission, permission } = useBrowserNotification();
+  const { user } = useAuth();
+  const studentUid = user?.uid || 'fallback-uid'; // Should always be available if authenticated
+
   const {
     activePopup,
     setActivePopup,
@@ -29,7 +26,7 @@ const StudentDashboard = () => {
     loadingResponse,
     respondToPopup,
     triggerDevTestPopup
-  } = usePopupListener('dev-stud-107', 'STUDENT');
+  } = usePopupListener(studentUid, 'STUDENT');
 
   const {
     activeAttendance,
@@ -39,38 +36,37 @@ const StudentDashboard = () => {
     loadingResponse: loadingAttendance,
     respondToAttendance,
     triggerTestAttendance
-  } = useAttendanceListener('dev-stud-107', 'STUDENT');
+  } = useAttendanceListener(studentUid, 'STUDENT');
 
   const navigate = useNavigate();
-  const { activeTest, testHistory } = useTestListener('dev-stud-107', navigate);
+  const { activeTest, testHistory } = useTestListener(studentUid, navigate);
 
   const handleTriggerTestNow = async () => {
     try {
-      const res = await axios.post('http://localhost:8080/api/test/trigger/dev-stud-107', {
-        internshipDomain: 'Software Architecture & Microservices'
+      const res = await axios.post(`http://localhost:8080/api/test/trigger/${studentUid}`, {
+        domain: 'Backend Engineering',
+        questionsCount: 5,
+        testId: `test-${Date.now()}`
       });
-      navigate(`/student/test-session/${res.data.id}`);
+      const today = new Date().toISOString().split('T')[0];
+      navigate(`/student/test-session/${studentUid}_${today}`);
     } catch (err) {
       console.error('Error simulating proctored exam, navigating to seamless fallback session:', err);
       const today = new Date().toISOString().split('T')[0];
-      navigate(`/student/test-session/dev-stud-107_${today}`);
+      navigate(`/student/test-session/${studentUid}_${today}`);
     }
   };
 
-  const [logs, setLogs] = useState(initialLogs);
-  const [showForm, setShowForm] = useState(false);
+
   const [appStatus, setAppStatus] = useState(null);
   const [permissionState, setPermissionState] = useState(permission);
-  const [claimingMeeting, setClaimingMeeting] = useState(false);
-  const { register, handleSubmit, reset, formState: { errors } } = useForm();
-
-  useEffect(() => {
+  const [claimingMeeting, setClaimingMeeting] = useState(false); useEffect(() => {
     if ('Notification' in window) {
       setPermissionState(Notification.permission);
     }
     const loadStatus = async () => {
       try {
-        const data = await getStudentStatus('dev-stud-107');
+        const data = await getStudentStatus(studentUid);
         setAppStatus(data);
       } catch (err) {
         console.error("Failed to load status chronology:", err);
@@ -78,10 +74,6 @@ const StudentDashboard = () => {
     };
     loadStatus();
   }, []);
-
-  const totalApprovedHours = logs.filter(l => l.status === 'APPROVED').reduce((acc, curr) => acc + curr.hoursLogged, 0);
-  const requiredHours = 160;
-  const compliancePercent = Math.min(100, Math.round((totalApprovedHours / requiredHours) * 100));
 
   const handlePermissionRequest = async () => {
     const newPerm = await requestPermission();
@@ -93,21 +85,7 @@ const StudentDashboard = () => {
     }
   };
 
-  const onSubmitLog = (data) => {
-    const newEntry = {
-      id: Date.now(),
-      weekStartDate: data.weekStartDate,
-      companyName: data.companyName,
-      hoursLogged: parseInt(data.hoursLogged, 10),
-      taskSummary: data.taskSummary,
-      status: 'PENDING',
-      mentorRemarks: 'Submitted for upcoming validation audit.'
-    };
-    setLogs([newEntry, ...logs]);
-    notify("Weekly activity log recorded in institutional ledger. Awaiting faculty validation.", "success", 4000);
-    reset();
-    setShowForm(false);
-  };
+
 
   const rawUsed = meetingQuota?.used || 0;
   const quotaLimit = meetingQuota?.limit || 3;
@@ -125,7 +103,7 @@ const StudentDashboard = () => {
     }
     setClaimingMeeting(true);
     try {
-      const res = await axios.post(`http://localhost:8080/api/popups/dev-stud-107/claim-meeting-day`);
+      const res = await axios.post(`http://localhost:8080/api/popups/${studentUid}/claim-meeting-day`);
       notify(res.data.message || "Whole day meeting exemption claimed successfully!", "success", 5000);
       // Update local quota state if needed (or trigger a refresh via custom hook)
       if (meetingQuota) {
@@ -155,16 +133,9 @@ const StudentDashboard = () => {
 
       <header className={styles.headerArea}>
         <div>
-          <h1 className={styles.title}>Student Academic Ledger: Weekly Internship Logs</h1>
-          <span className={styles.subText}>Roll Identifier: 2023CSB104 | Advisor: Dr. Rajesh K. (CS Dept)</span>
+          <h1 className={styles.title}>Student Dashboard</h1>
+          <span className={styles.subText}>Enrollment No. : {studentUid || 'Unknown'} | Faculty Mentor: {appStatus?.collegeMentor || 'Unassigned'} ({appStatus?.branch || 'Department Unassigned'})</span>
         </div>
-        <button
-          type="button"
-          onClick={() => setShowForm(!showForm)}
-          className={styles.actionBtn}
-        >
-          {showForm ? "Cancel Submission" : "Submit Activity Log"}
-        </button>
       </header>
 
       {/* Module 10: Consolidated Notification Preferences Section */}
@@ -202,7 +173,7 @@ const StudentDashboard = () => {
       {/* Module 5a: Automated Engagement "Are You Working?" Tracking Section */}
       <section className={styles.engagementSection}>
         <div className={styles.engagementHeader}>
-          <span className={styles.engagementTitle}>Working-Hour Engagement & Meeting Quota System</span>
+          <span className={styles.engagementTitle}>Daily Working Popups</span>
           <button
             type="button"
             onClick={() => triggerDevTestPopup(5)}
@@ -241,11 +212,11 @@ const StudentDashboard = () => {
                 fontWeight: 600
               }}
             >
-              {claimingMeeting ? 'Processing...' : alreadyClaimedToday ? '✅ Claimed for Today' : '🤝 Claim Full Day Meeting Exemption'}
+              {claimingMeeting ? 'Processing...' : alreadyClaimedToday ? 'Claimed for Today' : 'Claim Full Day Meeting Exemption'}
             </button>
             {isQuotaExhausted && !alreadyClaimedToday && (
               <span style={{ fontSize: '12px', color: '#DC2626', marginLeft: '12px' }}>
-                ⚠️ Quota exhausted!
+                Quota exhausted!
               </span>
             )}
           </div>
@@ -255,7 +226,7 @@ const StudentDashboard = () => {
       {/* Module 5b: Formal Daily Attendance Marking Section */}
       <section className={styles.engagementSection} style={{ borderTop: '4px solid #16A34A' }}>
         <div className={styles.engagementHeader}>
-          <span className={styles.engagementTitle} style={{ color: '#15803D' }}>Formal Daily Attendance Marking (1x Daily Check)</span>
+          <span className={styles.engagementTitle} style={{ color: '#15803D' }}>Daily Attendance Check (1x Daily Check)</span>
           <button
             type="button"
             onClick={triggerTestAttendance}
@@ -286,7 +257,7 @@ const StudentDashboard = () => {
       {/* Module 5c: Personalized AI Proctored Test Section */}
       <section className={styles.engagementSection} style={{ borderTop: '4px solid #4F46E5', background: 'white' }}>
         <div className={styles.engagementHeader}>
-          <span className={styles.engagementTitle} style={{ color: '#4338CA' }}>Personalized Proctored AI Test (2x/Week Timed Exam)</span>
+          <span className={styles.engagementTitle} style={{ color: '#4338CA' }}>Proctored AI Test (2x/Week Timed Exam)</span>
           <button
             type="button"
             onClick={handleTriggerTestNow}
@@ -331,11 +302,11 @@ const StudentDashboard = () => {
               <span className={styles.statusItemVal}>{appStatus.joiningDate || 'N/A'}</span>
             </div>
             <div className={styles.statusItem}>
-              <span className={styles.statusItemLabel}>Target Completion</span>
+              <span className={styles.statusItemLabel}>Completion Date</span>
               <span className={styles.statusItemVal}>{appStatus.completionDate || 'N/A'}</span>
             </div>
             <div className={styles.statusItem}>
-              <span className={styles.statusItemLabel}>Ongoing Effective Date</span>
+              <span className={styles.statusItemLabel}>Ongoing Date</span>
               <span className={styles.statusItemVal}>
                 {appStatus.ongoingSince
                   ? new Date(appStatus.ongoingSince).toLocaleDateString()
@@ -348,7 +319,7 @@ const StudentDashboard = () => {
           <div style={{ marginTop: '20px', padding: '14px 18px', backgroundColor: appStatus.status === 'Completed' ? '#EBF4EC' : '#FAFBFD', border: `1px solid ${appStatus.status === 'Completed' ? '#2F7A4F' : '#E2E5EA'}`, borderRadius: '4px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div style={{ paddingRight: '16px' }}>
               <strong style={{ color: appStatus.status === 'Completed' ? '#1B472D' : '#2B5C8A', display: 'block', fontSize: '15px' }}>
-                {appStatus.status === 'Completed' ? 'Internship Officially Completed & Verified (Module 9)' : 'Academic Completion Certification & Final Report (Module 9)'}
+                {appStatus.status === 'Completed' ? 'Internship Officially Completed & Verified' : 'Academic Completion Certification & Final Report'}
               </strong>
               <span style={{ color: appStatus.status === 'Completed' ? '#2C5A3E' : '#5A626A', fontSize: '13px', display: 'inline-block', marginTop: '3px' }}>
                 {appStatus.status === 'Completed'
@@ -377,144 +348,12 @@ const StudentDashboard = () => {
         </section>
       )}
 
-      {/* Compliance Metrics Overview */}
-      <section className={styles.metricsRow}>
-        <div className={styles.metricCard}>
-          <span className={styles.cardTitle}>Verified Hours Accumulated</span>
-          <div className={styles.metricValue}>
-            <span>{totalApprovedHours} / {requiredHours} hrs</span>
-          </div>
-          <div className={styles.progressBarWrap}>
-            <div className={styles.progressBarFill} style={{ width: `${compliancePercent}%` }}></div>
-          </div>
-        </div>
 
-        <div className={styles.metricCard}>
-          <span className={styles.cardTitle}>Academic Compliance Status</span>
-          <div className={styles.metricStatus}>
-            <span className={compliancePercent >= 100 ? styles.badgeSuccess : styles.badgeInfo}>
-              {compliancePercent >= 100 ? "REQUIREMENT SATISFIED" : "IN PROGRESS"}
-            </span>
-          </div>
-          <span className={styles.subNote}>{compliancePercent}% completion against graduation requirement</span>
-        </div>
 
-        <div className={styles.metricCard}>
-          <span className={styles.cardTitle}>Submission Record Summary</span>
-          <div className={styles.countsGrid}>
-            <div><span>Approved:</span> <strong>{logs.filter(l => l.status === 'APPROVED').length}</strong></div>
-            <div><span>Pending:</span> <strong>{logs.filter(l => l.status === 'PENDING').length}</strong></div>
-            <div><span>Rejected:</span> <strong>{logs.filter(l => l.status === 'REJECTED').length}</strong></div>
-          </div>
-        </div>
-      </section>
-
-      {/* Submission Form Drawer */}
-      {showForm && (
-        <section className={styles.formCard}>
-          <h2 className={styles.formHeading}>Record Weekly Activity Report</h2>
-          <form onSubmit={handleSubmit(onSubmitLog)} className={styles.formLayout} noValidate>
-            <div className={styles.formRow}>
-              <div className={styles.inputGroup}>
-                <label htmlFor="companyName">Corporate Host Organization</label>
-                <input
-                  id="companyName"
-                  type="text"
-                  defaultValue="Infosys Innovation Lab"
-                  {...register("companyName", { required: "Host organization name required" })}
-                  className={errors.companyName ? styles.errorField : styles.standardInput}
-                />
-              </div>
-
-              <div className={styles.inputGroup}>
-                <label htmlFor="weekStartDate">Week Starting Date</label>
-                <input
-                  id="weekStartDate"
-                  type="date"
-                  {...register("weekStartDate", { required: "Date chronology required" })}
-                  className={errors.weekStartDate ? styles.errorField : styles.standardInput}
-                />
-              </div>
-
-              <div className={styles.inputGroup}>
-                <label htmlFor="hoursLogged">Duration (Hours)</label>
-                <input
-                  id="hoursLogged"
-                  type="number"
-                  min="1"
-                  max="50"
-                  placeholder="e.g., 40"
-                  {...register("hoursLogged", { required: "Logged hours mandatory", min: 1 })}
-                  className={errors.hoursLogged ? styles.errorField : styles.standardInput}
-                />
-              </div>
-            </div>
-
-            <div className={styles.inputGroup}>
-              <label htmlFor="taskSummary">Technical Tasks & Engineering Contribution Summary</label>
-              <textarea
-                id="taskSummary"
-                rows="3"
-                placeholder="Detail specific engineering artifacts, GitHub commits, or research analyses produced..."
-                {...register("taskSummary", { required: "Technical narrative summary required for review" })}
-                className={errors.taskSummary ? styles.errorField : styles.standardInput}
-              />
-            </div>
-
-            <div className={styles.formActions}>
-              <button type="submit" className={styles.submitBtn}>Save Log to Ledger</button>
-            </div>
-          </form>
-        </section>
-      )}
-
-      {/* Data-Dense Activity Log Table */}
-      <section className={styles.tableCard}>
-        <h2 className={styles.tableHeading}>Activity Audit Ledger</h2>
-        <div className={styles.tableResponsive}>
-          <table className={styles.ledgerTable}>
-            <thead>
-              <tr>
-                <th>Week Commencing</th>
-                <th>Host Institution</th>
-                <th>Hrs</th>
-                <th>Engineering Task Summary</th>
-                <th>Verification Status</th>
-                <th>Faculty Mentor Remarks</th>
-              </tr>
-            </thead>
-            <tbody>
-              {logs.length === 0 ? (
-                <tr>
-                  <td colSpan="6" className={styles.emptyRow}>No activity entries recorded in active semester ledger.</td>
-                </tr>
-              ) : (
-                logs.map((entry) => (
-                  <tr key={entry.id}>
-                    <td className={styles.dateCell}>{entry.weekStartDate}</td>
-                    <td><strong>{entry.companyName}</strong></td>
-                    <td className={styles.numCell}>{entry.hoursLogged}</td>
-                    <td className={styles.summaryCell}>{entry.taskSummary}</td>
-                    <td>
-                      <span className={
-                        entry.status === 'APPROVED' ? styles.tagApproved :
-                          entry.status === 'REJECTED' ? styles.tagRejected : styles.tagPending
-                      }>
-                        {entry.status}
-                      </span>
-                    </td>
-                    <td className={styles.remarksCell}>{entry.mentorRemarks}</td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </section>
 
       {/* Module 5b: Real Attendance History Table */}
       <section className={styles.tableCard}>
-        <h2 className={styles.tableHeading}>Formal Attendance Audit Ledger</h2>
+        <h2 className={styles.tableHeading}>Formal Attendance Audit</h2>
         <div className={styles.tableResponsive}>
           <table className={styles.ledgerTable}>
             <thead>
@@ -589,7 +428,7 @@ const StudentDashboard = () => {
                   return (
                     <tr key={test.id} style={isAbs ? { backgroundColor: '#FEF2F2' } : {}}>
                       <td className={styles.dateCell}><strong>{test.date || 'N/A'}</strong></td>
-                      <td><strong>{test.internshipDomain || 'Software Architecture'}</strong></td>
+                      <td><strong>{appStatus?.internshipDomain || 'Software Architecture & Microservices'}</strong></td>
                       <td>
                         <span className={isComp ? styles.tagApproved : isAbs ? styles.tagRejected : styles.tagPending}>
                           {test.status ? test.status.toUpperCase().replace('_', ' ') : 'AWAITING START'}

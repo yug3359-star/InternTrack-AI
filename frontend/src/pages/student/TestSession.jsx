@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useTabVisibility } from '../../hooks/useTabVisibility';
+import { useFaceMatch } from '../../hooks/useFaceMatch';
 import CountdownTimer from '../../components/CountdownTimer';
 import PhotoCapture from '../../components/PhotoCapture';
 import axios from 'axios';
@@ -28,6 +29,9 @@ const TestSession = () => {
   const [simulatedScoreOverride, setSimulatedScoreOverride] = useState(-1); // -1 requires real webcam
 
   const [capturedPhoto, setCapturedPhoto] = useState(null);
+  
+  // face-api.js hook
+  const { modelsLoaded, loadingError, compareFaces } = useFaceMatch();
 
   // Active exam determination for Page Visibility API tracking
   const isExamActive = testData?.status === 'in_progress';
@@ -38,9 +42,9 @@ const TestSession = () => {
     let cleanId = testId;
     if (!cleanId || cleanId === ':testId' || cleanId === 'undefined' || cleanId === 'null') {
       const today = new Date().toISOString().split('T')[0];
-      cleanId = `dev-stud-107_${today}`;
+      cleanId = `${user?.uid}_${today}`;
     }
-    const uid = cleanId.includes('_') ? cleanId.split('_')[0] : (user?.uid || 'dev-stud-107');
+    const uid = cleanId.includes('_') ? cleanId.split('_')[0] : user?.uid;
     const targetId = cleanId;
 
     let doc = null;
@@ -101,10 +105,15 @@ const TestSession = () => {
        setErrorMsg('Please capture your reference photo to start the exam.');
        return;
     }
+    if (!modelsLoaded) {
+       setErrorMsg('Please wait for facial recognition models to load.');
+       return;
+    }
     setSubmitting(true);
     setErrorMsg('');
     try {
-      let simUrl = `https://firebasestorage.googleapis.com/v0/b/interntrack-dev.appspot.com/o/test-captures%2Fstart_${simulatedScoreOverride}.jpg`;
+      let simUrl = `https://firebasestorage.googleapis.com/v0/b/interntrack-ai-98f45.firebasestorage.app/o/test-captures%2Fstart_${simulatedScoreOverride}.jpg`;
+      let calculatedSimilarity = simulatedScoreOverride;
       
       if (capturedPhoto) {
          // Convert captured photo to Base64
@@ -114,10 +123,17 @@ const TestSession = () => {
             reader.onerror = reject;
             reader.readAsDataURL(capturedPhoto);
          });
+         
+         if (simulatedScoreOverride < 0) {
+           const refUrl = testData.referencePhotoUrl || `https://firebasestorage.googleapis.com/v0/b/interntrack-ai-98f45.firebasestorage.app/o/reference-photos%2F${testData.uid}.jpg?alt=media`;
+           calculatedSimilarity = await compareFaces(refUrl, simUrl);
+           console.log(`[Frontend Biometric] Face similarity calculated locally: ${calculatedSimilarity.toFixed(2)}%`);
+         }
       }
 
       const resp = await axios.post(`${API_BASE_URL}/test/${testData.id}/start`, {
-        startPhotoUrl: simUrl
+        startPhotoUrl: simUrl,
+        similarityScore: calculatedSimilarity
       });
       setTestData(resp.data);
       if (resp.data.answers) {
@@ -186,7 +202,7 @@ const TestSession = () => {
           actualStartTime: Date.now(),
           testDeadline: Date.now() + 1200000,
           questions: sampleQuestions,
-          startPhotoUrl: `https://firebasestorage.googleapis.com/v0/b/interntrack-dev.appspot.com/o/test-captures%2Fstart_${simulatedScoreOverride}.jpg`
+          startPhotoUrl: `https://firebasestorage.googleapis.com/v0/b/interntrack-ai-98f45.firebasestorage.app/o/test-captures%2Fstart_${simulatedScoreOverride}.jpg`
         });
       } else {
         const detail = err.response?.data?.error || err.message;
@@ -220,11 +236,26 @@ const TestSession = () => {
     setSubmitting(true);
     setErrorMsg('');
     try {
-      const submitUrl = `https://firebasestorage.googleapis.com/v0/b/interntrack-dev.appspot.com/o/test-captures%2Fsubmit_${testData.uid}.jpg`;
+      const submitUrl = `https://firebasestorage.googleapis.com/v0/b/interntrack-ai-98f45.firebasestorage.app/o/test-captures%2Fsubmit_${testData.uid}.jpg`;
+      let calculatedSimilarity = 100.0;
+      
+      if (capturedPhoto && simulatedScoreOverride < 0) {
+         const simUrl = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(capturedPhoto);
+         });
+         const refUrl = testData.referencePhotoUrl || `https://firebasestorage.googleapis.com/v0/b/interntrack-ai-98f45.firebasestorage.app/o/reference-photos%2F${testData.uid}.jpg?alt=media`;
+         calculatedSimilarity = await compareFaces(refUrl, simUrl);
+         console.log(`[Frontend Biometric] Final submit face similarity calculated locally: ${calculatedSimilarity.toFixed(2)}%`);
+      }
+      
       const resp = await axios.post(`${API_BASE_URL}/test/${testData.id}/submit`, {
         submitPhotoUrl: submitUrl,
         tabSwitchCount: tabSwitchCount,
-        answers: answers
+        answers: answers,
+        similarityScore: calculatedSimilarity
       });
       setTestData(resp.data);
       if (isTimeout) {

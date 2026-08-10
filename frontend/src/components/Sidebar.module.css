@@ -6,8 +6,11 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  min-height: calc(100vh - var(--header-height));
+  height: calc(100vh - var(--header-height));
   padding: 16px 0;
+  position: sticky;
+  top: var(--header-height);
+  overflow-y: auto;
 }
 
 .sectionTitle {

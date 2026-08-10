@@ -32,7 +32,7 @@ public class MentorReviewService {
     private final Map<String, Map<String, Object>> borderlineReviewRegistry = new ConcurrentHashMap<>();
 
     public MentorReviewService() {
-        initializeSampleBorderlineReviews();
+        // initializeSampleBorderlineReviews(); // Removed fake data population
     }
 
     /**

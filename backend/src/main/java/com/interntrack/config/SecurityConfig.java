@@ -37,10 +37,10 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
             .csrf(AbstractHttpConfigurer::disable)
-            // Register SecurityDefensesFilter first for outermost HTTPS enforcement, security headers, & rate limiting
-            .addFilterBefore(securityDefensesFilter, UsernamePasswordAuthenticationFilter.class)
-            // Register custom CORS configuration filter before security checks
+            // Register custom CORS configuration filter first
             .addFilterBefore(corsFilter, UsernamePasswordAuthenticationFilter.class)
+            // Register SecurityDefensesFilter after CORS to ensure rejected requests still have CORS headers
+            .addFilterAfter(securityDefensesFilter, CorsFilter.class)
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin)) // Allow H2 Console display
             .authorizeHttpRequests(auth -> auth

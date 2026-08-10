@@ -127,7 +127,7 @@ const SuspiciousDiaries = () => {
                     <td className={styles.td}>
                       <div className={styles.studentInfo}>
                         <span className={styles.studentName}>{item.studentName || 'Alex Vance'}</span>
-                        <span className={styles.studentUid}>{item.uid || 'dev-stud-107'}</span>
+                        <span className={styles.studentUid}>{item.uid}</span>
                       </div>
                     </td>
 

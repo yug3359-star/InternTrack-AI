@@ -130,13 +130,17 @@ public class CompletionService {
     private Map<String, Object> computeRealComplianceSummary(Firestore db, String uid, String joinStr, String compStr, DocumentSnapshot internDoc, long nowMs) {
         Map<String, Object> summary = new HashMap<>();
         summary.put("uid", uid);
-        summary.put("studentName", internDoc.getString("studentName") != null ? internDoc.getString("studentName") : "Student Candidate (" + uid + ")");
-        summary.put("branch", internDoc.getString("branch") != null ? internDoc.getString("branch") : "Computer Science & Engineering");
-        summary.put("mentorName", internDoc.getString("mentorName") != null ? internDoc.getString("mentorName") : "Unassigned Faculty");
-        summary.put("internshipDomain", internDoc.getString("internshipDomain") != null ? internDoc.getString("internshipDomain") : "Cloud Architecture");
         summary.put("joiningDate", joinStr);
         summary.put("completionDate", compStr);
         summary.put("completedAt", nowMs);
+        
+        // Populate identity metadata from internship document
+        if (internDoc != null) {
+            summary.put("studentName", internDoc.getString("studentName"));
+            summary.put("branch", internDoc.getString("branch"));
+            summary.put("mentorName", internDoc.getString("mentorName"));
+            summary.put("internshipDomain", internDoc.getString("internshipDomain"));
+        }
 
         // 1. Calculate Expected Working Days between joiningDate and completionDate (excluding weekends)
         long expectedWorkingDays = 0;
@@ -201,11 +205,7 @@ public class CompletionService {
         } catch (Exception e) {
             log.warn("Error querying diary records for candidate [{}]: {}", uid, e.getMessage());
         }
-        // Division-by-Zero Guard for Diary Compliance
-        double diaryPercent = (expectedWorkingDays > 0)
-                ? Math.min(100.0, ((double) acceptedDiaries / (double) expectedWorkingDays) * 100.0)
-                : 0.0;
-        summary.put("diaryCompliancePercentage", Math.round(diaryPercent * 10.0) / 10.0);
+
         summary.put("acceptedDiariesCount", acceptedDiaries);
 
         // 4. Query Real Test History & Scores
@@ -348,7 +348,7 @@ public class CompletionService {
         mock1.put("expectedWorkingDays", 62);
         mock1.put("attendancePercentage", 93.5);
         mock1.put("verifiedAttendanceDays", 58);
-        mock1.put("diaryCompliancePercentage", 91.9);
+
         mock1.put("acceptedDiariesCount", 57);
         mock1.put("averageTestScore", 84.5);
         mock1.put("completedExamCount", 14);
@@ -371,7 +371,7 @@ public class CompletionService {
         mock2.put("expectedWorkingDays", 70);
         mock2.put("attendancePercentage", 78.5);
         mock2.put("verifiedAttendanceDays", 55);
-        mock2.put("diaryCompliancePercentage", 74.3);
+
         mock2.put("acceptedDiariesCount", 52);
         mock2.put("averageTestScore", 71.0);
         mock2.put("completedExamCount", 12);

@@ -141,6 +141,8 @@ public class StatusService {
                     statusData.put("internshipDomain", internDoc.getString("internshipDomain"));
                     statusData.put("mentorName", internDoc.getString("mentorName"));
                     statusData.put("mentorEmail", internDoc.getString("mentorEmail"));
+                    statusData.put("branch", internDoc.getString("branch"));
+                    statusData.put("collegeMentor", internDoc.getString("collegeMentor"));
 
                     // Include chronological evaluation timestamps
                     copyTimestamp(internDoc, statusData, "createdAt");

@@ -8,6 +8,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -19,9 +20,11 @@ import java.util.Map;
 public class PortalController {
 
     private final ComplianceMonitoringService complianceService;
+    private final com.interntrack.service.HodService hodService;
 
-    public PortalController(ComplianceMonitoringService complianceService) {
+    public PortalController(ComplianceMonitoringService complianceService, com.interntrack.service.HodService hodService) {
         this.complianceService = complianceService;
+        this.hodService = hodService;
     }
 
     // --- STUDENT ENDPOINTS (Requires ROLE_STUDENT or ROLE_HOD) ---
@@ -43,6 +46,11 @@ public class PortalController {
     }
 
     // --- MENTOR ENDPOINTS (Requires ROLE_MENTOR or ROLE_HOD) ---
+
+    @GetMapping("/mentor/students")
+    public ResponseEntity<List<Map<String, Object>>> getMentorStudents(@RequestParam(name = "mentorName", defaultValue = "Dr. Rajesh K. (CS Dept)") String mentorName) {
+        return ResponseEntity.ok(hodService.getMentorStudents(mentorName));
+    }
 
     @GetMapping("/mentor/review-queue")
     public ResponseEntity<Map<String, Object>> getMentorReviewQueue() {

@@ -31,19 +31,8 @@ public class ComplianceMonitoringService {
     @Transactional(readOnly = true)
     public Map<String, Object> getStudentComplianceSummary(String studentId) {
         List<InternshipLog> logs = repository.findByStudentIdOrderByWeekStartDateDesc(studentId);
-        int totalHours = logs.stream()
-                .filter(l -> "APPROVED".equalsIgnoreCase(l.getVerificationStatus()))
-                .mapToInt(InternshipLog::getHoursLogged)
-                .sum();
-
-        double completionRate = Math.min(100.0, ((double) totalHours / REQUIRED_SEMESTER_HOURS) * 100.0);
-
         Map<String, Object> summary = new HashMap<>();
         summary.put("studentId", studentId);
-        summary.put("approvedHours", totalHours);
-        summary.put("requiredHours", REQUIRED_SEMESTER_HOURS);
-        summary.put("completionPercentage", Math.round(completionRate * 10.0) / 10.0);
-        summary.put("complianceStatus", totalHours >= REQUIRED_SEMESTER_HOURS ? "SATISFIED" : "IN_PROGRESS");
         summary.put("totalSubmissions", logs.size());
         summary.put("recentLogs", logs.stream().limit(5).toList());
 
@@ -70,7 +59,6 @@ public class ComplianceMonitoringService {
         stats.put("totalPendingReview", totalPending);
         stats.put("totalVerifiedApproved", totalApproved);
         stats.put("totalRejectedSubmissions", totalRejected);
-        stats.put("departmentOverallComplianceRate", 78.5); // Baseline aggregate percentage for review demo
         return stats;
     }
 }

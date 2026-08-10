@@ -26,29 +26,8 @@ const BorderlineReviews = () => {
         setReviews(res.data.reviews);
       }
     } catch (err) {
-      console.warn('[DEV MOCK PORTAL] Borderline review endpoint offline. Retaining demonstration evaluations.');
-      setReviews([
-        {
-          reviewId: 'REV-1001',
-          studentUid: 'dev-stud-102',
-          studentName: 'Rohit Verma',
-          internshipDomain: 'Artificial Intelligence & Machine Learning',
-          similarityScore: 58.4,
-          timestamp: Date.now() - 1800000,
-          checkInPhotoUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80',
-          referencePhotoUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80'
-        },
-        {
-          reviewId: 'REV-1002',
-          studentUid: 'dev-stud-108',
-          studentName: 'Simran Kaur',
-          internshipDomain: 'Cloud Infrastructure & DevOps',
-          similarityScore: 64.1,
-          timestamp: Date.now() - 3600000,
-          checkInPhotoUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&auto=format&fit=crop&q=80',
-          referencePhotoUrl: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&auto=format&fit=crop&q=80'
-        }
-      ]);
+      console.warn('Borderline review fetch error:', err);
+      setReviews([]);
     } finally {
       setLoading(false);
     }

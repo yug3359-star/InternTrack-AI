@@ -7,7 +7,7 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 
 const DiaryEntry = () => {
   const { user } = useAuth();
-  const studentUid = user?.uid || 'dev-stud-107';
+  const studentUid = user?.uid;
   const studentName = user?.name || 'Alex Vance (2023CSB104)';
 
   const todayStr = new Date().toISOString().split('T')[0];

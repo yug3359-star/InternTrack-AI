@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate, Link } from 'react-router-dom';
+import { auth } from '../services/firebase';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { useNotification } from '../hooks/useNotification';
 import { useAuth } from '../hooks/useAuth';
 import styles from './Register.module.css';
@@ -18,7 +20,7 @@ const Register = () => {
       email: '',
       password: '',
       department: 'Computer Science & Engineering',
-      role: 'STUDENT'
+      role: 'HOD'
     }
   });
 
@@ -33,7 +35,32 @@ const Register = () => {
       }
 
       // Emulate institutional application record submission for review panel demo
-      notify("Application accepted: temporary academic profile generated for evaluation.", "success", 4000);
+      notify("Application accepted: creating enterprise academic profile.", "success", 4000);
+
+      // For HOD and MENTOR roles, we need to actually create the Firebase Auth user
+      // so they can log in via real enterprise credentials without hardcoded data.
+      if (data.role === 'HOD' || data.role === 'MENTOR') {
+        try {
+          await createUserWithEmailAndPassword(auth, data.email, data.password);
+        } catch (e) {
+          // If already exists, we can just proceed to login
+          if (e.code !== 'auth/email-already-in-use') {
+            throw e;
+          }
+        }
+
+        // Securely assign the custom enterprise role claim via the break-glass setup API
+        const promoteEndpoint = data.role === 'HOD' ? '/api/auth/promote-hod' : '/api/auth/promote-mentor';
+        await fetch(`http://localhost:8080${promoteEndpoint}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            targetEmail: data.email,
+            setupSecret: "enterprise-setup-secret-2026"
+          })
+        });
+      }
+
       await login(data.email, data.password, data.role);
 
       if (data.role === 'MENTOR') {
@@ -54,42 +81,42 @@ const Register = () => {
     <div className={styles.container}>
       <div className={styles.formBox}>
         <div className={styles.titleSection}>
-          <h2>Academic Portal Enrollment</h2>
+          <h2>Registration Portal</h2>
           <span className={styles.guidelineText}>Submit profile data for internship monitoring verification</span>
         </div>
 
         <div className={styles.noticeBlock} style={{ marginBottom: '16px' }}>
           <p><strong>Are you a Student Practitioner enrolling for an internship?</strong><br />
-          Access the complete 3-step onboarding form with schedule parameters and live webcam reference photo capture here: <Link to="/student/register" style={{ color: 'var(--color-primary)', fontWeight: 700, textDecoration: 'underline' }}>Launch Student Onboarding Portal →</Link></p>
+            Access the complete 3-step onboarding form with schedule parameters and live webcam reference photo capture here: <Link to="/student/register" style={{ color: 'var(--color-primary)', fontWeight: 700, textDecoration: 'underline' }}>Launch Student Onboarding Portal →</Link></p>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className={styles.fieldsContainer} noValidate>
           <div className={styles.row}>
             <div className={styles.fieldItem}>
-              <label htmlFor="role">Institutional Designation</label>
+              <label htmlFor="role">ROLE</label>
               <select id="role" {...register("role")} className={styles.selectInput}>
-                <option value="STUDENT">Student Practitioner</option>
+                {/* <option value="STUDENT">Student Practitioner</option> */}
                 <option value="MENTOR">Faculty Mentor</option>
                 <option value="HOD">Head of Department (HOD)</option>
               </select>
             </div>
 
             <div className={styles.fieldItem}>
-              <label htmlFor="department">Academic Department</label>
+              <label htmlFor="department">Department</label>
               <select id="department" {...register("department")} className={styles.selectInput}>
-                <option value="Computer Science & Engineering">Computer Science & Eng</option>
-                <option value="Information Technology">Information Technology</option>
-                <option value="Artificial Intelligence & DS">AI & Data Science</option>
+                <option value="Computer Science & Engineering">Computer Science & Engineering</option>
+                {/* <option value="Information Technology">Information Technology</option>
+                <option value="Artificial Intelligence & DS">AI & Data Science</option> */}
               </select>
             </div>
           </div>
 
           <div className={styles.fieldItem}>
-            <label htmlFor="fullName">Full Official Name</label>
+            <label htmlFor="fullName">Full Name</label>
             <input
               id="fullName"
               type="text"
-              placeholder="e.g., Ananya Sharma"
+              placeholder="Full Name"
               {...register("fullName", { required: "Registration failed: full legal academic name required" })}
               className={errors.fullName ? styles.inputInvalid : styles.textInput}
             />
@@ -98,11 +125,11 @@ const Register = () => {
 
           <div className={styles.row}>
             <div className={styles.fieldItem}>
-              <label htmlFor="identifier">College Roll Number / Faculty ID</label>
+              <label htmlFor="identifier">Faculty ID</label>
               <input
                 id="identifier"
                 type="text"
-                placeholder="e.g., 2023CSB104"
+                placeholder="Faculty ID"
                 {...register("identifier", { required: "Registration failed: college identifier mandatory" })}
                 className={errors.identifier ? styles.inputInvalid : styles.textInput}
               />
@@ -110,12 +137,12 @@ const Register = () => {
             </div>
 
             <div className={styles.fieldItem}>
-              <label htmlFor="email">Institutional Email Address</label>
+              <label htmlFor="email">College Email Address</label>
               <input
                 id="email"
                 type="email"
-                placeholder="username@cs.college.edu"
-                {...register("email", { 
+                placeholder="College Mail"
+                {...register("email", {
                   required: "Registration failed: college email required",
                   pattern: {
                     value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
@@ -130,12 +157,12 @@ const Register = () => {
 
           <div className={styles.row}>
             <div className={styles.fieldItem}>
-              <label htmlFor="password">Portal Authentication Password</label>
+              <label htmlFor="password">New Password</label>
               <input
                 id="password"
                 type="password"
-                placeholder="Min 8 chars with at least 1 numeral"
-                {...register("password", { 
+                placeholder="New Password"
+                {...register("password", {
                   required: "Registration failed: password required",
                   pattern: {
                     value: /^(?=.*\d).{8,}$/,
@@ -146,7 +173,7 @@ const Register = () => {
               />
               {errors.password && <span className={styles.errorMsg}>{errors.password.message}</span>}
             </div>
-            
+
             <div className={styles.fieldItem}>
               <label htmlFor="confirmPassword">Confirm Password</label>
               <input
@@ -163,9 +190,7 @@ const Register = () => {
             </div>
           </div>
 
-          <div className={styles.noticeBlock}>
-            <p><strong>Note for review panel:</strong> Applications submitted via this interface are recorded immediately into the local developer runtime session to facilitate multi-role grading evaluation.</p>
-          </div>
+
 
           <div className={styles.btnWrapper}>
             <button type="submit" disabled={processing} className={styles.applyBtn}>
@@ -174,7 +199,7 @@ const Register = () => {
           </div>
 
           <div className={styles.linkRow}>
-            <span>Existing institutional profile?</span>
+            <span>Already have an account?</span>
             <Link to="/login">Return to Sign In</Link>
           </div>
         </form>

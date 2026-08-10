@@ -26,6 +26,8 @@ const PendingApplications = () => {
   // Detail Drawer state
   const [selectedApp, setSelectedApp] = useState(null);
   const [showRejectBox, setShowRejectBox] = useState(false);
+  const [showApproveBox, setShowApproveBox] = useState(false);
+  const [selectedCollegeMentor, setSelectedCollegeMentor] = useState('');
   const [rejectReason, setRejectReason] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
 
@@ -56,13 +58,18 @@ const PendingApplications = () => {
   };
 
   const handleApprove = async (uid) => {
+    if (!selectedCollegeMentor) {
+      alert('Please allocate a college mentor before approving the application.');
+      return;
+    }
     setActionLoading(true);
     try {
-      await approveApplication(uid);
+      await approveApplication(uid, { collegeMentor: selectedCollegeMentor });
       notify("Application approved — status transitioned to Approved in institutional ledger.", "success", 4000);
       setApplications(prev => prev.map(a => a.uid === uid ? { ...a, status: 'Approved' } : a));
       setSelectedApp(null);
-      setShowRejectBox(false);
+      setShowApproveBox(false);
+      setSelectedCollegeMentor('');
     } catch (err) {
       notify("Failed to commit approval to central database.", "error", 4000);
     } finally {
@@ -269,8 +276,8 @@ const PendingApplications = () => {
             <div className={styles.modalPanel} onClick={(e) => e.stopPropagation()}>
               <div className={styles.modalHeader}>
                 <div>
-                  <h2 className={styles.modalTitle}>Candidate Profile: {selectedApp.fullName}</h2>
-                  <div className={styles.modalSub}>{selectedApp.collegeEmail} | UID: {selectedApp.uid}</div>
+                  <h2 className={styles.modalTitle}>Candidate Profile: {selectedApp.fullName} (Section {selectedApp.section || 'N/A'}, Roll {selectedApp.rollNo || 'N/A'})</h2>
+                  <div className={styles.modalSub}>{selectedApp.collegeEmail} | Enrollment No: {selectedApp.enrollmentNo || 'N/A'}</div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <StatusBadge status={selectedApp.status} />
@@ -394,13 +401,33 @@ const PendingApplications = () => {
                     />
                   </div>
                 )}
+
+                {/* Mentor Allocation Input Area */}
+                {showApproveBox && (
+                  <div className={styles.rejectionInputArea} style={{ backgroundColor: '#F0FDF4', borderColor: '#22C55E' }}>
+                    <label htmlFor="collegeMentor" className={styles.rejectionLabel} style={{ color: '#166534' }}>Allocate College/Faculty Mentor:</label>
+                    <select
+                      id="collegeMentor"
+                      value={selectedCollegeMentor}
+                      onChange={(e) => setSelectedCollegeMentor(e.target.value)}
+                      className={styles.rejectionTextarea}
+                      style={{ padding: '8px', height: 'auto', border: '1px solid #BBF7D0' }}
+                    >
+                      <option value="">-- Select a Faculty Mentor --</option>
+                      <option value="Dr. Rajesh K. (CS Dept)">Dr. Rajesh K. (CS Dept)</option>
+                      <option value="Prof. A. Sharma (IT Dept)">Prof. A. Sharma (IT Dept)</option>
+                      <option value="Dr. S. Gupta (AI Dept)">Dr. S. Gupta (AI Dept)</option>
+                      <option value="Prof. V. Nair (EC Dept)">Prof. V. Nair (EC Dept)</option>
+                    </select>
+                  </div>
+                )}
               </div>
 
               {/* Section C: Modal Footer Action Bar */}
               <div className={styles.modalFooter}>
                 <button type="button" onClick={() => setSelectedApp(null)} className={styles.modalCancelBtn}>Close Preview</button>
                 <div className={styles.actionBtnGroup}>
-                  {!showRejectBox ? (
+                  {!showRejectBox && !showApproveBox ? (
                     <>
                       <button
                         type="button"
@@ -413,13 +440,13 @@ const PendingApplications = () => {
                       <button
                         type="button"
                         disabled={actionLoading || selectedApp.status === 'Approved' || selectedApp.status === 'Ongoing'}
-                        onClick={() => handleApprove(selectedApp.uid)}
+                        onClick={() => setShowApproveBox(true)}
                         className={styles.approveBtn}
                       >
-                        {actionLoading ? "Processing..." : (selectedApp.status === 'Approved' ? "Already Approved ✓" : "Approve Application")}
+                        {actionLoading ? "Processing..." : (selectedApp.status === 'Approved' ? "Already Approved ✓" : "Allocate Mentor & Approve")}
                       </button>
                     </>
-                  ) : (
+                  ) : showRejectBox ? (
                     <>
                       <button type="button" onClick={() => setShowRejectBox(false)} className={styles.backToActionsBtn}>Cancel Rejection</button>
                       <button
@@ -429,6 +456,18 @@ const PendingApplications = () => {
                         className={styles.confirmRejectBtn}
                       >
                         Confirm Rejection
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button type="button" onClick={() => setShowApproveBox(false)} className={styles.backToActionsBtn}>Cancel</button>
+                      <button
+                        type="button"
+                        disabled={actionLoading || !selectedCollegeMentor}
+                        onClick={() => handleApprove(selectedApp.uid)}
+                        className={styles.approveBtn}
+                      >
+                        Confirm Approval
                       </button>
                     </>
                   )}

@@ -65,6 +65,16 @@ public class SecurityValidationDtos {
         public void setRejectedDueToFaceMismatch(Boolean rejectedDueToFaceMismatch) { this.rejectedDueToFaceMismatch = rejectedDueToFaceMismatch; }
     }
 
+    public static class ApproveApplicationDto implements Serializable {
+        @NotBlank(message = "College Mentor allocation is required")
+        private String collegeMentor;
+
+        public ApproveApplicationDto() {}
+
+        public String getCollegeMentor() { return collegeMentor; }
+        public void setCollegeMentor(String collegeMentor) { this.collegeMentor = collegeMentor; }
+    }
+
     public static class RejectReasonDto implements Serializable {
         @Size(max = 500, message = "Audit rejection explanation cannot exceed 500 characters")
         @Pattern(regexp = "^[^<>\"']*$", message = "Rejection reason contains illegal HTML tags or script sequence tokens (XSS mitigation)")

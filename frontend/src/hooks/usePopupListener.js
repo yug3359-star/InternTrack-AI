@@ -8,7 +8,7 @@ import api from '../services/api';
  * Listens for unscheduled random working hour check-ins in popups/{uid}/pending.
  * Immediately invokes OS-level browser push notifications to awaken backgrounded sessions.
  */
-export const usePopupListener = (userUid = 'dev-stud-107', role = 'STUDENT', isDevMode = true) => {
+export const usePopupListener = (userUid, role = 'STUDENT', isDevMode = true) => {
   const { showNotification } = useBrowserNotification();
   const { notify } = useNotification();
 
@@ -51,8 +51,7 @@ export const usePopupListener = (userUid = 'dev-stud-107', role = 'STUDENT', isD
     );
   }, [showNotification]);
 
-  // Submit student response ("WORKING" with webcam photo or "IN_MEETING")
-  const respondToPopup = useCallback(async (action, photoBase64 = null) => {
+  const respondToPopup = useCallback(async (action, photoBase64 = null, similarityScore = 100.0) => {
     if (!activePopup) return;
     setLoadingResponse(true);
 
@@ -61,7 +60,8 @@ export const usePopupListener = (userUid = 'dev-stud-107', role = 'STUDENT', isD
         popupId: activePopup.id || 'dev-popup-999',
         action: action, // "WORKING" or "IN_MEETING"
         timestamp: Date.now(),
-        photoData: photoBase64
+        photoData: photoBase64,
+        similarityScore: similarityScore
       };
 
       const response = await api.post(`/popups/${userUid}/respond`, payload);
@@ -106,7 +106,8 @@ export const usePopupListener = (userUid = 'dev-stud-107', role = 'STUDENT', isD
           id: `test-checkin-${Date.now()}`,
           timestamp: Date.now(),
           deadline: Date.now() + 120000, // 2 minutes window
-          domain: 'Cloud Infrastructure & DevOps'
+          domain: 'Cloud Infrastructure & DevOps',
+          studentUid: userUid
         });
       }, delaySeconds * 1000);
     } else {
@@ -114,7 +115,8 @@ export const usePopupListener = (userUid = 'dev-stud-107', role = 'STUDENT', isD
         id: `test-checkin-${Date.now()}`,
         timestamp: Date.now(),
         deadline: Date.now() + 120000,
-        domain: 'test'
+        domain: 'test',
+        studentUid: userUid
       });
     }
   }, [handleNewPopupDetected, notify]);

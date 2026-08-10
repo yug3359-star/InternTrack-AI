@@ -3,13 +3,13 @@ import { useForm } from 'react-hook-form';
 import { useNavigate, Link } from 'react-router-dom';
 import PhotoCapture from '../../components/PhotoCapture';
 import { registerStudent } from '../../services/api';
-import { 
-  COLLEGE_DOMAIN, 
-  EMAIL_ERROR_MESSAGE, 
-  validateDateChronology, 
+import {
+  COLLEGE_DOMAIN,
+  EMAIL_ERROR_MESSAGE,
+  validateDateChronology,
   validateBreakHours,
   DATE_ERROR_MESSAGE,
-  TIME_ERROR_MESSAGE 
+  TIME_ERROR_MESSAGE
 } from '../../utils/validators';
 import styles from './Register.module.css';
 
@@ -63,6 +63,7 @@ const StudentRegister = () => {
       branch: 'Computer Science & Engineering',
       rollNo: '',
       enrollmentNo: '',
+      section: '',
       mentorName: '',
       mentorEmail: '',
       internshipDomain: '',
@@ -147,18 +148,18 @@ const StudentRegister = () => {
   const handleNextStep = async (targetStep) => {
     setBackendError(null);
     if (targetStep === 2 && currentStep === 1) {
-      const isStep1Valid = await trigger(['fullName', 'collegeEmail', 'password', 'branch', 'rollNo', 'enrollmentNo']);
+      const isStep1Valid = await trigger(['fullName', 'collegeEmail', 'password', 'branch', 'rollNo', 'enrollmentNo', 'section']);
       if (isStep1Valid) setCurrentStep(2);
     } else if (targetStep === 3 && currentStep === 2) {
       const isStep2Valid = await trigger([
-        'mentorName', 
-        'mentorEmail', 
-        'internshipDomain', 
-        'joiningDate', 
-        'completionDate', 
-        'officeStartTime', 
-        'officeEndTime', 
-        'breakStartTime', 
+        'mentorName',
+        'mentorEmail',
+        'internshipDomain',
+        'joiningDate',
+        'completionDate',
+        'officeStartTime',
+        'officeEndTime',
+        'breakStartTime',
         'breakEndTime',
         'workingDays'
       ]);
@@ -215,7 +216,7 @@ const StudentRegister = () => {
           formData.append(key, data[key]);
         }
       });
-      
+
       // Append combined multi-role registration documents (Modules 1 & 2)
       if (offerFile) formData.append('offerLetter', offerFile);
       if (approvalFile) formData.append('approvalLetter', approvalFile);
@@ -223,7 +224,7 @@ const StudentRegister = () => {
       formData.append('consentGiven', 'true');
 
       await registerStudent(formData);
-      
+
       setSubmitSuccessMessage("Application submitted. You'll be notified once your HOD reviews it.");
       setTimeout(() => {
         navigate('/login');
@@ -249,39 +250,39 @@ const StudentRegister = () => {
     <div className={styles.container}>
       <div className={styles.formPanel}>
         <header className={styles.panelHeader}>
-          <h1 className={styles.headerTitle}>Student Internship Onboarding & Compliance Application</h1>
-          <span className={styles.headerSub}>Department of Computer Science & Engineering — Institutional Registration</span>
+          <h1 className={styles.headerTitle}>Student Internship Application</h1>
+          <span className={styles.headerSub}>Department of Computer Science & Engineering</span>
         </header>
 
         {/* Utilitarian Plain Text 4-step numbered indicator */}
         <nav className={styles.stepNavigator} aria-label="Registration Progress">
-          <button 
-            type="button" 
-            onClick={() => handleNextStep(1)} 
+          <button
+            type="button"
+            onClick={() => handleNextStep(1)}
             className={currentStep === 1 ? styles.stepActive : styles.stepInactive}
           >
             1. Personal Info
           </button>
           <span className={styles.stepSeparator}>/</span>
-          <button 
-            type="button" 
-            onClick={() => handleNextStep(2)} 
+          <button
+            type="button"
+            onClick={() => handleNextStep(2)}
             className={currentStep === 2 ? styles.stepActive : styles.stepInactive}
           >
             2. Internship Schedule
           </button>
           <span className={styles.stepSeparator}>/</span>
-          <button 
-            type="button" 
-            onClick={() => handleNextStep(3)} 
+          <button
+            type="button"
+            onClick={() => handleNextStep(3)}
             className={currentStep === 3 ? styles.stepActive : styles.stepInactive}
           >
             3. Documents
           </button>
           <span className={styles.stepSeparator}>/</span>
-          <button 
-            type="button" 
-            onClick={() => handleNextStep(4)} 
+          <button
+            type="button"
+            onClick={() => handleNextStep(4)}
             className={currentStep === 4 ? styles.stepActive : styles.stepInactive}
           >
             4. Photo & Consent
@@ -295,32 +296,32 @@ const StudentRegister = () => {
           </div>
         ) : (
           <form onSubmit={handleSubmit(onSubmit)} className={styles.formLayout} noValidate>
-            
+
             {/* STEP 1: PERSONAL INFORMATION */}
             {currentStep === 1 && (
               <section className={styles.stepSection}>
-                <h2 className={styles.sectionHeading}>Section 1: Academic & Profile Identification</h2>
-                
+                <h2 className={styles.sectionHeading}>Section 1: Academic Details</h2>
+
                 <div className={styles.fieldRow}>
                   <div className={styles.fieldCol}>
-                    <label htmlFor="fullName" className={styles.fieldLabel}>Full Legal Name</label>
+                    <label htmlFor="fullName" className={styles.fieldLabel}>Full Name</label>
                     <input
                       id="fullName"
                       type="text"
-                      placeholder="e.g., Ananya Sharma"
-                      {...register("fullName", { required: "Full legal academic name is mandatory." })}
+                      placeholder="Full Name"
+                      {...register("fullName", { required: "Full name is mandatory." })}
                       className={errors.fullName ? styles.inputInvalid : styles.inputStandard}
                     />
                     {errors.fullName && <span className={styles.errorText}>{errors.fullName.message}</span>}
                   </div>
 
                   <div className={styles.fieldCol}>
-                    <label htmlFor="branch" className={styles.fieldLabel}>Enrolled Branch / Program</label>
+                    <label htmlFor="branch" className={styles.fieldLabel}>Branch</label>
                     <select id="branch" {...register("branch", { required: "Academic branch selection required." })} className={styles.selectStandard}>
-                      <option value="Computer Science & Engineering">Computer Science & Engineering (B.Tech)</option>
-                      <option value="Information Technology">Information Technology (B.Tech)</option>
+                      <option value="Computer Science & Engineering">Computer Science & Engineering</option>
+                      {/* <option value="Information Technology">Information Technology (B.Tech)</option>
                       <option value="Artificial Intelligence & Data Science">AI & Data Science (B.Tech)</option>
-                      <option value="Electronics & Communication">Electronics & Communication (B.Tech)</option>
+                      <option value="Electronics & Communication">Electronics & Communication (B.Tech)</option> */}
                     </select>
                     {errors.branch && <span className={styles.errorText}>{errors.branch.message}</span>}
                   </div>
@@ -328,24 +329,24 @@ const StudentRegister = () => {
 
                 <div className={styles.fieldRow}>
                   <div className={styles.fieldCol}>
-                    <label htmlFor="rollNo" className={styles.fieldLabel}>College Roll No.</label>
+                    <label htmlFor="rollNo" className={styles.fieldLabel}>Roll No.</label>
                     <input
                       id="rollNo"
                       type="text"
-                      placeholder="e.g., 2021BCSE001"
-                      {...register("rollNo", { required: "College Roll No. is mandatory." })}
+                      placeholder="Roll Number"
+                      {...register("rollNo", { required: "Roll Number" })}
                       className={errors.rollNo ? styles.inputInvalid : styles.inputStandard}
                     />
                     {errors.rollNo && <span className={styles.errorText}>{errors.rollNo.message}</span>}
                   </div>
 
                   <div className={styles.fieldCol}>
-                    <label htmlFor="enrollmentNo" className={styles.fieldLabel}>Enrollment No.</label>
+                    <label htmlFor="enrollmentNo" className={styles.fieldLabel}>Enrollment Number</label>
                     <input
                       id="enrollmentNo"
                       type="text"
-                      placeholder="e.g., EN12345678"
-                      {...register("enrollmentNo", { required: "Enrollment No. is mandatory." })}
+                      placeholder="Enrollment Number"
+                      {...register("enrollmentNo", { required: "Enrollment Number" })}
                       className={errors.enrollmentNo ? styles.inputInvalid : styles.inputStandard}
                     />
                     {errors.enrollmentNo && <span className={styles.errorText}>{errors.enrollmentNo.message}</span>}
@@ -354,11 +355,25 @@ const StudentRegister = () => {
 
                 <div className={styles.fieldRow}>
                   <div className={styles.fieldCol}>
-                    <label htmlFor="collegeEmail" className={styles.fieldLabel}>Official College Email Address</label>
+                    <label htmlFor="section" className={styles.fieldLabel}>Class Section</label>
+                    <input
+                      id="section"
+                      type="text"
+                      placeholder="e.g., A, B, C"
+                      {...register("section", { required: "Section is mandatory." })}
+                      className={errors.section ? styles.inputInvalid : styles.inputStandard}
+                    />
+                    {errors.section && <span className={styles.errorText}>{errors.section.message}</span>}
+                  </div>
+                </div>
+
+                <div className={styles.fieldRow}>
+                  <div className={styles.fieldCol}>
+                    <label htmlFor="collegeEmail" className={styles.fieldLabel}>College Email Address</label>
                     <input
                       id="collegeEmail"
                       type="email"
-                      placeholder="e.g., roll.number@cs.college.edu"
+                      placeholder="College Mail"
                       {...register("collegeEmail", {
                         required: EMAIL_ERROR_MESSAGE,
                         pattern: {
@@ -372,13 +387,13 @@ const StudentRegister = () => {
                   </div>
 
                   <div className={styles.fieldCol}>
-                    <label htmlFor="password" className={styles.fieldLabel}>Portal Authentication Password</label>
+                    <label htmlFor="password" className={styles.fieldLabel}>New Password</label>
                     <input
                       id="password"
                       type="password"
-                      placeholder="Min 8 chars with at least 1 numeral"
+                      placeholder="New Password"
                       {...register("password", {
-                        required: "Password is required for secure authentication.",
+                        required: "Password is required for authentication.",
                         pattern: {
                           value: /^(?=.*\d).{8,}$/,
                           message: "Password must be at least 8 characters long and contain at least one number."
@@ -405,7 +420,7 @@ const StudentRegister = () => {
                     />
                     {errors.confirmPassword && <span className={styles.errorText}>{errors.confirmPassword.message}</span>}
                   </div>
-                  
+
                   {/* Empty column to maintain grid layout */}
                   <div className={styles.fieldCol}></div>
                 </div>
@@ -422,11 +437,11 @@ const StudentRegister = () => {
             {/* STEP 2: INTERNSHIP SCHEDULE & DOMAIN */}
             {currentStep === 2 && (
               <section className={styles.stepSection}>
-                <h2 className={styles.sectionHeading}>Section 2: Internship Parameters & Working Schedule</h2>
-                
+                <h2 className={styles.sectionHeading}>Section 2: Internship Details</h2>
+
                 <div className={styles.fieldRow}>
                   <div className={styles.fieldCol}>
-                    <label htmlFor="mentorName" className={styles.fieldLabel}>Assigned Industry Mentor Name</label>
+                    <label htmlFor="mentorName" className={styles.fieldLabel}>Mentor Name</label>
                     <input
                       id="mentorName"
                       type="text"
@@ -549,7 +564,7 @@ const StudentRegister = () => {
                     <input
                       id="breakStartTime"
                       type="time"
-                      {...register("breakStartTime", { 
+                      {...register("breakStartTime", {
                         required: "Break start time required.",
                         validate: (val) => validateBreakHours(watchOfficeStart, watchOfficeEnd, val, watch('breakEndTime')) || TIME_ERROR_MESSAGE
                       })}
@@ -563,7 +578,7 @@ const StudentRegister = () => {
                     <input
                       id="breakEndTime"
                       type="time"
-                      {...register("breakEndTime", { 
+                      {...register("breakEndTime", {
                         required: "Break end time required.",
                         validate: (val) => validateBreakHours(watchOfficeStart, watchOfficeEnd, watchBreakStart, val) || TIME_ERROR_MESSAGE
                       })}
@@ -606,12 +621,12 @@ const StudentRegister = () => {
               <section className={styles.stepSection}>
                 <h2 className={styles.sectionHeading}>Section 3: Institutional Approval & Offer Documentation</h2>
                 <p className={styles.stepDescription}>
-                  Please attach copies of your corporate Offer Letter and departmental Approval Letter. 
+                  Please attach copies of your corporate Offer Letter and departmental Approval Letter.
                   Accepted file formats: JPG, PNG, or PDF (maximum 5MB per file).
                 </p>
 
                 <div className={styles.docUploadContainer}>
-                  
+
                   {/* DOCUMENT 1: OFFER LETTER */}
                   <div className={styles.docCard}>
                     <div className={styles.docHeader}>
@@ -727,7 +742,7 @@ const StudentRegister = () => {
             {currentStep === 4 && (
               <section className={styles.stepSection}>
                 <h2 className={styles.sectionHeading}>Section 4: Identity Verification & Compliance Consent</h2>
-                
+
                 <div className={styles.captureBlock}>
                   <h3 className={styles.subHeading}>A. Live Facial Reference Capture</h3>
                   <PhotoCapture onPhotoSelected={onPhotoSelected} error={photoError} />
@@ -735,7 +750,7 @@ const StudentRegister = () => {
 
                 <div className={styles.consentBlock}>
                   <h3 className={styles.subHeading}>B. Institutional Surveillance & Compliance Agreement</h3>
-                  
+
                   <label className={styles.consentCheckboxLabel}>
                     <input
                       type="checkbox"
@@ -771,11 +786,11 @@ const StudentRegister = () => {
                   <button type="button" onClick={() => handleNextStep(3)} disabled={isSubmitting} className={styles.backBtn}>
                     ← Back (Step 3)
                   </button>
-                  
+
                   <div className={styles.submitWrap} onClick={!consentChecked ? handleDisabledSubmitClick : undefined}>
-                    <button 
-                      type="submit" 
-                      disabled={isSubmitting || !consentChecked} 
+                    <button
+                      type="submit"
+                      disabled={isSubmitting || !consentChecked}
                       className={styles.finalSubmitBtn}
                     >
                       {isSubmitting ? (

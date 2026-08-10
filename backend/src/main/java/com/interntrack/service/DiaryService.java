@@ -36,34 +36,7 @@ public class DiaryService {
 
     public DiaryService() {
         // Initialize baseline demonstrated evaluations for dev test student dev-stud-107
-        String today = LocalDate.now().toString();
-        String yesterday = LocalDate.now().minusDays(1).toString();
-        String twoDaysAgo = LocalDate.now().minusDays(2).toString();
-
-        Map<String, Object> log1 = new HashMap<>();
-        log1.put("id", "dev-stud-107_" + yesterday);
-        log1.put("uid", "dev-stud-107");
-        log1.put("studentName", "Alex Vance (2023CSB104)");
-        log1.put("date", yesterday);
-        log1.put("entryText", "Implemented stateless JWT verification filter in Spring Security to support RBAC role verification and integrated AWS Rekognition hardware capture hooks.");
-        log1.put("status", "accepted");
-        log1.put("reviewReason", "Automated AI Review: Entry discusses core technical implementations directly aligned with declared domain [Software Architecture & Microservices]. Demonstrates consistent technological continuity.");
-        log1.put("topics", List.of("Spring Boot Security", "JWT Authentication", "AWS Biometrics"));
-        log1.put("submittedAt", System.currentTimeMillis() - 86400000L);
-        devDiaries.put("dev-stud-107_" + yesterday, log1);
-
-        Map<String, Object> log2 = new HashMap<>();
-        log2.put("id", "dev-stud-107_" + twoDaysAgo);
-        log2.put("uid", "dev-stud-107");
-        log2.put("studentName", "Alex Vance (2023CSB104)");
-        log2.put("date", twoDaysAgo);
-        log2.put("entryText", "Spent the afternoon practicing traditional Italian pizza recipe baking with sourdough flour in the kitchen.");
-        log2.put("status", "rejected");
-        log2.put("reviewReason", "Automated AI Review: Entry discusses culinary recipes or non-engineering hobbies, showing zero domain relevance to declared specialization [Software Architecture & Microservices]. Potential compliance evasion flagged.");
-        log2.put("topics", List.of("Off-Topic Submission", "Non-Engineering Content"));
-        log2.put("submittedAt", System.currentTimeMillis() - 172800000L);
-        log2.put("flaggedAt", System.currentTimeMillis() - 172800000L);
-        devSuspicious.put("dev-stud-107_" + twoDaysAgo, log2);
+        // (Removed fake data initialization)
     }
 
     /**

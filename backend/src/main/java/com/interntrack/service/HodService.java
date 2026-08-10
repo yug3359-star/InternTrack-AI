@@ -33,7 +33,6 @@ public class HodService {
     private final Map<String, Map<String, Object>> devSimulatedApplications = new ConcurrentHashMap<>();
 
     public HodService() {
-        initializeDevSimulationRecords();
     }
 
     /**
@@ -77,6 +76,9 @@ public class HodService {
                             record.put("fullName", userDoc.getString("fullName"));
                             record.put("collegeEmail", userDoc.getString("collegeEmail"));
                             record.put("branch", userDoc.getString("branch"));
+                            record.put("rollNo", userDoc.getString("rollNo"));
+                            record.put("enrollmentNo", userDoc.getString("enrollmentNo"));
+                            record.put("section", userDoc.getString("section"));
                         } else {
                             record.put("fullName", internData.getOrDefault("fullName", "Unverified Profile (" + doc.getId() + ")"));
                             record.put("collegeEmail", internData.getOrDefault("collegeEmail", "unknown@college.edu"));
@@ -132,6 +134,56 @@ public class HodService {
     }
 
     /**
+     * Retrieves a list of students assigned to a specific college mentor.
+     */
+    public List<Map<String, Object>> getMentorStudents(String mentorName) {
+        List<Map<String, Object>> matchedRecords = new ArrayList<>();
+        try {
+            Firestore db = FirestoreClient.getFirestore();
+            if (db != null) {
+                Query query = db.collection("internships").whereEqualTo("collegeMentor", mentorName);
+                
+                ApiFuture<QuerySnapshot> future = query.get();
+                List<? extends DocumentSnapshot> documents = future.get().getDocuments();
+                for (DocumentSnapshot doc : documents) {
+                    Map<String, Object> internData = doc.getData();
+                    if (internData != null) {
+                        Map<String, Object> record = new HashMap<>(internData);
+                        record.put("uid", doc.getId());
+
+                        // Read 2: Second read for matching users/{uid} doc to retrieve fullName and collegeEmail
+                        DocumentSnapshot userDoc = db.collection("users").document(doc.getId()).get().get();
+                        if (userDoc.exists() && userDoc.getData() != null) {
+                            record.put("fullName", userDoc.getString("fullName"));
+                            record.put("collegeEmail", userDoc.getString("collegeEmail"));
+                            record.put("branch", userDoc.getString("branch"));
+                            record.put("rollNo", userDoc.getString("rollNo"));
+                            record.put("enrollmentNo", userDoc.getString("enrollmentNo"));
+                            record.put("section", userDoc.getString("section"));
+                        } else {
+                            record.put("fullName", internData.getOrDefault("fullName", "Unverified Profile (" + doc.getId() + ")"));
+                            record.put("collegeEmail", internData.getOrDefault("collegeEmail", "unknown@college.edu"));
+                            record.put("branch", internData.getOrDefault("branch", "Computer Science & Engineering"));
+                        }
+                        matchedRecords.add(record);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.error("Failed to query mentor students from Firestore: {}", e.getMessage());
+        }
+
+        // Include dev simulations if applicable
+        for (Map<String, Object> record : devSimulatedApplications.values()) {
+            if (mentorName.equals(record.get("collegeMentor"))) {
+                matchedRecords.add(record);
+            }
+        }
+
+        return matchedRecords;
+    }
+
+    /**
      * Retrieves complete detail for a single application UID.
      */
     public Map<String, Object> getApplicationDetail(String uid) {
@@ -170,7 +222,7 @@ public class HodService {
     /**
      * Approves a student internship application, setting status to "Approved".
      */
-    public Map<String, Object> approveApplication(String uid, String hodUid) {
+    public Map<String, Object> approveApplication(String uid, String hodUid, String collegeMentor) {
         long timestamp = System.currentTimeMillis();
 
         try {
@@ -180,8 +232,9 @@ public class HodService {
                 updates.put("status", "Approved");
                 updates.put("approvedAt", timestamp);
                 updates.put("approvedBy", hodUid);
+                updates.put("collegeMentor", collegeMentor);
                 db.collection("internships").document(uid).update(updates).get();
-                log.info("HOD [{}] approved internship application for student [{}] at timestamp [{}]", hodUid, uid, timestamp);
+                log.info("HOD [{}] approved internship application for student [{}] at timestamp [{}] with mentor [{}]", hodUid, uid, timestamp, collegeMentor);
             }
         } catch (Exception e) {
             log.warn("Cloud Firestore update unreachable during approval commit for {}: {}", uid, e.getMessage());
@@ -192,7 +245,8 @@ public class HodService {
             record.put("status", "Approved");
             record.put("approvedAt", timestamp);
             record.put("approvedBy", hodUid);
-            log.info("Dev Simulation: HOD [{}] approved mock application [{}]", hodUid, uid);
+            record.put("collegeMentor", collegeMentor);
+            log.info("Dev Simulation: HOD [{}] approved mock application [{}] with mentor [{}]", hodUid, uid, collegeMentor);
         }
 
         Map<String, Object> response = new HashMap<>();
@@ -290,69 +344,4 @@ public class HodService {
         return result;
     }
 
-    private void initializeDevSimulationRecords() {
-        long now = System.currentTimeMillis();
-        long dayMs = 86400000L;
-
-        addMockStudent("dev-stud-101", "Ananya Sharma", "ananya.sharma@cs.college.edu", "Computer Science & Engineering",
-                "Cloud Infrastructure & DevOps", "Vikram Aditya", "vikram@cloudcorp.org", "Desktop",
-                "2026-08-01", "2026-11-30", "Applied", now - (5 * dayMs), 0, 0);
-
-        addMockStudent("dev-stud-102", "Rohit Verma", "rohit.verma@cs.college.edu", "Information Technology",
-                "Artificial Intelligence & Machine Learning", "Priya Nair", "priya.nair@ai-labs.io", "Desktop",
-                "2026-07-20", "2026-11-20", "Ongoing", now - (15 * dayMs), now - (12 * dayMs), now - (6 * dayMs));
-
-        addMockStudent("dev-stud-103", "Siddharth Rao", "siddharth.r@ai.college.edu", "Artificial Intelligence & Data Science",
-                "Cybersecurity & Vulnerability Assessment", "Amitabh Ghosh", "aghosh@sec-guard.com", "Desktop",
-                "2026-08-10", "2026-12-10", "Applied", now - (3 * dayMs), 0, 0);
-
-        addMockStudent("dev-stud-104", "Kavya Patel", "kavya.p@ec.college.edu", "Electronics & Communication",
-                "Embedded IoT Systems & Firmware", "Dr. Rajeshwar Singh", "rsingh@tech-devices.org", "Desktop",
-                LocalDate.now().toString(), "2026-11-15", "Approved", now - (2 * dayMs), now - dayMs, 0);
-
-        addMockStudent("dev-stud-105", "Arjun Mehta", "arjun.mehta@cs.college.edu", "Computer Science & Engineering",
-                "Software Development & Architecture", "Sneha Kulkarni", "sneha@fintech-solutions.co", "Desktop",
-                "2026-05-01", "2026-07-15", "Completed", now - (60 * dayMs), now - (58 * dayMs), now - (55 * dayMs));
-
-        addMockStudent("dev-stud-106", "Neerja Desai", "neerja.d@cs.college.edu", "Computer Science & Engineering",
-                "Web3 & Blockchain Systems", "Rishabh Malhotra", "rmalhotra@crypto-verify.io", "Mobile",
-                "2026-08-01", "2026-12-01", "Rejected", now - (4 * dayMs), 0, 0);
-    }
-
-    private void addMockStudent(String uid, String name, String email, String branch, String domain,
-                                String mentorName, String mentorEmail, String device, String joinDate, String compDate, 
-                                String status, long createdAt, long approvedAt, long ongoingSince) {
-        Map<String, Object> map = new HashMap<>();
-        map.put("uid", uid);
-        map.put("fullName", name);
-        map.put("collegeEmail", email);
-        map.put("branch", branch);
-        map.put("role", "student");
-        map.put("internshipDomain", domain);
-        map.put("mentorName", mentorName);
-        map.put("mentorEmail", mentorEmail);
-        map.put("deviceType", device);
-        map.put("joiningDate", joinDate);
-        map.put("completionDate", compDate);
-        map.put("officeStartTime", "09:00");
-        map.put("officeEndTime", "17:00");
-        map.put("breakStartTime", "13:00");
-        map.put("breakEndTime", "14:00");
-        map.put("workingDays", List.of("Monday", "Tuesday", "Wednesday", "Thursday", "Friday"));
-        map.put("status", status);
-        map.put("consentGiven", true);
-        map.put("consentTimestamp", createdAt - 60000L);
-        map.put("createdAt", createdAt);
-        if (approvedAt > 0) map.put("approvedAt", approvedAt);
-        if (ongoingSince > 0) map.put("ongoingSince", ongoingSince);
-        if ("Rejected".equals(status)) {
-            map.put("rejectedAt", createdAt + 3600000L);
-            map.put("rejectionReason", "Offer letter corporate header watermark missing official corporate authentication signature.");
-        }
-        map.put("referencePhotoUrl", "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80");
-        map.put("offerLetterUrl", "https://interntrack.dev/documents/" + uid + "/offer-letter.pdf");
-        map.put("approvalLetterUrl", "https://interntrack.dev/documents/" + uid + "/approval-letter.pdf");
-
-        devSimulatedApplications.put(uid, map);
-    }
 }

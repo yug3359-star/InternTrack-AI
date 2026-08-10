@@ -34,6 +34,9 @@ public class RegisterRequest {
     @NotBlank(message = "Enrollment No. required")
     private String enrollmentNo;
 
+    @NotBlank(message = "Section required")
+    private String section;
+
     // Step 2: Internship Schedule
     @NotBlank(message = "Assigned faculty mentor name required")
     private String mentorName;

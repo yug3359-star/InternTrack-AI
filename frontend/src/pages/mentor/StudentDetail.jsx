@@ -10,7 +10,7 @@ import styles from './StudentDetail.module.css';
  */
 const StudentDetail = () => {
   const { studentId } = useParams();
-  const uid = studentId || 'dev-stud-107';
+  const uid = studentId;
 
   const [records, setRecords] = useState([]);
   const [testRecords, setTestRecords] = useState([]);

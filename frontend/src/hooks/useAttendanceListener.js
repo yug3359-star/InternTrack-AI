@@ -8,7 +8,7 @@ import api from '../services/api';
  * Connects to live API/Firestore records and invokes OS-level push notifications
  * when an 'awaiting_response' attendance document is generated for the student.
  */
-export const useAttendanceListener = (userUid = 'dev-stud-107', role = 'STUDENT') => {
+export const useAttendanceListener = (userUid, role = 'STUDENT') => {
   const { showNotification } = useBrowserNotification();
   const { notify } = useNotification();
 

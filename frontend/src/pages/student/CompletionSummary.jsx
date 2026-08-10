@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useLocation } from 'react-router-dom';
 import { getCompletionSummary } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 import styles from './CompletionSummary.module.css';
 
 const CompletionSummary = () => {
   const { uid: paramUid } = useParams();
   const location = useLocation();
+  const { user } = useAuth();
   const isHodReview = location.pathname.includes('/hod/');
 
   // Use paramUid if accessed by HOD or student route parameter, otherwise default to student identity
-  const targetUid = paramUid || 'CS001';
+  const targetUid = paramUid || user?.uid || 'CS001';
 
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -24,10 +26,14 @@ const CompletionSummary = () => {
         if (data) {
           setSummary(data);
         } else {
-          setErrorMsg(`No completion record found for candidate [${targetUid}]. The student internship has not reached official completion status.`);
+          setErrorMsg(`Your internship is ongoing. Your final report will be generated when you successfully complete your internship.`);
         }
       } catch (err) {
-        setErrorMsg(`Failed to query permanent completion summary from Firestore database for candidate [${targetUid}].`);
+        if (err.response && err.response.status === 404) {
+          setErrorMsg(`Your internship is ongoing. Your final report will be generated when you successfully complete your internship.`);
+        } else {
+          setErrorMsg(`Your internship is ongoing. Your final report will be generated when you successfully complete your internship.`);
+        }
         console.error("Error loading completion summary:", err);
       } finally {
         setLoading(false);
@@ -73,7 +79,7 @@ const CompletionSummary = () => {
         <header className={styles.reportHeader}>
           <div className={styles.headerLeft}>
             <span className={styles.institutionName}>G H Raisoni College of Engineering, Nagpur</span>
-            <h1 className={styles.reportTitle}>Final Internship Compliance Summary</h1>
+            <h1 className={styles.reportTitle}>Final Internship Summary</h1>
             <span className={styles.reportSubtitle}>
               Official Academic Verification & Completion Report | Permanent Database Ledger
             </span>
@@ -135,7 +141,7 @@ const CompletionSummary = () => {
 
         {/* Real Historical Compliance Evaluation Ledger */}
         <section className={styles.section}>
-          <h2 className={styles.sectionHeader}>Authoritative Compliance Evaluation Table</h2>
+          <h2 className={styles.sectionHeader}>Authoritative Evaluation Table</h2>
           <table className={styles.table}>
             <thead>
               <tr>
@@ -157,18 +163,7 @@ const CompletionSummary = () => {
                   {summary.attendancePercentage !== undefined ? `${summary.attendancePercentage}%` : "0%"}
                 </td>
               </tr>
-              <tr>
-                <td>
-                  <div className={styles.metricTitle}>Daily AI Work Diary Compliance Rate</div>
-                  <div className={styles.metricSub}>Authoritative Ledger</div>
-                </td>
-                <td>
-                  {summary.acceptedDiariesCount !== undefined ? summary.acceptedDiariesCount : 0} daily activity diaries formally accepted by HOD evaluation over expected working days.
-                </td>
-                <td className={styles.metricFigure}>
-                  {summary.diaryCompliancePercentage !== undefined ? `${summary.diaryCompliancePercentage}%` : "0%"}
-                </td>
-              </tr>
+
               <tr>
                 <td>
                   <div className={styles.metricTitle}>Proctored Examination Performance</div>

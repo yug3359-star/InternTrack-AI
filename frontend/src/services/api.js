@@ -243,8 +243,8 @@ let mockOfflinePendingList = [
     consentTimestamp: Date.now() - 700000000,
     createdAt: Date.now() - 700000000,
     referencePhotoUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80',
-    offerLetterUrl: 'https://interntrack.dev/documents/dev-stud-107/offer-letter.pdf',
-    approvalLetterUrl: 'https://interntrack.dev/documents/dev-stud-107/approval-letter.pdf'
+    offerLetterUrl: `https://interntrack.dev/documents/dev-stud-107/offer-letter.pdf`,
+    approvalLetterUrl: `https://interntrack.dev/documents/dev-stud-107/approval-letter.pdf`
   }
 ];
 
@@ -278,9 +278,24 @@ export const getPendingApplications = async (page = 1, status = 'ALL') => {
   }
 };
 
-export const approveApplication = async (uid) => {
+export const getAssignedStudents = async (mentorName) => {
   try {
-    const response = await api.patch(`/hod/applications/${uid}/approve`);
+    const response = await api.get(`/mentor/students`, {
+      params: { mentorName }
+    });
+    return response.data;
+  } catch (err) {
+    if (!err.response || err.code === 'ERR_NETWORK' || err.message === 'Network Error') {
+      console.warn(`[DEV MOCK PORTAL] Simulating assigned students for ${mentorName}`);
+      return [];
+    }
+    throw err;
+  }
+};
+
+export const approveApplication = async (uid, payload = {}) => {
+  try {
+    const response = await api.patch(`/hod/applications/${uid}/approve`, payload);
     return response.data;
   } catch (err) {
     if (!err.response || err.code === 'ERR_NETWORK' || err.message === 'Network Error') {
@@ -430,36 +445,8 @@ export const runEscalationCheckNow = async (targetMonth) => {
 };
 
 export const getCompletionSummary = async (uid = 'CS001') => {
-  try {
-    const response = await api.get(`/completion/${uid}`);
-    return response.data;
-  } catch (err) {
-    if (!err.response || err.code === 'ERR_NETWORK' || err.message === 'Network Error' || err.response?.status === 404) {
-      console.warn(`[DEV MOCK PORTAL] Fetching simulated completion summary report for candidate ${uid}`);
-      return {
-        uid,
-        studentName: uid === 'CS002' ? "Priya Patel" : "Aditya Sharma",
-        branch: uid === 'CS002' ? "Information Technology" : "Computer Science & Engineering",
-        mentorName: uid === 'CS002' ? "Dr. Meenakshi S." : "Dr. Rajesh K.",
-        internshipDomain: uid === 'CS002' ? "Artificial Intelligence & Data Science" : "Cloud Infrastructure & DevOps",
-        joiningDate: uid === 'CS002' ? "2026-03-15" : "2026-04-01",
-        completionDate: new Date().toISOString().split('T')[0],
-        completedAt: Date.now() - 86400000,
-        expectedWorkingDays: uid === 'CS002' ? 70 : 62,
-        attendancePercentage: uid === 'CS002' ? 78.5 : 93.5,
-        verifiedAttendanceDays: uid === 'CS002' ? 55 : 58,
-        diaryCompliancePercentage: uid === 'CS002' ? 74.3 : 91.9,
-        acceptedDiariesCount: uid === 'CS002' ? 52 : 57,
-        averageTestScore: uid === 'CS002' ? 71.0 : 84.5,
-        completedExamCount: uid === 'CS002' ? 12 : 14,
-        absentExamCount: uid === 'CS002' ? 4 : 1,
-        excuseUsagePercentage: uid === 'CS002' ? 28.0 : 6.5,
-        riskLevel: uid === 'CS002' ? "High" : "Low",
-        highlightedMonthsCount: uid === 'CS002' ? 2 : 0
-      };
-    }
-    throw err;
-  }
+  const response = await api.get(`/completion/${uid}`);
+  return response.data;
 };
 
 export const getCompletedStudents = async () => {
@@ -500,7 +487,7 @@ export const getCompletedStudents = async () => {
 
 // --- MODULE 10 SUPPORTING SYSTEMS (ANALYTICS & REPORTING) ---
 
-export const getStudentAnalytics = async (uid = 'dev-stud-107') => {
+export const getStudentAnalytics = async (uid) => {
   try {
     const response = await api.get(`/analytics/student/${uid}`);
     return response.data;

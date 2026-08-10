@@ -73,7 +73,6 @@ public class AnalyticsService {
                 result.put("hasData", false);
                 result.put("message", "Not enough data to display yet");
                 result.put("attendanceOverTime", Collections.emptyList());
-                result.put("diaryComplianceOverTime", Collections.emptyList());
                 result.put("testScoresOverTime", Collections.emptyList());
                 result.put("excuseUsagePercentage", 0.0);
                 return result;
@@ -88,14 +87,7 @@ public class AnalyticsService {
             attendanceSeries.add(createPoint("Week 1", Math.max(75.0, overallAttRate - 5.0)));
             attendanceSeries.add(createPoint("Week 2", overallAttRate));
 
-            // Aggregate Diary Compliance % Over Time
-            List<Map<String, Object>> diarySeries = new ArrayList<>();
-            int totalDiaries = diaryDocs.size();
-            int acceptedDiaries = (int) diaryDocs.stream().filter(d -> !"REJECTED".equalsIgnoreCase(d.getString("verificationStatus")) && !Boolean.TRUE.equals(d.getBoolean("isSuspicious"))).count();
-            // Division-by-Zero guard
-            double diaryRate = totalDiaries > 0 ? Math.round(((double) acceptedDiaries / totalDiaries) * 1000.0) / 10.0 : 0.0;
-            diarySeries.add(createPoint("Week 1", Math.max(70.0, diaryRate - 10.0)));
-            diarySeries.add(createPoint("Week 2", diaryRate));
+
 
             // Aggregate Proctored Exam Scores Over Time
             List<Map<String, Object>> testSeries = new ArrayList<>();
@@ -109,7 +101,7 @@ public class AnalyticsService {
 
             result.put("hasData", true);
             result.put("attendanceOverTime", attendanceSeries);
-            result.put("diaryComplianceOverTime", diarySeries);
+
             result.put("testScoresOverTime", testSeries);
             result.put("excuseUsagePercentage", 40.0); // E.g., 2 / 5 meetings used
             return result;
@@ -239,7 +231,6 @@ public class AnalyticsService {
             result.put("hasData", false);
             result.put("message", "Not enough data to display yet");
             result.put("attendanceOverTime", Collections.emptyList());
-            result.put("diaryComplianceOverTime", Collections.emptyList());
             result.put("testScoresOverTime", Collections.emptyList());
             result.put("excuseUsagePercentage", 0.0);
             return result;
@@ -255,13 +246,7 @@ public class AnalyticsService {
         );
         result.put("attendanceOverTime", attSeries);
 
-        List<Map<String, Object>> diarySeries = Arrays.asList(
-                createPoint("Wk 1 (Jul 04)", 80.0),
-                createPoint("Wk 2 (Jul 11)", 100.0),
-                createPoint("Wk 3 (Jul 18)", 90.0),
-                createPoint("Wk 4 (Jul 25)", 95.0)
-        );
-        result.put("diaryComplianceOverTime", diarySeries);
+
 
         List<Map<String, Object>> testSeries = Arrays.asList(
                 createPoint("Midterm 1", 78.5),

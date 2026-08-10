@@ -31,7 +31,7 @@ const Navbar = () => {
   return (
     <header className={styles.topBar}>
       <div className={styles.brandSection}>
-        <span className={styles.portalLogo}>InternTrack AI</span>
+        <span className={styles.portalLogo}>InternTrack</span>
         <span className={styles.departmentSubtitle}>G H Raisoni College of Engineering, Nagpur</span>
       </div>
 
@@ -51,9 +51,9 @@ const Navbar = () => {
                   onChange={handleRoleSwitch}
                   title="Switch institutional access claim for review demo"
                 >
-                  <option value="STUDENT">Student (Logs)</option>
-                  <option value="MENTOR">Faculty Mentor (Verifications)</option>
-                  <option value="HOD">HOD (Department Analytics)</option>
+                  <option value="STUDENT">Student</option>
+                  <option value="MENTOR">Faculty Mentor</option>
+                  <option value="HOD">HOD</option>
                 </select>
               </div>
             </div>
@@ -64,13 +64,13 @@ const Navbar = () => {
               className={styles.signOutBtn}
               type="button"
             >
-              Terminate Session
+              Sign Out
             </button>
           </>
         ) : (
           <div className={styles.guestLinks}>
             <Link to="/privacy" className={styles.authLink}>Privacy Notice</Link>
-            <Link to="/login" className={styles.authLink}>Institutional Sign In</Link>
+            <Link to="/login" className={styles.authLink}>Sign In</Link>
             <Link to="/register" className={styles.registerLink}>New Registration</Link>
           </div>
         )}

@@ -14,7 +14,7 @@ const Analytics = () => {
       setLoading(true);
       try {
         // Evaluate analytics series from institutional database
-        const result = await getStudentAnalytics('dev-stud-107');
+        const result = await getStudentAnalytics(user?.uid);
         setData(result || { hasData: false });
       } catch (err) {
         console.error("Failed to query student analytics series:", err);
@@ -61,7 +61,7 @@ const Analytics = () => {
         <div>
           <h1 className={styles.title}>Candidate Academic Analytics</h1>
           <span className={styles.subtitle}>
-            Authoritative Longitudinal Reporting | Biometric Attendance & AI Work Diary Compliance
+            Authoritative Longitudinal Reporting | Biometric Attendance
           </span>
         </div>
       </header>
@@ -98,14 +98,7 @@ const Analytics = () => {
                   : "0%"}
               </span>
             </div>
-            <div className={styles.kpiItem}>
-              <span className={styles.kpiLabel}>AI Diary Compliance</span>
-              <span className={styles.kpiVal}>
-                {data.diaryComplianceOverTime && data.diaryComplianceOverTime.length > 0
-                  ? `${data.diaryComplianceOverTime[data.diaryComplianceOverTime.length - 1].value}%`
-                  : "0%"}
-              </span>
-            </div>
+
             <div className={styles.kpiItem}>
               <span className={styles.kpiLabel}>Meeting Quota Utilization</span>
               <span className={styles.kpiVal}>{data.excuseUsagePercentage ?? 0}%</span>
@@ -140,32 +133,7 @@ const Analytics = () => {
               )}
             </div>
 
-            {/* AI Work Diary Compliance Over Time */}
-            <div className={styles.chartCard}>
-              <div className={styles.chartHeader}>AI Work Diary Compliance Rate (%)</div>
-              {!data.diaryComplianceOverTime || data.diaryComplianceOverTime.length === 0 ? (
-                renderEmptyState()
-              ) : (
-                <ResponsiveContainer width="100%" height={260}>
-                  <LineChart data={data.diaryComplianceOverTime} margin={{ top: 10, right: 20, bottom: 20, left: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#E2E5EA" />
-                    <XAxis dataKey="date" stroke="#5A626A" tick={{ fontSize: 12 }} />
-                    <YAxis domain={[0, 100]} stroke="#5A626A" tick={{ fontSize: 12 }} />
-                    <Tooltip contentStyle={{ background: '#FFF', border: '1px solid #C08A2E', borderRadius: '4px' }} />
-                    <Legend verticalAlign="top" height={36} />
-                    <Line
-                      type="monotone"
-                      dataKey="value"
-                      name="Accepted Diary %"
-                      stroke="#C08A2E"
-                      strokeWidth={3}
-                      dot={{ r: 5, fill: '#C08A2E' }}
-                      isAnimationActive={false}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              )}
-            </div>
+
 
             {/* Proctored Test Scores Over Time */}
             <div className={styles.chartCard}>

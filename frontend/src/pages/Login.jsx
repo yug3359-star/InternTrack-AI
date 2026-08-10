@@ -10,7 +10,7 @@ const Login = () => {
   const { notify } = useNotification();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   const { register, handleSubmit, formState: { errors } } = useForm({
     defaultValues: {
       email: 'student.s26@cs.college.edu',
@@ -30,7 +30,7 @@ const Login = () => {
 
       await login(data.email, data.password, data.role);
       notify("Authentication verified: accessing academic departmental records.", "success");
-      
+
       // Redirect to assigned institutional role dashboard
       if (data.role === 'MENTOR') {
         navigate('/mentor/dashboard');
@@ -50,20 +50,20 @@ const Login = () => {
     <main className={styles.authContainer}>
       <section className={styles.loginCard}>
         <header className={styles.portalHeader}>
-          <h1 className={styles.portalTitle}>Institutional Sign In</h1>
-          <p className={styles.portalSubtitle}>Academic Internship Compliance System — Central Directory Access</p>
+          <h1 className={styles.portalTitle}>Sign In</h1>
+          <p className={styles.portalSubtitle}>Internship Monitoring System</p>
         </header>
 
         <form onSubmit={handleSubmit(onSubmit)} className={styles.formGrid} noValidate>
           <div className={styles.fieldGroup}>
-            <label htmlFor="role" className={styles.fieldLabel}>Assigned Academic Role</label>
+            <label htmlFor="role" className={styles.fieldLabel}>Role</label>
             <select
               id="role"
               {...register("role", { required: "Role selection is mandatory for route designation." })}
               className={styles.inputControl}
             >
               <option value="STUDENT">Student Practitioner</option>
-              <option value="MENTOR">Faculty Advisor / Mentor</option>
+              <option value="MENTOR">Faculty Mentor</option>
               <option value="HOD">Head of Department (HOD)</option>
             </select>
           </div>
@@ -74,7 +74,7 @@ const Login = () => {
               id="email"
               type="email"
               placeholder="e.g. rollnumber@cs.college.edu"
-              {...register("email", { 
+              {...register("email", {
                 required: "Authentication failed: college email required",
                 pattern: {
                   value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
@@ -87,7 +87,7 @@ const Login = () => {
           </div>
 
           <div className={styles.fieldGroup}>
-            <label htmlFor="password" className={styles.fieldLabel}>Directory Password</label>
+            <label htmlFor="password" className={styles.fieldLabel}>Password</label>
             <input
               id="password"
               type="password"
@@ -108,8 +108,8 @@ const Login = () => {
           </div>
 
           <footer className={styles.cardFooter}>
-            <span>Unregistered user?</span>
-            <Link to="/register" className={styles.navLink}>Submit Registration Inquiry</Link>
+            <span>New user?</span>
+            <Link to="/register" className={styles.navLink}>Sign-up</Link>
           </footer>
         </form>
       </section>

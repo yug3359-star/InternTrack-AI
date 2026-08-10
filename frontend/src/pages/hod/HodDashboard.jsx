@@ -1,16 +1,16 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+
 import { useNotification } from '../../hooks/useNotification';
 import { runStatusCheckNow } from '../../services/api';
 import styles from './HodDashboard.module.css';
 
 const chartData = [
-  { cohort: 'CS IV-A', verifiedHours: 2450, pendingHours: 320, students: 48, compliancePercent: 88 },
-  { cohort: 'CS IV-B', verifiedHours: 2800, pendingHours: 180, students: 50, compliancePercent: 94 },
-  { cohort: 'CS IV-C', verifiedHours: 2100, pendingHours: 410, students: 45, compliancePercent: 79 },
-  { cohort: 'IT IV-A', verifiedHours: 2600, pendingHours: 210, students: 46, compliancePercent: 91 },
-  { cohort: 'AI & DS IV', verifiedHours: 1950, pendingHours: 280, students: 42, compliancePercent: 82 }
+  { cohort: 'CS IV-A', students: 48, status: 'Active' },
+  { cohort: 'CS IV-B', students: 50, status: 'Active' },
+  { cohort: 'CS IV-C', students: 45, status: 'Review Flagged' },
+  { cohort: 'IT IV-A', students: 46, status: 'Active' },
+  { cohort: 'AI & DS IV', students: 42, status: 'Active' }
 ];
 
 const HodDashboard = () => {
@@ -19,8 +19,6 @@ const HodDashboard = () => {
   const [statusLoading, setStatusLoading] = useState(false);
 
   const totalStudents = chartData.reduce((acc, curr) => acc + curr.students, 0);
-  const totalVerified = chartData.reduce((acc, curr) => acc + curr.verifiedHours, 0);
-  const avgCompliance = Math.round(chartData.reduce((acc, curr) => acc + curr.compliancePercent, 0) / chartData.length);
 
   const handleExport = () => {
     notify("Generating accreditation compliance CSV spreadsheet for regional education review...", "info", 4000);
@@ -47,7 +45,7 @@ const HodDashboard = () => {
     <div className={styles.container}>
       <header className={styles.header}>
         <div className={styles.headerLeft}>
-          <h1 className={styles.title}>Department Analytics & Program Compliance Overview</h1>
+          <h1 className={styles.title}>HOD Dashboard</h1>
           <span className={styles.subtitle}>Head of Department Portal | G H Raisoni College of Engineering, Nagpur</span>
         </div>
 
@@ -86,50 +84,13 @@ const HodDashboard = () => {
       {/* Aggregate Department Metrics */}
       <section className={styles.statsGrid}>
         <div className={styles.statBox}>
-          <span className={styles.statTitle}>Active Senior Practitioners</span>
+          <span className={styles.statTitle}>Total Students</span>
           <span className={styles.statNumber}>{totalStudents}</span>
-          <span className={styles.statSub}>Enrolled across 5 academic cohorts</span>
-        </div>
-
-        <div className={styles.statBox}>
-          <span className={styles.statTitle}>Department Compliance Rate</span>
-          <span className={styles.statNumberPrimary}>{avgCompliance}%</span>
-          <span className={styles.statSub}>Target minimum required: 85%</span>
-        </div>
-
-        <div className={styles.statBox}>
-          <span className={styles.statTitle}>Total Verified Internship Hours</span>
-          <span className={styles.statNumber}>{totalVerified.toLocaleString()} hrs</span>
-          <span className={styles.statSub}>Verified by 12 faculty advisors</span>
+          <span className={styles.statSub}>Enrolled across all sections</span>
         </div>
       </section>
 
-      {/* Recharts Analytics Visualization */}
-      <section className={styles.chartCard}>
-        <div className={styles.cardTopRow}>
-          <h2 className={styles.cardHeading}>Cohort Hour Volume Comparison (Verified vs Pending)</h2>
-          <button type="button" onClick={handleAuditTrigger} className={styles.auditTriggerBtn}>
-            Trigger Low-Compliance Audit Notice
-          </button>
-        </div>
 
-        <div className={styles.chartWrap}>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#E2E5EA" />
-              <XAxis dataKey="cohort" tick={{ fontSize: 13, fill: '#1C1F26', fontWeight: 600 }} />
-              <YAxis tick={{ fontSize: 13, fill: '#6B7280' }} />
-              <Tooltip
-                contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#E2E5EA', fontSize: '13px' }}
-                labelStyle={{ fontWeight: 700, color: '#1C1F26' }}
-              />
-              <Legend wrapperStyle={{ fontSize: '13px', paddingTop: '10px' }} />
-              <Bar dataKey="verifiedHours" name="Verified Approved Hours" fill="#2B5C8A" radius={[2, 2, 0, 0]} />
-              <Bar dataKey="pendingHours" name="Pending Review Hours" fill="#C08A2E" radius={[2, 2, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </section>
 
       {/* Data-Dense Cohort Breakdown Table */}
       <section className={styles.tableSection}>
@@ -141,9 +102,6 @@ const HodDashboard = () => {
                 <th>Academic Cohort</th>
                 <th>Assigned Faculty Mentor</th>
                 <th>Student Count</th>
-                <th>Verified Hours</th>
-                <th>Pending Review</th>
-                <th>Compliance Rate</th>
                 <th>Institutional Status</th>
               </tr>
             </thead>
@@ -153,16 +111,9 @@ const HodDashboard = () => {
                   <td className={styles.boldCell}>{row.cohort}</td>
                   <td>{index % 2 === 0 ? 'Dr. Rajesh K.' : 'Prof. Sunita Rao'}</td>
                   <td className={styles.centerCell}>{row.students}</td>
-                  <td className={styles.centerCell}><strong>{row.verifiedHours.toLocaleString()}</strong></td>
-                  <td className={styles.centerCell}>{row.pendingHours}</td>
-                  <td className={styles.centerCell}>
-                    <span className={row.compliancePercent >= 85 ? styles.goodPercent : styles.warningPercent}>
-                      {row.compliancePercent}%
-                    </span>
-                  </td>
                   <td>
-                    <span className={row.compliancePercent >= 85 ? styles.tagOnTrack : styles.tagAudit}>
-                      {row.compliancePercent >= 85 ? 'ACCREDITED COMPLIANT' : 'REVIEW AUDIT FLAGGED'}
+                    <span className={row.status === 'Active' ? styles.tagOnTrack : styles.tagAudit}>
+                      {row.status === 'Active' ? 'ACCREDITED' : 'REVIEW AUDIT FLAGGED'}
                     </span>
                   </td>
                 </tr>

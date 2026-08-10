@@ -57,6 +57,7 @@ public class AuthService {
         try {
             FirebaseAuth auth = FirebaseAuth.getInstance();
             UserRecord.CreateRequest createReq = new UserRecord.CreateRequest()
+                    .setUid(request.getEnrollmentNo())
                     .setEmail(request.getCollegeEmail())
                     .setPassword(request.getPassword())
                     .setDisplayName(request.getFullName());
@@ -182,7 +183,9 @@ public class AuthService {
         }
         Blob blob = bucket.create(fileName, file.getBytes(), file.getContentType());
         uploadedTracker.add(fileName);
-        return "gs://" + bucket.getName() + "/" + fileName;
+        
+        java.net.URL signedUrl = blob.signUrl(365, java.util.concurrent.TimeUnit.DAYS);
+        return signedUrl.toString();
     }
 
     private void writeFirestoreRecords(String uid, RegisterRequest request, String photoUrl, String offerUrl, String approvalUrl, boolean isDevMode) throws Exception {
@@ -194,6 +197,7 @@ public class AuthService {
         userData.put("branch", request.getBranch());
         userData.put("rollNo", request.getRollNo());
         userData.put("enrollmentNo", request.getEnrollmentNo());
+        userData.put("section", request.getSection());
         userData.put("role", "student");
         userData.put("consentGiven", true);
         userData.put("consentTimestamp", timestamp);
@@ -248,7 +252,7 @@ public class AuthService {
      * per institutional security protocol. DO NOT expose this as a general administrative workflow.
      * -----------------------------------------------------------------------------------------
      */
-    public Map<String, Object> promoteToHod(String targetEmail, String providedSecret) {
+    public Map<String, Object> promoteToRole(String targetEmail, String providedSecret, String roleToAssign) {
         if (setupSecret == null || setupSecret.trim().isEmpty() || !setupSecret.equals(providedSecret)) {
             log.warn("[SECURITY AUDIT] Unauthorized attempt to invoke emergency HOD promotion tool for email [{}] with invalid or unconfigured setup secret.", targetEmail);
             throw new com.interntrack.exception.CustomAuthException("Invalid emergency HOD recovery authorization secret.");
@@ -265,26 +269,26 @@ public class AuthService {
             UserRecord user = auth.getUserByEmail(targetEmail);
 
             Map<String, Object> existingClaims = user.getCustomClaims() != null ? new HashMap<>(user.getCustomClaims()) : new HashMap<>();
-            existingClaims.put("role", "hod");
+            existingClaims.put("role", roleToAssign.toLowerCase());
             auth.setCustomUserClaims(user.getUid(), existingClaims);
 
             Firestore db = FirestoreClient.getFirestore();
             if (db != null) {
-                db.collection("users").document(user.getUid()).update("role", "hod");
+                db.collection("users").document(user.getUid()).update("role", roleToAssign.toLowerCase());
             }
-            log.info("Successfully elevated Firebase identity [{}] (uid: {}) to institutional HOD role.", targetEmail, user.getUid());
+            log.info("Successfully elevated Firebase identity [{}] (uid: {}) to institutional {} role.", targetEmail, user.getUid(), roleToAssign);
             response.put("status", "SUCCESS");
-            response.put("message", "User " + targetEmail + " promoted to institutional role: hod");
+            response.put("message", "User " + targetEmail + " promoted to institutional role: " + roleToAssign.toLowerCase());
             response.put("uid", user.getUid());
         } catch (IllegalStateException | NoClassDefFoundError e) {
             log.warn("Firebase Auth cloud service offline: {}. Executing dev-runtime mock promotion.", e.getMessage());
             response.put("status", "SUCCESS");
-            response.put("message", "Dev Mode: User " + targetEmail + " simulated promotion to institutional role: hod");
+            response.put("message", "Dev Mode: User " + targetEmail + " simulated promotion to institutional role: " + roleToAssign);
             response.put("warning", "Offline dev mode fallback executed.");
         } catch (Exception e) {
             log.warn("User record [{}] not found in cloud auth directory or error occurred: {}. Executing simulated fallback.", targetEmail, e.getMessage());
             response.put("status", "SUCCESS");
-            response.put("message", "Simulated promotion for User " + targetEmail + " to institutional role: hod");
+            response.put("message", "Simulated promotion for User " + targetEmail + " to institutional role: " + roleToAssign);
         }
         return response;
     }

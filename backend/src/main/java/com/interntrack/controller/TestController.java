@@ -29,6 +29,9 @@ public class TestController {
     @Autowired
     private TestService testService;
 
+    @Autowired(required = false)
+    private com.google.cloud.firestore.Firestore firestore;
+
     @Autowired
     private com.interntrack.service.AiPipelineService aiPipelineService;
 
@@ -47,7 +50,11 @@ public class TestController {
                 ? (String) payload.get("startPhotoUrl")
                 : "https://firebasestorage.googleapis.com/v0/b/interntrack-dev.appspot.com/o/test-captures%2Fstart_sim.jpg";
 
-            Map<String, Object> updated = testService.startTest(testId, photo);
+            Double similarityScore = (payload != null && payload.get("similarityScore") != null)
+                ? ((Number) payload.get("similarityScore")).doubleValue()
+                : 100.0;
+
+            Map<String, Object> updated = testService.startTest(testId, photo, similarityScore);
             return ResponseEntity.ok(updated);
         } catch (InvalidRegistrationException e) {
             log.warn("Test start rejected for [{}]: {}", testId, e.getMessage());
@@ -105,7 +112,11 @@ public class TestController {
                 ? (Map<String, Object>) payload.get("answers")
                 : null;
 
-            Map<String, Object> res = testService.submitTest(testId, submitPhoto, tabSwitches, answers);
+            Double similarityScore = (payload != null && payload.get("similarityScore") != null)
+                ? ((Number) payload.get("similarityScore")).doubleValue()
+                : 100.0;
+
+            Map<String, Object> res = testService.submitTest(testId, submitPhoto, tabSwitches, answers, similarityScore);
             return ResponseEntity.ok(res);
         } catch (InvalidRegistrationException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
@@ -163,7 +174,25 @@ public class TestController {
         
         String dateStr = LocalDate.now(zoneId).toString();
         String domain = (payload != null && payload.get("internshipDomain") != null) ? (String) payload.get("internshipDomain") : "Software Architecture & Microservices";
-        String refUrl = "https://firebasestorage.googleapis.com/v0/b/interntrack-dev.appspot.com/o/reference-photos%2F" + uid + ".jpg";
+        
+        String refUrl = null;
+        try {
+            if (firestore != null) {
+                com.google.cloud.firestore.DocumentSnapshot doc = firestore.collection("internships").document(uid).get().get();
+                if (doc.exists()) {
+                    refUrl = doc.getString("referencePhotoUrl");
+                }
+            } else {
+                log.warn("Firestore bean is null in TestController!");
+            }
+        } catch (Exception e) {
+            log.warn("Failed to fetch referencePhotoUrl from Firestore for uid: {}. Error: {}", uid, e.getMessage(), e);
+        }
+        
+        if (refUrl == null) {
+            refUrl = "https://firebasestorage.googleapis.com/v0/b/interntrack-ai-98f45.firebasestorage.app/o/reference-photos%2F" + uid + ".jpg";
+        }
+
 
         Map<String, Object> newTest = testService.createTestDoc(uid, dateStr, System.currentTimeMillis(), 60, domain, refUrl);
         return ResponseEntity.ok(newTest);

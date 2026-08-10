@@ -42,10 +42,12 @@ public class HodController {
     }
 
     @PatchMapping("/{uid}/approve")
-    public ResponseEntity<Map<String, Object>> approveApplication(@PathVariable String uid) {
+    public ResponseEntity<Map<String, Object>> approveApplication(
+            @PathVariable String uid,
+            @Valid @RequestBody SecurityValidationDtos.ApproveApplicationDto payload) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String hodUid = (auth != null && auth.getName() != null) ? auth.getName() : "hod-directory-admin";
-        Map<String, Object> result = hodService.approveApplication(uid, hodUid);
+        Map<String, Object> result = hodService.approveApplication(uid, hodUid, payload.getCollegeMentor());
         auditLogger.logAdminAction("HOD_APPLICATION_APPROVAL", hodUid, uid, "Transitioned student application to ONGOING status after institutional credentials evaluation");
         return ResponseEntity.ok(result);
     }
