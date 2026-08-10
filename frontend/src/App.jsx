@@ -23,6 +23,7 @@ import CompletionSummary from './pages/student/CompletionSummary';
 import CompletedStudents from './pages/hod/CompletedStudents';
 import Analytics from './pages/student/Analytics';
 import AnalyticsOverview from './pages/hod/AnalyticsOverview';
+import Profile from './pages/Profile';
 import styles from './App.module.css';
 
 const App = () => {
@@ -37,7 +38,8 @@ const App = () => {
                            location.pathname.includes('/highlighted') ||
                            location.pathname.includes('/completed') ||
                            location.pathname.includes('/completion-summary') ||
-                           location.pathname.includes('/analytics');
+                           location.pathname.includes('/analytics') ||
+                           location.pathname.includes('/profile');
 
   return (
     <div className={styles.appWrapper}>
@@ -75,8 +77,11 @@ const App = () => {
             <Route path="/hod/highlighted" element={<ProtectedRoute allowedRoles={["hod"]}><HighlightedStudents /></ProtectedRoute>} />
             <Route path="/hod/highlighted/:uid/history" element={<ProtectedRoute allowedRoles={["hod"]}><StudentWarningHistory /></ProtectedRoute>} />
             <Route path="/hod/completed" element={<ProtectedRoute allowedRoles={["hod"]}><CompletedStudents /></ProtectedRoute>} />
-            <Route path="/hod/completed/:uid/summary" element={<ProtectedRoute allowedRoles={["hod"]}><CompletionSummary /></ProtectedRoute>} />
+            <Route path="/hod/completed-students" element={<ProtectedRoute allowedRoles={["hod"]}><CompletedStudents /></ProtectedRoute>} />
             <Route path="/hod/analytics" element={<ProtectedRoute allowedRoles={["hod"]}><AnalyticsOverview /></ProtectedRoute>} />
+
+            {/* Shared Authenticated Routes */}
+            <Route path="/profile" element={<ProtectedRoute allowedRoles={["student", "mentor", "hod"]}><Profile /></ProtectedRoute>} />
             
             <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
