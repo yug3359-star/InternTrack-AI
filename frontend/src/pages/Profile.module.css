@@ -1,0 +1,251 @@
+.container {
+  padding: 2rem;
+  max-width: 800px;
+  margin: 0 auto;
+  background-color: #F7F8FA;
+  min-height: 100vh;
+}
+
+.header {
+  margin-bottom: 2rem;
+}
+
+.title {
+  font-family: 'IBM Plex Serif', serif;
+  color: #111827;
+  font-size: 1.8rem;
+  margin: 0 0 0.5rem 0;
+}
+
+.subtitle {
+  font-family: 'Source Sans 3', sans-serif;
+  color: #6B7280;
+  margin: 0;
+}
+
+.card {
+  background-color: #FFFFFF;
+  border: 1px solid #E2E5EA;
+  border-radius: 4px;
+  padding: 2rem;
+}
+
+.section {
+  margin-bottom: 2rem;
+}
+
+.section:last-child {
+  margin-bottom: 0;
+}
+
+.sectionTitle {
+  font-family: 'IBM Plex Serif', serif;
+  color: #2B5C8A;
+  font-size: 1.3rem;
+  margin: 0 0 1.5rem 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #E2E5EA;
+}
+
+.divider {
+  border: 0;
+  border-top: 1px solid #E2E5EA;
+  margin: 2.5rem 0;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.formGroup label {
+  font-family: 'Source Sans 3', sans-serif;
+  font-weight: 600;
+  color: #374151;
+  font-size: 0.9rem;
+}
+
+.input, .inputDisabled {
+  padding: 0.75rem;
+  border: 1px solid #D1D5DB;
+  border-radius: 4px;
+  font-family: 'Source Sans 3', sans-serif;
+  font-size: 1rem;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #2B5C8A;
+}
+
+.inputDisabled {
+  background-color: #F3F4F6;
+  color: #6B7280;
+  cursor: not-allowed;
+}
+
+.readOnlyBlock {
+  background-color: #F9FAFB;
+  border: 1px solid #E5E7EB;
+  border-radius: 4px;
+  padding: 1.5rem;
+}
+
+.readOnlyBlock h3 {
+  font-family: 'Source Sans 3', sans-serif;
+  font-size: 1rem;
+  color: #374151;
+  margin: 0 0 1rem 0;
+}
+
+.photoContainer {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.referencePhoto {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 1px solid #D1D5DB;
+}
+
+.noPhoto {
+  width: 100px;
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #E5E7EB;
+  color: #6B7280;
+  font-size: 0.8rem;
+  text-align: center;
+  border-radius: 4px;
+}
+
+.detailsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.detailsGrid div {
+  display: flex;
+  flex-direction: column;
+}
+
+.detailsGrid label {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #6B7280;
+}
+
+.detailsGrid span {
+  color: #111827;
+  font-weight: 500;
+}
+
+.helpText {
+  display: block;
+  color: #9CA3AF;
+  font-style: italic;
+  font-size: 0.8rem;
+  margin-top: 0.5rem;
+}
+
+.formActions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
+
+.primaryBtn, .secondaryBtn, .dangerBtn {
+  font-family: 'Source Sans 3', sans-serif;
+  font-weight: 600;
+  padding: 0.75rem 1.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  border: none;
+  font-size: 0.95rem;
+  transition: opacity 0.2s;
+}
+
+.primaryBtn {
+  background-color: #2B5C8A;
+  color: white;
+}
+
+.primaryBtn:disabled {
+  background-color: #9CA3AF;
+  cursor: not-allowed;
+}
+
+.secondaryBtn {
+  background-color: white;
+  border: 1px solid #D1D5DB;
+  color: #374151;
+}
+
+.secondaryBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.dangerBtn {
+  background-color: white;
+  border: 1px solid #DC2626;
+  color: #DC2626;
+  width: 100%;
+}
+
+.dangerBtn:hover {
+  background-color: #FEF2F2;
+}
+
+.securityBlock {
+  margin-bottom: 2rem;
+}
+
+.securityBlock h3 {
+  font-family: 'Source Sans 3', sans-serif;
+  font-size: 1rem;
+  color: #374151;
+  margin: 0 0 1rem 0;
+}
+
+.passwordForm {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 400px;
+}
+
+.toggleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #F9FAFB;
+  padding: 1rem;
+  border: 1px solid #E5E7EB;
+  border-radius: 4px;
+}
+
+.loading, .error {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 50vh;
+  font-family: 'Source Sans 3', sans-serif;
+  color: #6B7280;
+}
