@@ -69,13 +69,13 @@ const Navbar = () => {
               Profile
             </Link>
             <Link to="/privacy" style={{ fontSize: '12px', color: '#2B5C8A', marginRight: '14px', textDecoration: 'underline', fontWeight: '600', alignSelf: 'center' }}>Privacy Policy</Link>
-            <button
+            {/* <button
               onClick={handleLogout}
               className={styles.signOutBtn}
               type="button"
             >
               Sign Out
-            </button>
+            </button> */}
           </>
         ) : (
           <div className={styles.guestLinks}>

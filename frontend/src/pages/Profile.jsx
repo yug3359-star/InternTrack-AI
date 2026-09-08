@@ -10,10 +10,10 @@ const Profile = () => {
   const { user, role, logout } = useAuth();
   const { notify } = useNotification();
   const { permission, requestPermission } = useBrowserNotificationContext();
-  
+
   const [profileData, setProfileData] = useState(null);
   const [loading, setLoading] = useState(true);
-  
+
   const [formData, setFormData] = useState({
     fullName: '',
     department: '',
@@ -21,7 +21,7 @@ const Profile = () => {
   const [initialFormData, setInitialFormData] = useState({});
   const [isSaving, setIsSaving] = useState(false);
   const [isRequestingPhoto, setIsRequestingPhoto] = useState(false);
-  
+
   // Security
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -78,7 +78,7 @@ const Profile = () => {
       if (isHod) {
         updates.department = formData.department;
       }
-      
+
       await api.patch('/profile', updates);
       setInitialFormData({ ...formData });
       notify("Profile updated successfully", "success");
@@ -120,7 +120,7 @@ const Profile = () => {
       const credential = EmailAuthProvider.credential(auth.currentUser.email, currentPassword);
       await reauthenticateWithCredential(auth.currentUser, credential);
       await updatePassword(auth.currentUser, newPassword);
-      
+
       setCurrentPassword('');
       setNewPassword('');
       notify("Password updated successfully", "success");
@@ -183,7 +183,7 @@ const Profile = () => {
                     className={styles.inputDisabled}
                   />
                 </div>
-                
+
                 <div className={styles.readOnlyBlock}>
                   <h3>Biometric Reference Photo</h3>
                   <div className={styles.photoContainer}>
@@ -192,9 +192,9 @@ const Profile = () => {
                     ) : (
                       <div className={styles.noPhoto}>No reference photo on file</div>
                     )}
-                    <button 
-                      type="button" 
-                      className={styles.secondaryBtn} 
+                    <button
+                      type="button"
+                      className={styles.secondaryBtn}
                       onClick={handleRequestPhotoUpdate}
                       disabled={isRequestingPhoto}
                     >
@@ -244,9 +244,9 @@ const Profile = () => {
             )}
 
             <div className={styles.formActions}>
-              <button 
-                type="submit" 
-                className={styles.primaryBtn} 
+              <button
+                type="submit"
+                className={styles.primaryBtn}
                 disabled={!isFormDirty() || isSaving}
               >
                 {isSaving ? 'Saving...' : 'Save Changes'}
@@ -259,7 +259,7 @@ const Profile = () => {
 
         <section className={styles.section}>
           <h2 className={styles.sectionTitle}>Security & Preferences</h2>
-          
+
           <div className={styles.securityBlock}>
             <h3>Change Password</h3>
             <form onSubmit={handleChangePassword} className={styles.passwordForm}>
@@ -294,8 +294,8 @@ const Profile = () => {
             <h3>Notification Preferences</h3>
             <div className={styles.toggleRow}>
               <span>OS Browser Notifications ({permission})</span>
-              <button 
-                type="button" 
+              <button
+                type="button"
                 className={styles.secondaryBtn}
                 onClick={requestPermission}
                 disabled={permission === 'granted'}
@@ -307,7 +307,7 @@ const Profile = () => {
 
           <div className={styles.securityBlock} style={{ marginTop: '2rem' }}>
             <button type="button" onClick={logout} className={styles.dangerBtn}>
-              Sign Out Securely
+              Sign Out
             </button>
           </div>
 

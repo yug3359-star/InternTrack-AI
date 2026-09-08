@@ -25,7 +25,7 @@ const Sidebar = () => {
     try {
       const resp = await axios.get(`${API_BASE}/api/mentor/suspicious/count`);
       if (resp.data && typeof resp.data.count === 'number') {
-        setSuspiciousCount(resp.data.count);
+        setSuspiciousCount();
       }
     } catch (err) {
       console.error("Could not load suspicious badge count:", err);
@@ -40,7 +40,7 @@ const Sidebar = () => {
       }
     } catch (err) {
       console.warn("Could not load highlighted student badge count, utilizing simulated fallback counter:", err);
-      setHighlightedCount(3);
+      setHighlightedCount();
     }
   };
 
@@ -191,7 +191,7 @@ const Sidebar = () => {
 
       <ul className={styles.menuList}>
         {renderNavGroup()}
-        
+
         <li style={{ marginTop: '2rem', borderTop: '1px solid #E2E5EA', paddingTop: '1rem' }}>
           <NavLink to="/profile" className={({ isActive }) => isActive ? styles.itemActive : styles.itemLink} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

@@ -171,21 +171,21 @@ const PhotoCapture = ({ onPhotoSelected, onPhotoCaptured, error }) => {
             {isStreaming ? (
               <div className={styles.controlsRow}>
                 <button type="button" onClick={handleCapture} className={styles.captureBtn}>
-                  📸 Capture Reference Photo
+                  Capture Reference Photo
                 </button>
                 <button type="button" onClick={toggleFallback} className={styles.textLinkBtn}>
-                  📁 Upload File Instead
+                  Upload File Instead
                 </button>
               </div>
             ) : !cameraError && (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', padding: '16px', width: '100%', boxSizing: 'border-box' }}>
-                <span className={styles.statusText} style={{ marginBottom: '4px' }}>⏳ Connecting to hardware optical device...</span>
+                <span className={styles.statusText} style={{ marginBottom: '4px' }}>Connecting to hardware optical device...</span>
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center', zIndex: 10 }}>
                   <button type="button" onClick={handleSimulateCapture} style={{ padding: '8px 14px', background: '#2563eb', color: '#ffffff', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.85rem', boxShadow: '0 2px 4px rgba(0,0,0,0.15)' }}>
-                    ⚡ Simulate Biometric Capture (Live Test)
+                    Simulate Biometric Capture (Live Test)
                   </button>
                   <button type="button" onClick={toggleFallback} style={{ padding: '8px 14px', background: '#475569', color: '#ffffff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', boxShadow: '0 2px 4px rgba(0,0,0,0.15)' }}>
-                    📁 Upload Photo File
+                    Upload Photo File
                   </button>
                 </div>
               </div>
@@ -198,14 +198,14 @@ const PhotoCapture = ({ onPhotoSelected, onPhotoCaptured, error }) => {
             <img src={capturedImageUrl} alt="Identity reference verification preview" className={styles.previewImage} style={{ maxHeight: '220px', borderRadius: '8px' }} />
             <div className={styles.controlsRow} style={{ marginTop: '10px', display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
               <button type="button" onClick={handleRetake} className={styles.retakeBtn}>
-                🔄 Retake Photo
+                Retake Photo
               </button>
               <button type="button" onClick={handleSimulateCapture} style={{ padding: '6px 12px', background: '#10b981', color: '#ffffff', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.85rem' }}>
-                ⚡ Generate 98% Simulated Match
+                Generate 98% Simulated Match
               </button>
               {useFallback && (
                 <label className={styles.uploadLabelBtn} style={{ cursor: 'pointer' }}>
-                  📁 Select Different File
+                  Select Different File
                   <input 
                     type="file" 
                     accept="image/jpeg,image/png" 
@@ -226,10 +226,10 @@ const PhotoCapture = ({ onPhotoSelected, onPhotoCaptured, error }) => {
             <div className={styles.fileSelectorArea} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
               <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'center' }}>
                 <button type="button" onClick={handleSimulateCapture} style={{ padding: '10px 16px', background: '#2563eb', color: '#ffffff', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.9rem', boxShadow: '0 2px 5px rgba(37,99,235,0.3)' }}>
-                  ⚡ Simulate Biometric Capture (Live Test)
+                  Simulate Biometric Capture (Live Test)
                 </button>
                 <label className={styles.fileInputLabel} style={{ cursor: 'pointer', padding: '10px 16px', background: '#10b981', color: '#fff', borderRadius: '6px', fontWeight: '600', fontSize: '0.9rem', display: 'inline-block' }}>
-                  📁 Select Image File (JPG/PNG)
+                  Select Image File (JPG/PNG)
                   <input
                     type="file"
                     accept="image/jpeg,image/png"
@@ -240,7 +240,7 @@ const PhotoCapture = ({ onPhotoSelected, onPhotoCaptured, error }) => {
               </div>
               {!cameraError && (
                 <button type="button" onClick={startCamera} style={{ background: 'transparent', color: '#2563eb', border: 'none', textDecoration: 'underline', cursor: 'pointer', fontSize: '0.85rem', marginTop: '4px' }}>
-                  🔄 Retry Webcam Connection
+                  Retry Webcam Connection
                 </button>
               )}
             </div>

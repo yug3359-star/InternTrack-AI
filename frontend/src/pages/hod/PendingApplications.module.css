@@ -689,7 +689,80 @@
 }
 
 .confirmRejectBtn:hover:not(:disabled) {
-  background-color: #B91C1C;
+  background-color: #991b1b;
+}
+
+/* CRUD Extensions */
+.createBtn {
+  background-color: var(--color-primary);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: var(--border-radius-sm);
+  font-weight: 600;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  transition: background-color 0.2s ease;
+  font-size: 14px;
+}
+.createBtn:hover {
+  background-color: var(--color-primary-dark, #1e3a8a);
+}
+
+.editBtn {
+  background-color: #f59e0b;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: var(--border-radius-sm);
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 12px;
+  margin-right: 6px;
+}
+.editBtn:hover {
+  background-color: #d97706;
+}
+
+.deleteBtn {
+  background-color: #ef4444;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: var(--border-radius-sm);
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 12px;
+}
+.deleteBtn:hover {
+  background-color: #dc2626;
+}
+
+.formGroup {
+  margin-bottom: 16px;
+}
+
+.formLabel {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  margin-bottom: 6px;
+}
+
+.formInput, .formSelect {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-sm);
+  font-family: var(--font-sans);
+  font-size: 14px;
+}
+
+.formInput:focus, .formSelect:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
 }
 
 @keyframes spin {

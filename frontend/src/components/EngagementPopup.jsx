@@ -81,10 +81,10 @@ const EngagementPopup = ({ activePopup, meetingQuota, onRespond, onClose, loadin
         
         <header className={styles.header}>
           <h2 id="popup-title" className={styles.title}>
-            ⏱️ InternTrack Compliance Audit: Are You Working?
+            InternTrack Compliance Audit: Are You Working?
           </h2>
           <div className={styles.timerBadge}>
-            ⏳ {formatTime(secondsLeft)}
+            {formatTime(secondsLeft)}
           </div>
         </header>
 
@@ -96,7 +96,7 @@ const EngagementPopup = ({ activePopup, meetingQuota, onRespond, onClose, loadin
         {showWebcam ? (
           <div className={styles.webcamSection}>
             <p style={{ margin: 0, fontWeight: 600, fontSize: '0.9rem', color: '#1E293B' }}>
-              📸 Optical Face-Match Verification (Client-Side AI over 75% threshold)
+              Optical Face-Match Verification (Client-Side AI over 75% threshold)
             </p>
             <PhotoCapture 
               label="Capture Check-In Portrait"
@@ -132,13 +132,13 @@ const EngagementPopup = ({ activePopup, meetingQuota, onRespond, onClose, loadin
               disabled={loading}
               style={{ width: '100%' }}
             >
-              📷 Yes, I am working (Verify via Webcam)
+              Yes, I am working (Verify via Webcam)
             </button>
           </div>
         )}
 
         <p className={styles.footerNote}>
-          🔒 Biometric snapshots are evaluated against your Module 1 reference photo. 
+          Biometric snapshots are evaluated against your Module 1 reference photo. 
           Unanswered checks count toward daily absence penalties (3 or more missed today triggers formal absent mark).
         </p>
       </div>

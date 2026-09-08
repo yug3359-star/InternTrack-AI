@@ -331,6 +331,58 @@ export const rejectApplication = async (uid, reason) => {
   }
 };
 
+export const createApplication = async (data) => {
+  try {
+    const response = await api.post('/hod/applications', data);
+    return response.data;
+  } catch (err) {
+    if (!err.response || err.code === 'ERR_NETWORK' || err.message === 'Network Error') {
+      console.warn(`[DEV MOCK PORTAL] Simulating creation for application`);
+      const newApp = {
+        uid: 'dev-stud-' + Date.now(),
+        ...data,
+        createdAt: Date.now()
+      };
+      mockOfflinePendingList = [newApp, ...mockOfflinePendingList];
+      return newApp;
+    }
+    throw err;
+  }
+};
+
+export const updateApplication = async (uid, data) => {
+  try {
+    const response = await api.put(`/hod/applications/${uid}`, data);
+    return response.data;
+  } catch (err) {
+    if (!err.response || err.code === 'ERR_NETWORK' || err.message === 'Network Error') {
+      console.warn(`[DEV MOCK PORTAL] Simulating update for application ${uid}`);
+      mockOfflinePendingList = mockOfflinePendingList.map(item => {
+        if (item.uid === uid) {
+          return { ...item, ...data, updatedAt: Date.now() };
+        }
+        return item;
+      });
+      return { uid, message: "Application updated (Local Evaluation Mode)" };
+    }
+    throw err;
+  }
+};
+
+export const deleteApplication = async (uid) => {
+  try {
+    const response = await api.delete(`/hod/applications/${uid}`);
+    return response.data;
+  } catch (err) {
+    if (!err.response || err.code === 'ERR_NETWORK' || err.message === 'Network Error') {
+      console.warn(`[DEV MOCK PORTAL] Simulating deletion for application ${uid}`);
+      mockOfflinePendingList = mockOfflinePendingList.filter(item => item.uid !== uid);
+      return { uid, message: "Application deleted (Local Evaluation Mode)" };
+    }
+    throw err;
+  }
+};
+
 export const getStudentStatus = async (uid = 'dev-stud-106') => {
   try {
     const response = await api.get(`/status/${uid}`);

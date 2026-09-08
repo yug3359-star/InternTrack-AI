@@ -28,7 +28,7 @@ const Login = () => {
         return;
       }
 
-      await login(data.email, data.password, data.role);
+      const authResult = await login(data.email, data.password, data.role);
       notify("Authentication verified: accessing academic departmental records.", "success");
 
       // Redirect to assigned institutional role dashboard
@@ -37,7 +37,18 @@ const Login = () => {
       } else if (data.role === 'HOD') {
         navigate('/hod/dashboard');
       } else {
-        navigate('/student/dashboard');
+        try {
+          const { getStudentStatus } = await import('../services/api');
+          const studentUid = authResult?.user?.uid || 'dev-stud-106'; // fallback to mock uid
+          const statusData = await getStudentStatus(studentUid);
+          if (statusData && (statusData.status === 'Applied' || statusData.status === 'Under Review')) {
+            navigate('/student/verification-pending');
+          } else {
+            navigate('/student/dashboard');
+          }
+        } catch (e) {
+          navigate('/student/dashboard');
+        }
       }
     } catch (err) {
       notify("Sign-in rejected: institutional credentials unrecognized or directory session timed out.", "error", 5000);

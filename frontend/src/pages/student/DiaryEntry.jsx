@@ -173,9 +173,9 @@ const DiaryEntry = () => {
                   className={`${styles.logItem} ${isAccepted ? styles.logItemAccepted : styles.logItemRejected}`}
                 >
                   <div className={styles.logHeader}>
-                    <span className={styles.logDate}>📅 Ledger Date: {item.date}</span>
+                    <span className={styles.logDate}>Ledger Date: {item.date}</span>
                     <span className={`${styles.statusBadge} ${isAccepted ? styles.statusAccepted : styles.statusRejected}`}>
-                      {isAccepted ? '✓ Accepted by AI Compliance' : '✕ Rejected by Automated Review'}
+                      {isAccepted ? 'Accepted by AI Compliance' : 'Rejected by Automated Review'}
                       {item.mentorOverridden && ' (Mentor Overridden)'}
                     </span>
                   </div>
@@ -191,7 +191,7 @@ const DiaryEntry = () => {
 
                   {item.topics && Array.isArray(item.topics) && item.topics.length > 0 && (
                     <div className={styles.topicsContainer}>
-                      <span className={styles.topicsTitle}>🏷️ Extracted Learning Themes (Module 6 Pipeline):</span>
+                      <span className={styles.topicsTitle}>Extracted Learning Themes (Module 6 Pipeline):</span>
                       {item.topics.map((t, idx) => (
                         <span key={idx} className={styles.topicTag}>#{t}</span>
                       ))}

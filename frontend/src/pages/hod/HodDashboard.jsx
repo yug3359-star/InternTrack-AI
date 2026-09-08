@@ -6,11 +6,11 @@ import { runStatusCheckNow } from '../../services/api';
 import styles from './HodDashboard.module.css';
 
 const chartData = [
-  { cohort: 'CS IV-A', students: 48, status: 'Active' },
-  { cohort: 'CS IV-B', students: 50, status: 'Active' },
-  { cohort: 'CS IV-C', students: 45, status: 'Review Flagged' },
-  { cohort: 'IT IV-A', students: 46, status: 'Active' },
-  { cohort: 'AI & DS IV', students: 42, status: 'Active' }
+  // { cohort: 'CS IV-A', students: 48, status: 'Active' },
+  // { cohort: 'CS IV-B', students: 50, status: 'Active' },
+  // { cohort: 'CS IV-C', students: 45, status: 'Review Flagged' },
+  // { cohort: 'IT IV-A', students: 46, status: 'Active' },
+  // { cohort: 'AI & DS IV', students: 42, status: 'Active' }
 ];
 
 const HodDashboard = () => {

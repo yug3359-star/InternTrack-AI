@@ -9,6 +9,7 @@ import PrivacyNotice from './pages/PrivacyNotice';
 import Unauthorized from './pages/Unauthorized';
 import ProtectedRoute from './components/ProtectedRoute';
 import StudentDashboard from './pages/student/StudentDashboard';
+import VerificationPending from './pages/student/VerificationPending';
 import TestSession from './pages/student/TestSession';
 import MentorDashboard from './pages/mentor/MentorDashboard';
 import BorderlineReviews from './pages/mentor/BorderlineReviews';
@@ -41,9 +42,11 @@ const App = () => {
                            location.pathname.includes('/analytics') ||
                            location.pathname.includes('/profile');
 
+  const hideNavbar = location.pathname.includes('/verification-pending');
+
   return (
     <div className={styles.appWrapper}>
-      <Navbar />
+      {!hideNavbar && <Navbar />}
       
       <div className={isDashboardRoute ? styles.dashboardLayout : styles.standaloneLayout}>
         {isDashboardRoute && <Sidebar />}
@@ -58,6 +61,7 @@ const App = () => {
             
             {/* Student-Scoped Institutional Routes */}
             <Route path="/student/register" element={<StudentRegister />} />
+            <Route path="/student/verification-pending" element={<ProtectedRoute allowedRoles={["student"]}><VerificationPending /></ProtectedRoute>} />
             <Route path="/student/dashboard" element={<ProtectedRoute allowedRoles={["student"]}><StudentDashboard /></ProtectedRoute>} />
             <Route path="/student/diaries" element={<ProtectedRoute allowedRoles={["student"]}><DiaryEntry /></ProtectedRoute>} />
             <Route path="/student/test-session/:testId?" element={<ProtectedRoute allowedRoles={["student"]}><TestSession /></ProtectedRoute>} />

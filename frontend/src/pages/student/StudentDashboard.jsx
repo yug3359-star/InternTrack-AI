@@ -67,7 +67,11 @@ const StudentDashboard = () => {
     const loadStatus = async () => {
       try {
         const data = await getStudentStatus(studentUid);
-        setAppStatus(data);
+        if (data && (data.status === 'Applied' || data.status === 'Under Review')) {
+          navigate('/student/verification-pending', { replace: true });
+        } else {
+          setAppStatus(data);
+        }
       } catch (err) {
         console.error("Failed to load status chronology:", err);
       }

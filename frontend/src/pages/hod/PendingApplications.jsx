@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { getPendingApplications, approveApplication, rejectApplication } from '../../services/api';
+import { getPendingApplications, approveApplication, rejectApplication, createApplication, updateApplication, deleteApplication } from '../../services/api';
 import { useNotification } from '../../hooks/useNotification';
 import StatusBadge from '../../components/StatusBadge';
 import styles from './PendingApplications.module.css';
@@ -30,6 +30,21 @@ const PendingApplications = () => {
   const [selectedCollegeMentor, setSelectedCollegeMentor] = useState('');
   const [rejectReason, setRejectReason] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
+
+  // CRUD State
+  const [showCrudModal, setShowCrudModal] = useState(false);
+  const [crudMode, setCrudMode] = useState('create'); // 'create' or 'edit'
+  const [crudFormData, setCrudFormData] = useState({
+    fullName: '',
+    collegeEmail: '',
+    branch: 'Computer Science & Engineering',
+    internshipDomain: '',
+    mentorName: '',
+    mentorEmail: '',
+    joiningDate: '',
+    completionDate: '',
+    status: 'Applied'
+  });
 
   const fetchApplications = useCallback(async (page, status) => {
     setLoading(true);
@@ -94,6 +109,84 @@ const PendingApplications = () => {
     }
   };
 
+  const handleCrudSubmit = async (e) => {
+    e.preventDefault();
+    setActionLoading(true);
+    try {
+      if (crudMode === 'create') {
+        const newApp = await createApplication(crudFormData);
+        notify("Application manually created.", "success", 4000);
+        setApplications(prev => [newApp, ...prev]);
+        setTotalRecords(prev => prev + 1);
+      } else {
+        await updateApplication(crudFormData.uid, crudFormData);
+        notify("Application manually updated.", "success", 4000);
+        setApplications(prev => prev.map(a => a.uid === crudFormData.uid ? { ...a, ...crudFormData } : a));
+      }
+      setShowCrudModal(false);
+    } catch (err) {
+      notify(`Failed to ${crudMode} application.`, "error", 4000);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDelete = async (app) => {
+    if (app.status === 'Ongoing') {
+      alert("Ongoing internships cannot be modified or deleted.");
+      return;
+    }
+
+    if (app.status === 'Completed' || app.status === 'Rejected') {
+      if (!window.confirm("Are you sure you want to permanently delete this application?")) return;
+      try {
+        await deleteApplication(app.uid);
+        notify("Application deleted successfully.", "success", 4000);
+        setApplications(prev => prev.filter(a => a.uid !== app.uid));
+        setTotalRecords(prev => prev - 1);
+      } catch (err) {
+        notify("Failed to delete application.", "error", 4000);
+      }
+    } else {
+      // Pending applications (Applied, Approved)
+      if (!window.confirm("Deleting a pending application will mark it as Rejected. Proceed?")) return;
+      try {
+        await rejectApplication(app.uid, "Rejected by HOD via Delete action.");
+        notify("Pending application marked as Rejected.", "warning", 4000);
+        setApplications(prev => prev.map(a => a.uid === app.uid ? { ...a, status: 'Rejected', rejectionReason: "Rejected by HOD via Delete action." } : a));
+      } catch (err) {
+        notify("Failed to reject application.", "error", 4000);
+      }
+    }
+  };
+
+  const openCreateModal = () => {
+    setCrudMode('create');
+    setCrudFormData({
+      fullName: '', collegeEmail: '', branch: 'Computer Science & Engineering', internshipDomain: '',
+      mentorName: '', mentorEmail: '', joiningDate: '', completionDate: '', status: 'Applied'
+    });
+    setShowCrudModal(true);
+  };
+
+  const openEditModal = (app, e) => {
+    e.stopPropagation();
+    setCrudMode('edit');
+    setCrudFormData({
+      uid: app.uid,
+      fullName: app.fullName || '',
+      collegeEmail: app.collegeEmail || '',
+      branch: app.branch || 'Computer Science & Engineering',
+      internshipDomain: app.internshipDomain || '',
+      mentorName: app.mentorName || '',
+      mentorEmail: app.mentorEmail || '',
+      joiningDate: app.joiningDate || '',
+      completionDate: app.completionDate || '',
+      status: app.status || 'Applied'
+    });
+    setShowCrudModal(true);
+  };
+
   const displayedApplications = applications.filter(app => {
     const matchesSearch = searchTerm === '' ||
       (app.fullName && app.fullName.toLowerCase().includes(searchTerm.toLowerCase())) ||
@@ -110,9 +203,14 @@ const PendingApplications = () => {
             <h1 className={styles.headerTitle}>HOD Departmental Applications & Lifecycle Evaluation </h1>
             <div className={styles.headerSub}>G H Raisoni College of Engineering, Nagpur</div>
           </div>
-          <div className={styles.recordBadge}>
-            <span className={styles.badgeLabel}>Total Records:</span>
-            <span className={styles.badgeCount}>{totalRecords}</span>
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            <button type="button" onClick={openCreateModal} className={styles.createBtn}>
+              + Create Application
+            </button>
+            <div className={styles.recordBadge}>
+              <span className={styles.badgeLabel}>Total Records:</span>
+              <span className={styles.badgeCount}>{totalRecords}</span>
+            </div>
           </div>
         </header>
 
@@ -228,13 +326,34 @@ const PendingApplications = () => {
                           {app.createdAt ? new Date(app.createdAt).toLocaleDateString() : 'N/A'}
                         </td>
                         <td onClick={(e) => e.stopPropagation()}>
-                          <button
-                            type="button"
-                            onClick={() => { setSelectedApp(app); setShowRejectBox(false); }}
-                            className={styles.viewBtn}
-                          >
-                            View Details
-                          </button>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', justifyContent: 'center' }}>
+                            {app.status !== 'Ongoing' && (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={(e) => openEditModal(app, e)}
+                                  className={styles.editBtn}
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={(e) => { e.stopPropagation(); handleDelete(app); }}
+                                  className={styles.deleteBtn}
+                                >
+                                  Delete
+                                </button>
+                              </>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => { setSelectedApp(app); setShowRejectBox(false); }}
+                              className={styles.viewBtn}
+                              style={{ width: app.status !== 'Ongoing' ? '100%' : 'auto', marginTop: app.status !== 'Ongoing' ? '4px' : '0' }}
+                            >
+                              View Details
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))
@@ -475,6 +594,77 @@ const PendingApplications = () => {
               </div>
             </div>
           </aside>
+        )}
+
+        {/* CRUD Modal for Create / Edit */}
+        {showCrudModal && (
+          <div className={styles.modalOverlay} onClick={() => setShowCrudModal(false)}>
+            <div className={styles.modalPanel} onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
+              <div className={styles.modalHeader}>
+                <h2 className={styles.modalTitle}>{crudMode === 'create' ? 'Create New Application' : 'Edit Application'}</h2>
+                <button type="button" className={styles.closeBtn} onClick={() => setShowCrudModal(false)}>✕</button>
+              </div>
+              <div className={styles.modalBody}>
+                <form id="crudForm" onSubmit={handleCrudSubmit}>
+                  <div className={styles.grid2}>
+                    <div className={styles.formGroup}>
+                      <label className={styles.formLabel}>Full Name</label>
+                      <input type="text" required className={styles.formInput} value={crudFormData.fullName} onChange={e => setCrudFormData({...crudFormData, fullName: e.target.value})} />
+                    </div>
+                    <div className={styles.formGroup}>
+                      <label className={styles.formLabel}>College Email</label>
+                      <input type="email" required className={styles.formInput} value={crudFormData.collegeEmail} onChange={e => setCrudFormData({...crudFormData, collegeEmail: e.target.value})} />
+                    </div>
+                    <div className={styles.formGroup}>
+                      <label className={styles.formLabel}>Branch</label>
+                      <select required className={styles.formSelect} value={crudFormData.branch} onChange={e => setCrudFormData({...crudFormData, branch: e.target.value})}>
+                        <option value="Computer Science & Engineering">Computer Science & Engineering</option>
+                        <option value="Information Technology">Information Technology</option>
+                        <option value="Artificial Intelligence & Data Science">Artificial Intelligence & Data Science</option>
+                        <option value="Electronics & Communication">Electronics & Communication</option>
+                      </select>
+                    </div>
+                    <div className={styles.formGroup}>
+                      <label className={styles.formLabel}>Internship Domain</label>
+                      <input type="text" required className={styles.formInput} value={crudFormData.internshipDomain} onChange={e => setCrudFormData({...crudFormData, internshipDomain: e.target.value})} />
+                    </div>
+                    <div className={styles.formGroup}>
+                      <label className={styles.formLabel}>Mentor Name</label>
+                      <input type="text" className={styles.formInput} value={crudFormData.mentorName} onChange={e => setCrudFormData({...crudFormData, mentorName: e.target.value})} />
+                    </div>
+                    <div className={styles.formGroup}>
+                      <label className={styles.formLabel}>Mentor Email</label>
+                      <input type="email" className={styles.formInput} value={crudFormData.mentorEmail} onChange={e => setCrudFormData({...crudFormData, mentorEmail: e.target.value})} />
+                    </div>
+                    <div className={styles.formGroup}>
+                      <label className={styles.formLabel}>Joining Date</label>
+                      <input type="date" required className={styles.formInput} value={crudFormData.joiningDate} onChange={e => setCrudFormData({...crudFormData, joiningDate: e.target.value})} />
+                    </div>
+                    <div className={styles.formGroup}>
+                      <label className={styles.formLabel}>Completion Date</label>
+                      <input type="date" required className={styles.formInput} value={crudFormData.completionDate} onChange={e => setCrudFormData({...crudFormData, completionDate: e.target.value})} />
+                    </div>
+                    <div className={styles.formGroup} style={{ gridColumn: '1 / -1' }}>
+                      <label className={styles.formLabel}>Status</label>
+                      <select required className={styles.formSelect} value={crudFormData.status} onChange={e => setCrudFormData({...crudFormData, status: e.target.value})}>
+                        <option value="Applied">Applied</option>
+                        <option value="Approved">Approved</option>
+                        <option value="Ongoing">Ongoing</option>
+                        <option value="Completed">Completed</option>
+                        <option value="Rejected">Rejected</option>
+                      </select>
+                    </div>
+                  </div>
+                </form>
+              </div>
+              <div className={styles.modalFooter}>
+                <button type="button" onClick={() => setShowCrudModal(false)} className={styles.modalCancelBtn}>Cancel</button>
+                <button type="submit" form="crudForm" disabled={actionLoading} className={styles.approveBtn} style={{ width: 'auto' }}>
+                  {actionLoading ? 'Saving...' : 'Save Application'}
+                </button>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </div>

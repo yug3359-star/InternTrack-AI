@@ -121,4 +121,52 @@ public class SecurityValidationDtos {
         public String getMeetingReason() { return meetingReason; }
         public void setMeetingReason(String meetingReason) { this.meetingReason = meetingReason; }
     }
+
+    public static class ApplicationCrudDto implements Serializable {
+        @NotBlank(message = "Full name is required")
+        private String fullName;
+
+        @NotBlank(message = "College email is required")
+        @Email(message = "Valid email is required")
+        private String collegeEmail;
+
+        @NotBlank(message = "Branch is required")
+        private String branch;
+
+        @NotBlank(message = "Internship domain is required")
+        private String internshipDomain;
+
+        private String mentorName;
+        private String mentorEmail;
+
+        @NotBlank(message = "Joining date is required")
+        private String joiningDate;
+
+        @NotBlank(message = "Completion date is required")
+        private String completionDate;
+
+        @NotBlank(message = "Status is required")
+        private String status;
+
+        public ApplicationCrudDto() {}
+
+        public String getFullName() { return fullName; }
+        public void setFullName(String fullName) { this.fullName = fullName; }
+        public String getCollegeEmail() { return collegeEmail; }
+        public void setCollegeEmail(String collegeEmail) { this.collegeEmail = collegeEmail; }
+        public String getBranch() { return branch; }
+        public void setBranch(String branch) { this.branch = branch; }
+        public String getInternshipDomain() { return internshipDomain; }
+        public void setInternshipDomain(String internshipDomain) { this.internshipDomain = internshipDomain; }
+        public String getMentorName() { return mentorName; }
+        public void setMentorName(String mentorName) { this.mentorName = mentorName; }
+        public String getMentorEmail() { return mentorEmail; }
+        public void setMentorEmail(String mentorEmail) { this.mentorEmail = mentorEmail; }
+        public String getJoiningDate() { return joiningDate; }
+        public void setJoiningDate(String joiningDate) { this.joiningDate = joiningDate; }
+        public String getCompletionDate() { return completionDate; }
+        public void setCompletionDate(String completionDate) { this.completionDate = completionDate; }
+        public String getStatus() { return status; }
+        public void setStatus(String status) { this.status = status; }
+    }
 }

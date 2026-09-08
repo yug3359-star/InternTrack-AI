@@ -76,7 +76,7 @@ const CountdownTimer = ({ durationSeconds = 3600, deadline = null, onTimeout, cl
 
   return (
     <span style={badgeStyle} className={className} title={`Time remaining to complete check-in: ${formatTime(secondsLeft)}`}>
-      ⏳ {formatTime(secondsLeft)}
+      {formatTime(secondsLeft)}
     </span>
   );
 };

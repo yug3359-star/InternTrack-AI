@@ -63,4 +63,35 @@ public class HodController {
         auditLogger.logAdminAction("HOD_APPLICATION_REJECTION", hodUid, uid, "Rejected candidate onboarding application. Reason: " + (reason != null ? reason : "Unspecified compliance failure"));
         return ResponseEntity.ok(result);
     }
+
+    @PostMapping
+    public ResponseEntity<Map<String, Object>> createApplication(
+            @Valid @RequestBody SecurityValidationDtos.ApplicationCrudDto payload) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String hodUid = (auth != null && auth.getName() != null) ? auth.getName() : "hod-directory-admin";
+        Map<String, Object> result = hodService.createApplication(payload, hodUid);
+        auditLogger.logAdminAction("HOD_APPLICATION_CREATION", hodUid, (String) result.get("uid"), "Manually created student application");
+        return ResponseEntity.ok(result);
+    }
+
+    @PutMapping("/{uid}")
+    public ResponseEntity<Map<String, Object>> updateApplication(
+            @PathVariable String uid,
+            @Valid @RequestBody SecurityValidationDtos.ApplicationCrudDto payload) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String hodUid = (auth != null && auth.getName() != null) ? auth.getName() : "hod-directory-admin";
+        Map<String, Object> result = hodService.updateApplication(uid, payload, hodUid);
+        auditLogger.logAdminAction("HOD_APPLICATION_UPDATE", hodUid, uid, "Manually updated student application");
+        return ResponseEntity.ok(result);
+    }
+
+    @DeleteMapping("/{uid}")
+    public ResponseEntity<Map<String, Object>> deleteApplication(
+            @PathVariable String uid) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String hodUid = (auth != null && auth.getName() != null) ? auth.getName() : "hod-directory-admin";
+        Map<String, Object> result = hodService.deleteApplication(uid, hodUid);
+        auditLogger.logAdminAction("HOD_APPLICATION_DELETION", hodUid, uid, "Manually deleted student application");
+        return ResponseEntity.ok(result);
+    }
 }

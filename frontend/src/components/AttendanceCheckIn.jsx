@@ -21,7 +21,7 @@ const AttendanceCheckIn = ({ activeAttendance, meetingQuota, onRespond, onClose,
         
         <div className={styles.header}>
           <h2 id="attendance-title" className={styles.title}>
-            <span>📋</span> Daily Attendance
+            Daily Attendance
           </h2>
           <CountdownTimer 
             durationSeconds={3600} 
@@ -41,7 +41,7 @@ const AttendanceCheckIn = ({ activeAttendance, meetingQuota, onRespond, onClose,
           </div>
           {isQuotaExhausted ? (
             <span className={styles.quotaExhausted}>
-              ⚠️ Meeting quota exhausted for this month. You must mark Present directly.
+              Meeting quota exhausted for this month. You must mark Present directly.
             </span>
           ) : (
             <span style={{ fontSize: '0.85rem', color: '#64748B' }}>
@@ -57,7 +57,7 @@ const AttendanceCheckIn = ({ activeAttendance, meetingQuota, onRespond, onClose,
             onClick={() => onRespond('present')}
             disabled={loading}
           >
-            {loading ? 'Processing...' : '✓ Mark Present'}
+            {loading ? 'Processing...' : 'Mark Present'}
           </button>
 
           <button 
@@ -67,12 +67,12 @@ const AttendanceCheckIn = ({ activeAttendance, meetingQuota, onRespond, onClose,
             disabled={loading || isQuotaExhausted}
             title={isQuotaExhausted ? 'Monthly meeting override quota exhausted' : 'Excuses today\'s attendance check using 1 meeting pass'}
           >
-            🤝 I'm in a meeting ({remaining} passes left)
+            I'm in a meeting ({remaining} passes left)
           </button>
         </div>
 
         <p className={styles.footerNote}>
-          🔒 Institutional verification logged automatically to real Firestore records.
+          Institutional verification logged automatically to real Firestore records.
         </p>
 
       </div>

@@ -7,6 +7,7 @@ import com.google.cloud.firestore.Query;
 import com.google.cloud.firestore.QuerySnapshot;
 import com.google.firebase.cloud.FirestoreClient;
 import com.interntrack.exception.InvalidRegistrationException;
+import com.interntrack.dto.SecurityValidationDtos;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -291,6 +292,94 @@ public class HodService {
         response.put("uid", uid);
         response.put("status", "Rejected");
         response.put("message", "Application rejected");
+        return response;
+    }
+
+    public Map<String, Object> createApplication(SecurityValidationDtos.ApplicationCrudDto dto, String hodUid) {
+        String newUid = "man-app-" + System.currentTimeMillis();
+        long timestamp = System.currentTimeMillis();
+
+        Map<String, Object> record = new HashMap<>();
+        record.put("uid", newUid);
+        record.put("fullName", dto.getFullName());
+        record.put("collegeEmail", dto.getCollegeEmail());
+        record.put("branch", dto.getBranch());
+        record.put("internshipDomain", dto.getInternshipDomain());
+        record.put("mentorName", dto.getMentorName());
+        record.put("mentorEmail", dto.getMentorEmail());
+        record.put("joiningDate", dto.getJoiningDate());
+        record.put("completionDate", dto.getCompletionDate());
+        record.put("status", dto.getStatus());
+        record.put("createdAt", timestamp);
+        record.put("createdBy", hodUid);
+
+        try {
+            Firestore db = FirestoreClient.getFirestore();
+            if (db != null) {
+                db.collection("internships").document(newUid).set(record).get();
+            }
+        } catch (Exception e) {
+            log.warn("Cloud Firestore update unreachable during application creation: {}", e.getMessage());
+        }
+
+        devSimulatedApplications.put(newUid, record);
+
+        Map<String, Object> response = new HashMap<>(record);
+        response.put("message", "Application created");
+        return response;
+    }
+
+    public Map<String, Object> updateApplication(String uid, SecurityValidationDtos.ApplicationCrudDto dto, String hodUid) {
+        long timestamp = System.currentTimeMillis();
+
+        Map<String, Object> updates = new HashMap<>();
+        updates.put("fullName", dto.getFullName());
+        updates.put("collegeEmail", dto.getCollegeEmail());
+        updates.put("branch", dto.getBranch());
+        updates.put("internshipDomain", dto.getInternshipDomain());
+        updates.put("mentorName", dto.getMentorName());
+        updates.put("mentorEmail", dto.getMentorEmail());
+        updates.put("joiningDate", dto.getJoiningDate());
+        updates.put("completionDate", dto.getCompletionDate());
+        updates.put("status", dto.getStatus());
+        updates.put("updatedAt", timestamp);
+        updates.put("updatedBy", hodUid);
+
+        try {
+            Firestore db = FirestoreClient.getFirestore();
+            if (db != null && !devSimulatedApplications.containsKey(uid)) {
+                db.collection("internships").document(uid).update(updates).get();
+            }
+        } catch (Exception e) {
+            log.warn("Cloud Firestore update unreachable during application update for {}: {}", uid, e.getMessage());
+        }
+
+        if (devSimulatedApplications.containsKey(uid)) {
+            Map<String, Object> record = devSimulatedApplications.get(uid);
+            record.putAll(updates);
+        }
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("uid", uid);
+        response.put("message", "Application updated");
+        return response;
+    }
+
+    public Map<String, Object> deleteApplication(String uid, String hodUid) {
+        try {
+            Firestore db = FirestoreClient.getFirestore();
+            if (db != null && !devSimulatedApplications.containsKey(uid)) {
+                db.collection("internships").document(uid).delete().get();
+            }
+        } catch (Exception e) {
+            log.warn("Cloud Firestore update unreachable during application deletion for {}: {}", uid, e.getMessage());
+        }
+
+        devSimulatedApplications.remove(uid);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("uid", uid);
+        response.put("message", "Application deleted");
         return response;
     }
 

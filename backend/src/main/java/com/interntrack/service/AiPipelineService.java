@@ -73,10 +73,14 @@ public class AiPipelineService {
                 "Declared Internship Domain: " + internshipDomain + "\n" +
                 "Past 2 Weeks' Summary Logs: " + (pastEntries.isEmpty() ? "None (First active log submitted)" : String.join(" | ", pastEntries)) + "\n\n" +
                 "Today's Submitted Entry Text: \"" + entryText + "\"\n\n" +
-                "Evaluate if today's entry genuinely relates to the internship domain. Off-topic entries (e.g., recipes, cooking, personal unrelated sports) must be rejected.";
+                "Evaluate if today's entry genuinely relates to the internship domain AND makes logical technical sense. " +
+                "You must strictly REJECT the entry if it contains:\n" +
+                "1. Off-topic content (e.g., recipes, cooking, vacations, sports).\n" +
+                "2. Nonsensical 'buzzword salads' or technically contradictory statements (e.g., writing SQL for MongoDB, using Java as a frontend browser rendering engine, etc.).\n" +
+                "Only accept if the technical description is coherent and logically sound.";
 
         Map<String, Object> result;
-        if (llmApiKey != null && !llmApiKey.trim().isEmpty() && !llmApiKey.equalsIgnoreCase("AIzaSyDemoPlaceholderKeyReplaceWithLive")) {
+        if (llmApiKey != null && !llmApiKey.trim().isEmpty() && !llmApiKey.equalsIgnoreCase("AIzaSyDemoPlaceholderKeyReplaceWithLive") && !llmApiKey.equalsIgnoreCase("your_groq_api_key_here")) {
             result = executeWithRateLimitBackoff(systemPrompt, userPrompt, internshipDomain, entryText, pastEntries);
         } else {
             log.info("[DEV MODE FALLBACK] External LLM API key not configured. Executing localized semantic domain-matching evaluation.");
@@ -295,7 +299,7 @@ public class AiPipelineService {
 
         List<Map<String, Object>> generatedQuestions;
         String source;
-        if (llmApiKey != null && !llmApiKey.trim().isEmpty() && !llmApiKey.equalsIgnoreCase("AIzaSyDemoPlaceholderKeyReplaceWithLive")) {
+        if (llmApiKey != null && !llmApiKey.trim().isEmpty() && !llmApiKey.equalsIgnoreCase("AIzaSyDemoPlaceholderKeyReplaceWithLive") && !llmApiKey.equalsIgnoreCase("your_groq_api_key_here")) {
             generatedQuestions = executeQuestionGenWithBackoff(systemPrompt, userPrompt, uid, domain, pastEntries);
             source = "REAL_AI_OPENAI";
         } else {
