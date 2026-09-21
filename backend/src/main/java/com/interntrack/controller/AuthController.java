@@ -35,7 +35,7 @@ public class AuthController {
     public ResponseEntity<Map<String, Object>> promoteHod(@Valid @RequestBody SecurityValidationDtos.PromoteHodDto request) {
         String targetEmail = request.getTargetEmail();
         String setupSecret = request.getSetupSecret();
-        Map<String, Object> result = authService.promoteToRole(targetEmail, setupSecret, "hod");
+        Map<String, Object> result = authService.promoteToRole(targetEmail, setupSecret, "hod", request.getFullName());
         auditLogger.logAdminAction("BREAK_GLASS_HOD_PROMOTION", "EMERGENCY_SETUP_SECRET", targetEmail, "Promoted account to HOD administrative status via verified secret challenge");
         return ResponseEntity.ok(result);
     }
@@ -44,7 +44,7 @@ public class AuthController {
     public ResponseEntity<Map<String, Object>> promoteMentor(@Valid @RequestBody SecurityValidationDtos.PromoteHodDto request) {
         String targetEmail = request.getTargetEmail();
         String setupSecret = request.getSetupSecret();
-        Map<String, Object> result = authService.promoteToRole(targetEmail, setupSecret, "mentor");
+        Map<String, Object> result = authService.promoteToRole(targetEmail, setupSecret, "mentor", request.getFullName());
         auditLogger.logAdminAction("BREAK_GLASS_MENTOR_PROMOTION", "EMERGENCY_SETUP_SECRET", targetEmail, "Promoted account to MENTOR administrative status via verified secret challenge");
         return ResponseEntity.ok(result);
     }

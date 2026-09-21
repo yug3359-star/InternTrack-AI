@@ -33,6 +33,7 @@ public class DiaryService {
     private final Map<String, Map<String, Object>> devDiaries = new ConcurrentHashMap<>();
     private final Map<String, Map<String, Object>> devSuspicious = new ConcurrentHashMap<>();
     private final Map<String, Integer> devWarnings = new ConcurrentHashMap<>();
+    private final Map<String, Object> submissionLocks = new ConcurrentHashMap<>();
 
     public DiaryService() {
         // Initialize baseline demonstrated evaluations for dev test student dev-stud-107
@@ -42,21 +43,24 @@ public class DiaryService {
     /**
      * Submits a student work diary and triggers automated mentor evaluation.
      */
-    public synchronized Map<String, Object> submitDiary(String uid, String date, String entryText, boolean rejectedDueToFaceMismatch, String studentName) {
+    public Map<String, Object> submitDiary(String uid, String date, String entryText, boolean rejectedDueToFaceMismatch, String studentName) {
         String docId = uid + "_" + date;
-        log.info("Processing diary submission for student [{}] on date [{}]. Face mismatch: {}", uid, date, rejectedDueToFaceMismatch);
+        
+        Object lock = submissionLocks.computeIfAbsent(docId, k -> new Object());
+        synchronized (lock) {
+            log.info("Processing diary submission for student [{}] on date [{}]. Face mismatch: {}", uid, date, rejectedDueToFaceMismatch);
 
-        String today = LocalDate.now(ZoneId.of("Asia/Kolkata")).toString();
-        if (!today.equals(date)) {
-            log.warn("Diary submission rejected: Provided date [{}] does not match current system date [{}].", date, today);
-            throw new IllegalStateException("Diary entries can only be submitted for the current day.");
-        }
+            String today = LocalDate.now(ZoneId.of("Asia/Kolkata")).toString();
+            if (!today.equals(date)) {
+                log.warn("Diary submission rejected: Provided date [{}] does not match current system date [{}].", date, today);
+                throw new IllegalStateException("Diary entries can only be submitted for the current day.");
+            }
 
-        // 1. Check for resubmission attempt on already decided date
-        if (isAlreadyDecided(docId)) {
-            log.warn("Resubmission rejected: Date [{}] already has a locked Accepted or Rejected record.", date);
-            throw new IllegalStateException("Resubmissions are prohibited for dates marked as Rejected or Accepted.");
-        }
+            // 1. Check for resubmission attempt on already decided date
+            if (isAlreadyDecided(docId)) {
+                log.warn("Resubmission rejected: Date [{}] already has a locked Accepted or Rejected record.", date);
+                throw new IllegalStateException("Resubmissions are prohibited for dates marked as Rejected or Accepted.");
+            }
 
         long now = System.currentTimeMillis();
         Map<String, Object> record = new HashMap<>();
@@ -77,6 +81,10 @@ public class DiaryService {
 
             saveToSuspicious(docId, record);
             incrementMonthlyWarningCounter(uid);
+            
+            if (dailyStatusService != null) {
+                dailyStatusService.evaluateDailyStatus(uid, LocalDate.parse(date, DateTimeFormatter.ofPattern("yyyy-MM-dd")), 0);
+            }
             return record;
         }
 
@@ -101,15 +109,24 @@ public class DiaryService {
                 record.put("status", "accepted");
                 saveToDiaries(docId, record);
             }
-        } catch (Exception e) {
-            log.error("Error awaiting AI evaluation pipeline: {}", e.getMessage(), e);
-            record.put("status", "accepted");
-            record.put("reviewReason", "Accepted via emergency automated fallback; AI analysis timed out.");
-            record.put("topics", List.of("Engineering Development Log"));
-            saveToDiaries(docId, record);
-        }
 
-        return record;
+            if (dailyStatusService != null) {
+                dailyStatusService.evaluateDailyStatus(uid, LocalDate.parse(date, DateTimeFormatter.ofPattern("yyyy-MM-dd")), 0);
+            }
+            } catch (Exception e) {
+                log.error("Error awaiting AI evaluation pipeline: {}", e.getMessage(), e);
+                record.put("status", "accepted");
+                record.put("reviewReason", "Accepted via emergency automated fallback; AI analysis timed out.");
+                record.put("topics", List.of("Engineering Development Log"));
+                saveToDiaries(docId, record);
+
+                if (dailyStatusService != null) {
+                    dailyStatusService.evaluateDailyStatus(uid, LocalDate.parse(date, DateTimeFormatter.ofPattern("yyyy-MM-dd")), 0);
+                }
+            }
+
+            return record;
+        }
     }
 
     /**
@@ -257,38 +274,50 @@ public class DiaryService {
     }
 
     /**
-     * Daily audit job running at 18:00 to verify all active students submitted their daily work diary.
-     * If they missed it, apply an absence penalty for the day.
+     * Daily audit job running at 00:01 AM to verify all active students submitted their daily work diary for the previous 24 hours.
+     * If they missed it by midnight, apply an absence penalty for that day.
      */
-    @Scheduled(cron = "0 0 18 * * *")
+    @Scheduled(cron = "0 1 0 * * *")
     public void executeDailyDiaryAbsenceAudit() {
-        String today = LocalDate.now(ZoneId.of("Asia/Kolkata")).toString();
-        log.info("Initiating daily absence audit for missing diary submissions on date [{}]", today);
+        LocalDate yesterdayDate = LocalDate.now(ZoneId.of("Asia/Kolkata")).minusDays(1);
+        String targetDate = yesterdayDate.toString();
+        String targetDayName = yesterdayDate.getDayOfWeek().getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.ENGLISH);
 
-        List<String> activeStudents = new ArrayList<>();
+        log.info("Initiating daily absence audit for missing diary submissions on date [{}]", targetDate);
+
+        Map<String, DocumentSnapshot> activeDocs = new HashMap<>();
         if (firestore != null) {
             try {
                 // Fetch all students with Ongoing internships
                 List<QueryDocumentSnapshot> docs = firestore.collection("internships").whereEqualTo("status", "Ongoing").get().get().getDocuments();
                 for (QueryDocumentSnapshot doc : docs) {
-                    activeStudents.add(doc.getId());
+                    activeDocs.put(doc.getId(), doc);
                 }
             } catch (Exception e) {
                 log.warn("Could not query Firestore for active internships: {}", e.getMessage());
             }
         }
         
-        if (activeStudents.isEmpty()) {
-            activeStudents.add("dev-stud-107");
-            activeStudents.add("dev-stud-102");
-        }
+        if (!activeDocs.containsKey("dev-stud-107")) activeDocs.put("dev-stud-107", null);
+        if (!activeDocs.containsKey("dev-stud-102")) activeDocs.put("dev-stud-102", null);
 
-        for (String uid : activeStudents) {
-            String docId = uid + "_" + today;
+        for (Map.Entry<String, DocumentSnapshot> entry : activeDocs.entrySet()) {
+            String uid = entry.getKey();
+            DocumentSnapshot d = entry.getValue();
+
+            if (d != null && d.contains("workingDays")) {
+                List<String> workingDays = (List<String>) d.get("workingDays");
+                if (workingDays != null && !workingDays.isEmpty() && !workingDays.contains(targetDayName)) {
+                    log.info("Skipping diary audit for student [{}] because target date ({}) is a rest day.", uid, targetDayName);
+                    continue;
+                }
+            }
+
+            String docId = uid + "_" + targetDate;
             if (!isAlreadyDecided(docId)) {
-                log.warn("COMPLIANCE VIOLATION: Student [{}] failed to submit daily diary for [{}]. Applying absence penalty.", uid, today);
+                log.warn("COMPLIANCE VIOLATION: Student [{}] failed to submit daily diary for [{}]. Applying absence penalty.", uid, targetDate);
                 if (dailyStatusService != null) {
-                    dailyStatusService.recordAttendanceResult(uid, today, "absent", "Failed to submit mandatory daily work diary.");
+                    dailyStatusService.recordAttendanceResult(uid, targetDate, "absent", "Failed to submit mandatory daily work diary.");
                 }
             }
         }
@@ -306,6 +335,13 @@ public class DiaryService {
             record.put("overriddenBy", mentorUid != null ? mentorUid : "Faculty Mentor");
             record.put("reviewReason", "Faculty Mentor Overrode AI Rejection (Verified compliance by " + (mentorUid != null ? mentorUid : "Faculty") + ")");
             devDiaries.put(docId, record);
+
+            if (dailyStatusService != null) {
+                String[] parts = docId.split("_");
+                if (parts.length == 2) {
+                    dailyStatusService.evaluateDailyStatus(parts[0], LocalDate.parse(parts[1], DateTimeFormatter.ofPattern("yyyy-MM-dd")), 0);
+                }
+            }
         }
     }
 

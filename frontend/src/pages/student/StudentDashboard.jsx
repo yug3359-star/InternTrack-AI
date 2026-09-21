@@ -23,6 +23,7 @@ const StudentDashboard = () => {
     activePopup,
     setActivePopup,
     meetingQuota,
+    popupStatus,
     loadingResponse,
     respondToPopup,
     triggerDevTestPopup
@@ -60,7 +61,9 @@ const StudentDashboard = () => {
 
   const [appStatus, setAppStatus] = useState(null);
   const [permissionState, setPermissionState] = useState(permission);
-  const [claimingMeeting, setClaimingMeeting] = useState(false); useEffect(() => {
+  const [claimingMeeting, setClaimingMeeting] = useState(false);
+  const [localClaimedToday, setLocalClaimedToday] = useState(false);
+  useEffect(() => {
     if ('Notification' in window) {
       setPermissionState(Notification.permission);
     }
@@ -98,7 +101,7 @@ const StudentDashboard = () => {
   const isQuotaExhausted = rawUsed >= quotaLimit;
 
   const todayDateStr = new Date().toISOString().split('T')[0];
-  const alreadyClaimedToday = attendanceHistory?.some(rec => rec.date === todayDateStr && rec.status === 'excused_meeting');
+  const alreadyClaimedToday = localClaimedToday || attendanceHistory?.some(rec => rec.date === todayDateStr && rec.status === 'excused_meeting');
 
   const handleClaimMeetingDay = async () => {
     if (isQuotaExhausted) {
@@ -113,6 +116,7 @@ const StudentDashboard = () => {
       if (meetingQuota) {
         meetingQuota.used = res.data.quotaUsed;
       }
+      setLocalClaimedToday(true);
     } catch (err) {
       console.error("Error claiming meeting day:", err);
       notify(err.response?.data?.message || "Failed to claim meeting exemption.", "error", 5000);
@@ -188,13 +192,24 @@ const StudentDashboard = () => {
         </div>
 
         <div className={styles.quotaContainer}>
-          <div className={styles.quotaBox}>
-            <span style={{ fontSize: '12px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>Monthly Meeting Exemption Quota</span>
-            <div className={styles.quotaCount}>
-              {cappedUsed} / {quotaLimit} Used
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div className={styles.quotaBox}>
+              <span style={{ fontSize: '12px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>Monthly Meeting Exemption Quota</span>
+              <div className={styles.quotaCount}>
+                {cappedUsed} / {quotaLimit} Used
+              </div>
+              <div className={styles.progressBarOuter}>
+                <div className={styles.progressBarInner} style={{ width: `${quotaUsedPercent}%` }} />
+              </div>
             </div>
-            <div className={styles.progressBarOuter}>
-              <div className={styles.progressBarInner} style={{ width: `${quotaUsedPercent}%` }} />
+            <div className={styles.quotaBox} style={{ background: '#F8FAFC', borderColor: '#E2E8F0' }}>
+              <span style={{ fontSize: '12px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>Daily Check-Ins</span>
+              <div className={styles.quotaCount} style={{ color: '#0F172A', fontSize: '20px' }}>
+                {popupStatus?.popupsRemaining ?? '-'} Remaining
+              </div>
+              <span style={{ fontSize: '13px', color: '#475569' }}>
+                Completed: <strong>{popupStatus?.popupsElapsed ?? '-'}</strong> / {popupStatus?.totalPopupsScheduled ?? '-'} | Missed: <strong style={{ color: popupStatus?.missedToday > 0 ? '#DC2626' : 'inherit' }}>{popupStatus?.missedToday ?? 0}</strong> / 3
+              </span>
             </div>
           </div>
           <div>

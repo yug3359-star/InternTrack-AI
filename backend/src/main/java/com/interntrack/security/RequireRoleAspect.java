@@ -42,9 +42,9 @@ public class RequireRoleAspect {
         String[] allowedRoles = requireRole.value();
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 
-        if (auth == null || !auth.isAuthenticated()) {
+        if (auth == null || !auth.isAuthenticated() || auth.getPrincipal().equals("anonymousUser")) {
             log.warn("RBAC Rejection: unauthenticated attempt to execute {}", method.getName());
-            throw new AccessDeniedException("You do not have permission to perform this action");
+            throw new org.springframework.security.authentication.InsufficientAuthenticationException("Full authentication is required to access this resource");
         }
 
         boolean hasRequiredRole = false;

@@ -1,30 +1,57 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { getAssignedStudents } from '../../services/api';
+import api, { getAssignedStudents } from '../../services/api';
 import { useNotification } from '../../hooks/useNotification';
+import { useAuth } from '../../hooks/useAuth';
 import styles from './MentorDashboard.module.css';
 
-const MENTOR_NAME = "Dr. Rajesh K. (CS Dept)"; // Simulated logged-in mentor
-
 const MentorDashboard = () => {
+  const { user } = useAuth();
   const { notify } = useNotification();
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterText, setFilterText] = useState('');
+  const [pendingReviewsCount, setPendingReviewsCount] = useState(0);
+  const [mentorName, setMentorName] = useState(user?.displayName || 'Faculty Mentor');
 
   useEffect(() => {
-    const fetchStudents = async () => {
+    const fetchDashboardData = async () => {
       try {
-        const data = await getAssignedStudents(MENTOR_NAME);
+        if (!user) return;
+        
+        let fetchedName = mentorName;
+        // Fetch accurate mentor profile name from backend
+        try {
+          const profileRes = await api.get('/profile');
+          if (profileRes.data && profileRes.data.fullName) {
+            fetchedName = profileRes.data.fullName;
+            setMentorName(fetchedName);
+          }
+        } catch (e) {
+          console.warn("Could not fetch mentor profile name", e);
+        }
+
+        // Fetch students
+        const data = await getAssignedStudents(fetchedName);
         setStudents(data);
+
+        // Fetch pending review counts
+        try {
+          const reviewRes = await api.get('/mentor/borderline-reviews');
+          if (reviewRes?.data?.totalPending !== undefined) {
+             setPendingReviewsCount(reviewRes.data.totalPending);
+          }
+        } catch (e) {
+          console.warn("Could not fetch borderline review counts", e);
+        }
       } catch (err) {
-        notify("Failed to load assigned students from server.", "error");
+        notify("Failed to load dashboard metrics from server.", "error");
       } finally {
         setLoading(false);
       }
     };
-    fetchStudents();
-  }, [notify]);
+    fetchDashboardData();
+  }, [notify, user]);
 
   const filteredStudents = students.filter(item =>
     (item.fullName && item.fullName.toLowerCase().includes(filterText.toLowerCase())) ||
@@ -37,11 +64,11 @@ const MentorDashboard = () => {
       <header className={styles.topSection}>
         <div>
           <h1 className={styles.pageTitle}>Faculty Dashboard</h1>
-          <p className={styles.metaSub}>Faculty Advisor: Dr. Rajesh K.</p>
+          <p className={styles.metaSub}>Faculty Advisor: {mentorName}</p>
         </div>
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
           <Link to="/mentor/borderline-reviews" style={{ backgroundColor: '#D97706', color: '#FFF', padding: '8px 16px', borderRadius: '4px', textDecoration: 'none', fontWeight: 700, fontSize: '14px', border: '1px solid #B45309' }}>
-            Borderline Reviews (2 Pending)
+            Borderline Reviews ({pendingReviewsCount} Pending)
           </Link>
 
           <div className={styles.headerBadge}>
@@ -60,7 +87,7 @@ const MentorDashboard = () => {
 
         <div className={styles.statusBox}>
           <span className={styles.boxLabel}>Pending Reviews</span>
-          <span className={styles.boxNumAlert}>2</span>
+          <span className={styles.boxNumAlert}>{pendingReviewsCount}</span>
           <span className={styles.boxNote}>Requires your immediate audit</span>
         </div>
       </section>
@@ -87,6 +114,7 @@ const MentorDashboard = () => {
                 <th>Student Practitioner</th>
                 <th>Branch</th>
                 <th>Current Status</th>
+                <th>Attendance</th>
                 <th>Joining Date</th>
                 <th className={styles.actionsHeader}>Audit Controls</th>
               </tr>
@@ -94,13 +122,13 @@ const MentorDashboard = () => {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan="5" style={{ padding: '24px', textAlign: 'center' }}>
+                  <td colSpan="6" style={{ padding: '24px', textAlign: 'center' }}>
                     Loading your assigned students...
                   </td>
                 </tr>
               ) : filteredStudents.length === 0 ? (
                 <tr>
-                  <td colSpan="5" className={styles.emptyNotice}>
+                  <td colSpan="6" className={styles.emptyNotice}>
                     No students currently allocated to you by the Head of Department.
                   </td>
                 </tr>
@@ -118,6 +146,11 @@ const MentorDashboard = () => {
                     <td>
                       <span className={item.status === 'Ongoing' ? styles.lowHoursBadge : ''} style={{ padding: '4px 8px', borderRadius: '4px', backgroundColor: '#F0FDF4', color: '#166534', border: '1px solid #BBF7D0', fontWeight: 600 }}>
                         {item.status || 'Approved'}
+                      </span>
+                    </td>
+                    <td>
+                      <span style={{ fontWeight: 600, color: (item.attendancePercentage && item.attendancePercentage < 75) ? '#dc2626' : '#166534' }}>
+                        {item.attendancePercentage ?? 0.0}%
                       </span>
                     </td>
                     <td className={styles.dateText}>{item.joiningDate || 'Pending'}</td>

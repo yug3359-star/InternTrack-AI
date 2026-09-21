@@ -41,11 +41,26 @@ public class MentorReviewService {
     public String createBorderlineReview(String studentUid, double similarityScore, String checkInPhotoUrl, String referencePhotoUrl) {
         String reviewId = "REV-" + System.currentTimeMillis() + "-" + (int)(Math.random() * 1000);
         
+        String studentName = "Unknown Student";
+        String domain = "Internship";
+        
+        if (firestore != null) {
+            try {
+                DocumentSnapshot internDoc = firestore.collection("internships").document(studentUid).get().get();
+                if (internDoc.exists()) {
+                    studentName = internDoc.getString("fullName");
+                    domain = internDoc.getString("internshipDomain");
+                }
+            } catch (Exception e) {
+                log.warn("Could not fetch student data for {}: {}", studentUid, e.getMessage());
+            }
+        }
+        
         Map<String, Object> record = new HashMap<>();
         record.put("reviewId", reviewId);
         record.put("studentUid", studentUid);
-        record.put("studentName", getMockStudentName(studentUid));
-        record.put("internshipDomain", getMockStudentDomain(studentUid));
+        record.put("studentName", studentName);
+        record.put("internshipDomain", domain);
         record.put("similarityScore", Math.round(similarityScore * 10.0) / 10.0);
         record.put("checkInPhotoUrl", checkInPhotoUrl != null ? checkInPhotoUrl : "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200");
         record.put("referencePhotoUrl", referencePhotoUrl != null ? referencePhotoUrl : "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200");
@@ -68,47 +83,41 @@ public class MentorReviewService {
         return reviewId;
     }
 
-    /**
-     * Retrieves all pending borderline reviews for faculty evaluation from real Firestore database.
-     */
-    public List<Map<String, Object>> getPendingReviews() {
+    public List<Map<String, Object>> getPendingReviews(String mentorName, boolean isHod) {
+        List<Map<String, Object>> liveList = new ArrayList<>();
         if (firestore != null) {
             try {
                 Query query = firestore.collection("mentor_reviews").whereEqualTo("status", "PENDING_REVIEW");
                 ApiFuture<QuerySnapshot> future = query.get();
                 List<QueryDocumentSnapshot> docs = future.get().getDocuments();
-                List<Map<String, Object>> liveList = new ArrayList<>();
+                
                 for (DocumentSnapshot doc : docs) {
-                    liveList.add(doc.getData());
+                    Map<String, Object> data = doc.getData();
+                    if (data != null) {
+                        String studentUid = (String) data.get("studentUid");
+                        if (studentUid != null) {
+                            if (isHod) {
+                                liveList.add(data);
+                            } else {
+                                DocumentSnapshot internDoc = firestore.collection("internships").document(studentUid).get().get();
+                                if (internDoc.exists() && mentorName.equals(internDoc.getString("collegeMentor"))) {
+                                    liveList.add(data);
+                                }
+                            }
+                        }
+                    }
                 }
                 liveList.sort((a, b) -> Long.compare(
                         ((Number) b.getOrDefault("timestamp", 0L)).longValue(),
                         ((Number) a.getOrDefault("timestamp", 0L)).longValue()
                 ));
-                if (!liveList.isEmpty()) {
-                    return liveList;
-                }
             } catch (Exception e) {
-                log.warn("Error querying Firestore mentor_reviews: {}. Utilizing memory fallback.", e.getMessage());
+                log.error("Error querying Firestore mentor_reviews: {}", e.getMessage());
             }
         }
-
-        List<Map<String, Object>> pendingList = new ArrayList<>();
-        for (Map<String, Object> rev : borderlineReviewRegistry.values()) {
-            if ("PENDING_REVIEW".equals(rev.get("status"))) {
-                pendingList.add(rev);
-            }
-        }
-        pendingList.sort((a, b) -> Long.compare(
-                ((Number) b.getOrDefault("timestamp", 0L)).longValue(),
-                ((Number) a.getOrDefault("timestamp", 0L)).longValue()
-        ));
-        return pendingList;
+        return liveList;
     }
 
-    /**
-     * Executes one-tap resolution ("APPROVE" or "REJECT") on a borderline candidate check-in in Firestore.
-     */
     public Map<String, Object> resolveReview(String reviewId, String action, String mentorUid, String notes) {
         String cleanAction = "APPROVE".equalsIgnoreCase(action) ? "APPROVED" : "REJECTED";
         long now = System.currentTimeMillis();
@@ -137,56 +146,6 @@ public class MentorReviewService {
             }
         }
 
-        if (!borderlineReviewRegistry.containsKey(reviewId)) {
-            throw new InvalidRegistrationException("Target borderline review record not found: " + reviewId);
-        }
-
-        Map<String, Object> record = borderlineReviewRegistry.get(reviewId);
-        record.put("status", cleanAction);
-        record.put("resolvedBy", resolver);
-        record.put("resolvedAt", now);
-        if (notes != null && !notes.trim().isEmpty()) {
-            record.put("mentorNotes", notes.trim());
-        }
-
-        log.info("Mentor [{}] resolved borderline review [{}] with final adjudication: [{}]", resolver, reviewId, cleanAction);
-        return record;
-    }
-
-    private void initializeSampleBorderlineReviews() {
-        createSample("dev-stud-102", "Rohit Verma", "Artificial Intelligence & Machine Learning", 58.4,
-                "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80",
-                "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80");
-
-        createSample("dev-stud-108", "Simran Kaur", "Cloud Infrastructure & DevOps", 64.1,
-                "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&auto=format&fit=crop&q=80",
-                "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&auto=format&fit=crop&q=80");
-    }
-
-    private void createSample(String uid, String name, String domain, double score, String checkIn, String ref) {
-        String id = "REV-" + reviewIdCounter.getAndIncrement();
-        Map<String, Object> rec = new HashMap<>();
-        rec.put("reviewId", id);
-        rec.put("studentUid", uid);
-        rec.put("studentName", name);
-        rec.put("internshipDomain", domain);
-        rec.put("similarityScore", score);
-        rec.put("checkInPhotoUrl", checkIn);
-        rec.put("referencePhotoUrl", ref);
-        rec.put("status", "PENDING_REVIEW");
-        rec.put("timestamp", System.currentTimeMillis() - 1800000L);
-        borderlineReviewRegistry.put(id, rec);
-    }
-
-    private String getMockStudentName(String uid) {
-        if ("dev-stud-107".equals(uid)) return "Priya Shinde";
-        if ("dev-stud-102".equals(uid)) return "Rohit Verma";
-        return "Student Profile (" + uid + ")";
-    }
-
-    private String getMockStudentDomain(String uid) {
-        if ("dev-stud-107".equals(uid)) return "Cloud Infrastructure & DevOps";
-        if ("dev-stud-102".equals(uid)) return "Artificial Intelligence & ML";
-        return "Computer Science Systems";
+        throw new InvalidRegistrationException("Target borderline review record not found or server offline: " + reviewId);
     }
 }

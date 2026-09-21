@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { ResponsiveContainer, LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 import { getStudentAnalytics } from '../../services/api';
 import { useBrowserNotificationContext } from '../../context/BrowserNotificationProvider';
+import { useAuth } from '../../hooks/useAuth';
 import styles from './Analytics.module.css';
 
 const Analytics = () => {
+  const { user } = useAuth();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const { permission, requestPermission } = useBrowserNotificationContext();
@@ -32,7 +34,6 @@ const Analytics = () => {
   const runSecurityRulesAudit = async () => {
     setRunningAudit(true);
     setAuditResults(null);
-    await new Promise(r => setTimeout(r, 900));
     setAuditResults([
       { title: "Cross-Student Read Isolation (diaries/{uid}_{date})", status: "PASSED", detail: "Attempted query against unauthorized candidate 'CS002_2026-07-22'. Rejected with error code: permission-denied." },
       { title: "Server-Only Exemption Quota Integrity (quotas/{uid}_{month})", status: "PASSED", detail: "Client modification attempt on meeting exemption passes blocked by rule: (allow write: if false). Admin SDK exclusive." },

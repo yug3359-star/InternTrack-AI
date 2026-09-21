@@ -1,24 +1,44 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
 import { useNotification } from '../../hooks/useNotification';
-import { runStatusCheckNow } from '../../services/api';
+import { runStatusCheckNow, getPendingApplications } from '../../services/api';
 import styles from './HodDashboard.module.css';
-
-const chartData = [
-  // { cohort: 'CS IV-A', students: 48, status: 'Active' },
-  // { cohort: 'CS IV-B', students: 50, status: 'Active' },
-  // { cohort: 'CS IV-C', students: 45, status: 'Review Flagged' },
-  // { cohort: 'IT IV-A', students: 46, status: 'Active' },
-  // { cohort: 'AI & DS IV', students: 42, status: 'Active' }
-];
 
 const HodDashboard = () => {
   const { notify } = useNotification();
   const [selectedSemester, setSelectedSemester] = useState('Fall 2026');
   const [statusLoading, setStatusLoading] = useState(false);
+  const [studentData, setStudentData] = useState([]);
+  const [isLoadingData, setIsLoadingData] = useState(true);
 
-  const totalStudents = chartData.reduce((acc, curr) => acc + curr.students, 0);
+  useEffect(() => {
+    const fetchStudents = async () => {
+      try {
+        setIsLoadingData(true);
+        const data = await getPendingApplications(1, 'ALL');
+        if (data && data.applications) {
+          const formattedData = data.applications.map(app => ({
+            uid: app.uid,
+            name: app.fullName || 'Unknown',
+            section: app.section || 'N/A',
+            rollNo: app.rollNo || 'N/A',
+            startDate: app.joiningDate || 'N/A',
+            attendance: app.attendancePercentage !== undefined ? `${app.attendancePercentage}%` : '0%'
+          }));
+          setStudentData(formattedData);
+        }
+      } catch (error) {
+        console.error("Failed to fetch student data", error);
+        notify("Could not load real student data", "error");
+      } finally {
+        setIsLoadingData(false);
+      }
+    };
+    fetchStudents();
+  }, [notify]);
+
+  const totalStudents = studentData.length;
 
   const handleExport = () => {
     notify("Generating accreditation compliance CSV spreadsheet for regional education review...", "info", 4000);
@@ -66,7 +86,7 @@ const HodDashboard = () => {
           >
             Review Applications & Status
           </Link>
-          <select
+          {/* <select
             value={selectedSemester}
             onChange={(e) => setSelectedSemester(e.target.value)}
             className={styles.semesterSelect}
@@ -74,7 +94,7 @@ const HodDashboard = () => {
             <option value="Fall 2026">Semester VII (Fall 2026)</option>
             <option value="Spring 2026">Semester VI (Spring 2026)</option>
             <option value="Fall 2025">Semester V (Fall 2025)</option>
-          </select>
+          </select> */}
           <button type="button" onClick={handleExport} className={styles.exportBtn}>
             Export Accreditation Ledger
           </button>
@@ -92,32 +112,44 @@ const HodDashboard = () => {
 
 
 
-      {/* Data-Dense Cohort Breakdown Table */}
+      {/* Student Internship Overview Table */}
       <section className={styles.tableSection}>
-        <h2 className={styles.tableHeading}>Cohort Accreditation Audit Table</h2>
+        <h2 className={styles.tableHeading}>VII Semester Internship Overview</h2>
         <div className={styles.tableOverflow}>
           <table className={styles.deptTable}>
             <thead>
               <tr>
-                <th>Academic Cohort</th>
-                <th>Assigned Faculty Mentor</th>
-                <th>Student Count</th>
-                <th>Institutional Status</th>
+                <th>Student Name</th>
+                <th>Section</th>
+                <th>Roll No.</th>
+                <th>Internship Start Date</th>
+                <th>Attendance</th>
               </tr>
             </thead>
             <tbody>
-              {chartData.map((row, index) => (
-                <tr key={row.cohort}>
-                  <td className={styles.boldCell}>{row.cohort}</td>
-                  <td>{index % 2 === 0 ? 'Dr. Rajesh K.' : 'Prof. Sunita Rao'}</td>
-                  <td className={styles.centerCell}>{row.students}</td>
-                  <td>
-                    <span className={row.status === 'Active' ? styles.tagOnTrack : styles.tagAudit}>
-                      {row.status === 'Active' ? 'ACCREDITED' : 'REVIEW AUDIT FLAGGED'}
-                    </span>
-                  </td>
+              {isLoadingData ? (
+                <tr>
+                  <td colSpan="5" className={styles.centerCell} style={{ padding: '2rem' }}>Loading real student data...</td>
                 </tr>
-              ))}
+              ) : studentData.length === 0 ? (
+                <tr>
+                  <td colSpan="5" className={styles.centerCell} style={{ padding: '2rem' }}>No students found.</td>
+                </tr>
+              ) : (
+                studentData.map((student) => (
+                  <tr key={student.uid}>
+                    <td className={styles.boldCell}>{student.name}</td>
+                    <td>{student.section}</td>
+                    <td className={styles.centerCell}>{student.rollNo}</td>
+                    <td>{student.startDate}</td>
+                    <td>
+                      <span className={parseFloat(student.attendance) >= 90 ? styles.tagOnTrack : styles.tagAudit}>
+                        {student.attendance}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

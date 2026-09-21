@@ -4,6 +4,7 @@ import com.interntrack.security.RequireRole;
 import com.interntrack.service.MentorReviewService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -28,23 +29,32 @@ public class MentorReviewController {
 
     private static final Logger log = LoggerFactory.getLogger(MentorReviewController.class);
 
-    private final MentorReviewService mentorReviewService;
+    @Autowired
+    private MentorReviewService mentorReviewService;
 
-    public MentorReviewController(MentorReviewService mentorReviewService) {
-        this.mentorReviewService = mentorReviewService;
-    }
+    @Autowired
+    private com.interntrack.service.HodService hodService;
 
     /**
-     * Fetch all pending borderline check-ins awaiting visual verification.
+     * Retrieve all borderline biometric scans pending faculty adjudication.
      */
     @GetMapping
-    public ResponseEntity<Map<String, Object>> getPendingBorderlineReviews() {
-        log.info("REST request to query pending borderline biometric reviews for faculty evaluations");
-        List<Map<String, Object>> reviews = mentorReviewService.getPendingReviews();
-        Map<String, Object> response = new HashMap<>();
-        response.put("reviews", reviews);
-        response.put("totalPending", reviews.size());
-        return ResponseEntity.ok(response);
+    public ResponseEntity<Map<String, Object>> getPendingReviews() {
+        org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || auth.getName() == null) {
+            return ResponseEntity.status(401).build();
+        }
+        
+        String uid = auth.getName();
+        boolean isHod = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_HOD"));
+        String mentorName = hodService.getMentorNameByUid(uid);
+        
+        List<Map<String, Object>> pending = mentorReviewService.getPendingReviews(mentorName, isHod);
+        
+        Map<String, Object> resp = new HashMap<>();
+        resp.put("reviews", pending);
+        resp.put("totalPending", pending.size());
+        return ResponseEntity.ok(resp);
     }
 
     /**

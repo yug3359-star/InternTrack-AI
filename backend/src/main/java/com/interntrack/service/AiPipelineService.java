@@ -360,17 +360,30 @@ public class AiPipelineService {
         List<Map<String, Object>> questions = new ArrayList<>();
         String topicHint = logs.isEmpty() ? "Stateless Cloud Architecture" : "Recent Work Ledger Implementations";
         
+        String[] fallbackQuestions = {
+            "In the context of your reported [%s] tasks, which architectural approach ensures fault-tolerant state recovery?",
+            "Based on [%s], what is the most secure method for transmitting authentication tokens?",
+            "When dealing with [%s], how can you best optimize database query performance for large datasets?",
+            "In your [%s] implementation, which design pattern best decouples business logic from data access?",
+            "Considering your work on [%s], what is the primary benefit of deploying applications in containerized microservices?"
+        };
+
+        String[][] fallbackOptions = {
+            {"Synchronous blocking loops on single-threaded workers", "Idempotent event-driven message queuing with Dead Letter Queues (DLQ)", "Disabling database constraints to increase read throughput", "Statically archiving live user credentials in unencrypted browser storage"},
+            {"In the URL query string", "HTTP-only Secure Cookies / Authorization Bearer Headers", "Unencrypted in LocalStorage", "Embedded in the HTML DOM"},
+            {"Using SELECT * for all queries", "Adding indexes to frequently queried columns", "Storing all data in a single massive table", "Processing data completely in memory instead of the database"},
+            {"Repository Pattern", "Singleton Pattern", "Observer Pattern", "God Object Pattern"},
+            {"It allows all services to share the exact same memory space", "It isolates dependencies and allows independent scaling", "It completely eliminates the need for network security", "It prevents you from using version control"}
+        };
+        
+        int[] fallbackAnswers = {1, 1, 1, 0, 1};
+
         for (int i = 0; i < 5; i++) {
             Map<String, Object> q = new HashMap<>();
             q.put("questionId", i);
-            q.put("questionText", String.format("[AI Synthetic Exam - %s] In the context of your reported [%s] tasks, which architectural approach ensures fault-tolerant state recovery?", domain, topicHint));
-            q.put("options", List.of(
-                "Synchronous blocking loops on single-threaded workers",
-                "Idempotent event-driven message queuing with Dead Letter Queues (DLQ)",
-                "Disabling database constraints to increase read throughput",
-                "Statically archiving live user credentials in unencrypted browser storage"
-            ));
-            q.put("correctOptionIndex", 1);
+            q.put("questionText", String.format("[AI Synthetic Exam - %s] " + fallbackQuestions[i], domain, topicHint));
+            q.put("options", Arrays.asList(fallbackOptions[i]));
+            q.put("correctOptionIndex", fallbackAnswers[i]);
             questions.add(q);
         }
         return questions;

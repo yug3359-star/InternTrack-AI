@@ -36,7 +36,7 @@ public class CompletionController {
         Map<String, Object> summary = completionService.getCompletionSummary(uid);
         if (summary == null) {
             log.info("Completion report requested for candidate [{}], but no completed certification ledger was found.", uid);
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+            return ResponseEntity.ok(null);
         }
         return ResponseEntity.ok(summary);
     }

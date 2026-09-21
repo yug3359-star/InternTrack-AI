@@ -13,7 +13,8 @@ import java.util.Map;
 
 /**
  * Service managing student responses to live working-hour engagement check-ins,
- * face match biometrics validation, and monthly meeting exemption quotas via shared QuotaService.
+ * face match biometrics validation, and monthly meeting exemption quotas via
+ * shared QuotaService.
  */
 @Service
 public class PopupService {
@@ -27,8 +28,8 @@ public class PopupService {
     private final DailyStatusService dailyStatusService;
 
     public PopupService(MentorReviewService mentorReviewService,
-                        EngagementPopupJob engagementPopupJob, QuotaService quotaService,
-                        ZoneId applicationZoneId, DailyStatusService dailyStatusService) {
+            EngagementPopupJob engagementPopupJob, QuotaService quotaService,
+            ZoneId applicationZoneId, DailyStatusService dailyStatusService) {
         this.mentorReviewService = mentorReviewService;
         this.engagementPopupJob = engagementPopupJob;
         this.quotaService = quotaService;
@@ -45,11 +46,15 @@ public class PopupService {
         String photoData = (String) payload.get("photoData");
         Double simulatedScore = null;
 
+        // Resolve the pending popup to prevent the sweeper from marking it as missed
+        engagementPopupJob.resolvePendingPopup(uid, popupId);
+
         if (payload.get("simulatedScore") instanceof Number) {
             simulatedScore = ((Number) payload.get("simulatedScore")).doubleValue();
         }
 
-        log.info("Processing engagement popup response for student [{}], action [{}], popupId [{}]", uid, action, popupId);
+        log.info("Processing engagement popup response for student [{}], action [{}], popupId [{}]", uid, action,
+                popupId);
 
         if ("IN_MEETING".equals(action)) {
             return claimMeetingOverride(uid, popupId);
@@ -57,9 +62,9 @@ public class PopupService {
 
         // Client-side provided similarity score
         Double similarityScore = (payload.get("similarityScore") instanceof Number)
-            ? ((Number) payload.get("similarityScore")).doubleValue()
-            : 100.0; // fallback to pass if not provided
-            
+                ? ((Number) payload.get("similarityScore")).doubleValue()
+                : 100.0; // fallback to pass if not provided
+
         String matchStatus;
         if (similarityScore >= 75.0) {
             matchStatus = "APPROVED";
@@ -70,8 +75,10 @@ public class PopupService {
         }
 
         if ("BORDERLINE".equals(matchStatus)) {
-            log.info("Biometric score borderline for student [{}]. Placing snapshot into mentor review repository.", uid);
-            String referencePhotoUrl = "https://firebasestorage.googleapis.com/v0/b/interntrack-dev.appspot.com/o/reference-photos%2F" + uid + ".jpg?alt=media";
+            log.info("Biometric score borderline for student [{}]. Placing snapshot into mentor review repository.",
+                    uid);
+            String referencePhotoUrl = "https://firebasestorage.googleapis.com/v0/b/interntrack-dev.appspot.com/o/reference-photos%2F"
+                    + uid + ".jpg?alt=media";
             mentorReviewService.createBorderlineReview(uid, similarityScore, photoData, referencePhotoUrl);
         } else if ("REJECTED".equals(matchStatus)) {
             log.warn("Biometric verification failed for student [{}]. Registering failed attendance attempt.", uid);
@@ -88,7 +95,8 @@ public class PopupService {
     }
 
     /**
-     * Retrieves current monthly meeting quota usage (quotas/{uid}_{yyyy-MM}) via shared QuotaService.
+     * Retrieves current monthly meeting quota usage (quotas/{uid}_{yyyy-MM}) via
+     * shared QuotaService.
      */
     public Map<String, Object> getStudentMeetingQuota(String uid) {
         return quotaService.getStudentMeetingQuota(uid);
@@ -97,19 +105,21 @@ public class PopupService {
     public Map<String, Object> claimWholeDayMeetingOverride(String uid) {
         // Automatically checks and decrements real Firestore doc via QuotaService
         quotaService.consumeMeetingQuotaOrThrow(uid);
-        
+
         // Stop all popups for today
         engagementPopupJob.clearPopupsForToday(uid);
-        
+
         // Mark as excused present
         String today = LocalDate.now(applicationZoneId).toString();
-        dailyStatusService.recordAttendanceResult(uid, today, "excused_meeting", "Claimed whole day meeting exemption token.");
-        
+        dailyStatusService.recordAttendanceResult(uid, today, "excused_meeting",
+                "Claimed whole day meeting exemption token.");
+
         Map<String, Object> currentQuota = quotaService.getStudentMeetingQuota(uid);
         int used = ((Number) currentQuota.getOrDefault("used", 0)).intValue();
         int limit = ((Number) currentQuota.getOrDefault("limit", 3)).intValue();
 
-        log.info("Student [{}] claimed WHOLE DAY meeting override. Popups stopped. Quota status: [{}/{}] used.", uid, used, limit);
+        log.info("Student [{}] claimed WHOLE DAY meeting override. Popups stopped. Quota status: [{}/{}] used.", uid,
+                used, limit);
 
         Map<String, Object> res = new HashMap<>();
         res.put("uid", uid);
@@ -128,7 +138,8 @@ public class PopupService {
         int used = ((Number) currentQuota.getOrDefault("used", 0)).intValue();
         int limit = ((Number) currentQuota.getOrDefault("limit", 3)).intValue();
 
-        log.info("Student [{}] claimed lawful meeting override for popup [{}]. Quota status: [{}/{}] used.", uid, popupId, used, limit);
+        log.info("Student [{}] claimed lawful meeting override for popup [{}]. Quota status: [{}/{}] used.", uid,
+                popupId, used, limit);
 
         Map<String, Object> res = new HashMap<>();
         res.put("uid", uid);
@@ -136,7 +147,8 @@ public class PopupService {
         res.put("popupId", popupId);
         res.put("quotaUsed", used);
         res.put("quotaLimit", limit);
-        res.put("message", "Check-in excused via valid meeting override. Quota updated: " + used + " / " + limit + " used this month.");
+        res.put("message", "Check-in excused via valid meeting override. Quota updated: " + used + " / " + limit
+                + " used this month.");
         return res;
     }
 }

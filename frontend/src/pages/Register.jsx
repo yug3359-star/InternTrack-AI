@@ -56,7 +56,8 @@ const Register = () => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             targetEmail: data.email,
-            setupSecret: "enterprise-setup-secret-2026"
+            setupSecret: "enterprise-setup-secret-2026",
+            fullName: data.fullName
           })
         });
       }

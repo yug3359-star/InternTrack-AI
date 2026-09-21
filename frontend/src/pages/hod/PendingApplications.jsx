@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { getPendingApplications, approveApplication, rejectApplication, createApplication, updateApplication, deleteApplication } from '../../services/api';
+import { getPendingApplications, approveApplication, rejectApplication, createApplication, updateApplication, deleteApplication, getFacultyMentors } from '../../services/api';
 import { useNotification } from '../../hooks/useNotification';
 import StatusBadge from '../../components/StatusBadge';
 import styles from './PendingApplications.module.css';
@@ -30,6 +30,19 @@ const PendingApplications = () => {
   const [selectedCollegeMentor, setSelectedCollegeMentor] = useState('');
   const [rejectReason, setRejectReason] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
+  const [mentorsList, setMentorsList] = useState([]);
+
+  useEffect(() => {
+    const loadMentors = async () => {
+      try {
+        const data = await getFacultyMentors();
+        setMentorsList(data || []);
+      } catch (err) {
+        console.error("Failed to load mentors", err);
+      }
+    };
+    loadMentors();
+  }, []);
 
   // CRUD State
   const [showCrudModal, setShowCrudModal] = useState(false);
@@ -525,18 +538,17 @@ const PendingApplications = () => {
                 {showApproveBox && (
                   <div className={styles.rejectionInputArea} style={{ backgroundColor: '#F0FDF4', borderColor: '#22C55E' }}>
                     <label htmlFor="collegeMentor" className={styles.rejectionLabel} style={{ color: '#166534' }}>Allocate College/Faculty Mentor:</label>
-                    <select
-                      id="collegeMentor"
+                    <select 
+                      className={styles.mentorSelect}
                       value={selectedCollegeMentor}
                       onChange={(e) => setSelectedCollegeMentor(e.target.value)}
-                      className={styles.rejectionTextarea}
-                      style={{ padding: '8px', height: 'auto', border: '1px solid #BBF7D0' }}
                     >
                       <option value="">-- Select a Faculty Mentor --</option>
-                      <option value="Dr. Rajesh K. (CS Dept)">Dr. Rajesh K. (CS Dept)</option>
-                      <option value="Prof. A. Sharma (IT Dept)">Prof. A. Sharma (IT Dept)</option>
-                      <option value="Dr. S. Gupta (AI Dept)">Dr. S. Gupta (AI Dept)</option>
-                      <option value="Prof. V. Nair (EC Dept)">Prof. V. Nair (EC Dept)</option>
+                      {mentorsList.map((m) => (
+                        <option key={m.uid} value={m.fullName}>
+                          {m.fullName}
+                        </option>
+                      ))}
                     </select>
                   </div>
                 )}

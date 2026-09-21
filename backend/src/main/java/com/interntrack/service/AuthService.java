@@ -252,7 +252,7 @@ public class AuthService {
      * per institutional security protocol. DO NOT expose this as a general administrative workflow.
      * -----------------------------------------------------------------------------------------
      */
-    public Map<String, Object> promoteToRole(String targetEmail, String providedSecret, String roleToAssign) {
+    public Map<String, Object> promoteToRole(String targetEmail, String providedSecret, String roleToAssign, String fullName) {
         if (setupSecret == null || setupSecret.trim().isEmpty() || !setupSecret.equals(providedSecret)) {
             log.warn("[SECURITY AUDIT] Unauthorized attempt to invoke emergency HOD promotion tool for email [{}] with invalid or unconfigured setup secret.", targetEmail);
             throw new com.interntrack.exception.CustomAuthException("Invalid emergency HOD recovery authorization secret.");
@@ -272,9 +272,20 @@ public class AuthService {
             existingClaims.put("role", roleToAssign.toLowerCase());
             auth.setCustomUserClaims(user.getUid(), existingClaims);
 
+            if (fullName != null && !fullName.trim().isEmpty()) {
+                UserRecord.UpdateRequest req = new UserRecord.UpdateRequest(user.getUid()).setDisplayName(fullName);
+                auth.updateUser(req);
+            }
+
             Firestore db = FirestoreClient.getFirestore();
             if (db != null) {
-                db.collection("users").document(user.getUid()).update("role", roleToAssign.toLowerCase());
+                Map<String, Object> userData = new HashMap<>();
+                userData.put("role", roleToAssign.toLowerCase());
+                userData.put("collegeEmail", targetEmail);
+                if (fullName != null && !fullName.trim().isEmpty()) {
+                    userData.put("fullName", fullName);
+                }
+                db.collection("users").document(user.getUid()).set(userData, com.google.cloud.firestore.SetOptions.merge());
             }
             log.info("Successfully elevated Firebase identity [{}] (uid: {}) to institutional {} role.", targetEmail, user.getUid(), roleToAssign);
             response.put("status", "SUCCESS");

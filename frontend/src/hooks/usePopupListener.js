@@ -14,6 +14,7 @@ export const usePopupListener = (userUid, role = 'STUDENT', isDevMode = true) =>
 
   const [activePopup, setActivePopup] = useState(null);
   const [meetingQuota, setMeetingQuota] = useState({ used: 2, limit: 3, month: 'July 2026' });
+  const [popupStatus, setPopupStatus] = useState(null);
   const [loadingResponse, setLoadingResponse] = useState(false);
 
   // Fetch initial meeting quota status from institutional ledger
@@ -28,11 +29,23 @@ export const usePopupListener = (userUid, role = 'STUDENT', isDevMode = true) =>
     }
   }, [userUid]);
 
+  const fetchPopupStatus = useCallback(async () => {
+    try {
+      const response = await api.get(`/popups/${userUid}/status`);
+      if (response.data) {
+        setPopupStatus(response.data);
+      }
+    } catch (err) {
+      console.warn('Failed to fetch popup status');
+    }
+  }, [userUid]);
+
   useEffect(() => {
     if (role === 'STUDENT' || role === 'student') {
       fetchMeetingQuota();
+      fetchPopupStatus();
     }
-  }, [role, fetchMeetingQuota]);
+  }, [role, fetchMeetingQuota, fetchPopupStatus]);
 
   // Method called when a popup document arrives from Firestore onSnapshot or testing simulation
   const handleNewPopupDetected = useCallback((popupData) => {
@@ -94,8 +107,9 @@ export const usePopupListener = (userUid, role = 'STUDENT', isDevMode = true) =>
     } finally {
       setLoadingResponse(false);
       setActivePopup(null);
+      fetchPopupStatus();
     }
-  }, [activePopup, userUid, meetingQuota, notify]);
+  }, [activePopup, userUid, meetingQuota, notify, fetchPopupStatus]);
 
   // Helper method for review panel presentation demonstrations
   const triggerDevTestPopup = useCallback((delaySeconds = 0) => {
@@ -125,6 +139,8 @@ export const usePopupListener = (userUid, role = 'STUDENT', isDevMode = true) =>
     activePopup,
     setActivePopup,
     meetingQuota,
+    popupStatus,
+    fetchPopupStatus,
     loadingResponse,
     respondToPopup,
     triggerDevTestPopup

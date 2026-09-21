@@ -35,7 +35,6 @@ const AnalyticsOverview = () => {
   const runSecurityRulesAudit = async () => {
     setRunningAudit(true);
     setAuditResults(null);
-    await new Promise(r => setTimeout(r, 900));
     setAuditResults([
       { title: "Cross-Student Read Isolation (diaries/{uid}_{date})", status: "PASSED", detail: "Attempted query against unauthorized candidate 'CS002_2026-07-22'. Rejected with error code: permission-denied." },
       { title: "Server-Only Exemption Quota Integrity (quotas/{uid}_{month})", status: "PASSED", detail: "Client modification attempt on meeting exemption passes blocked by rule: (allow write: if false). Admin SDK exclusive." },

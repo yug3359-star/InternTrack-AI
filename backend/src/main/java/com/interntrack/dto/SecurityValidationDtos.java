@@ -21,6 +21,8 @@ public class SecurityValidationDtos {
         @Size(min = 8, max = 128, message = "Setup secret length must be between 8 and 128 characters")
         private String setupSecret;
 
+        private String fullName;
+
         public PromoteHodDto() {}
         public PromoteHodDto(String targetEmail, String setupSecret) {
             this.targetEmail = targetEmail;
@@ -31,6 +33,8 @@ public class SecurityValidationDtos {
         public void setTargetEmail(String targetEmail) { this.targetEmail = targetEmail; }
         public String getSetupSecret() { return setupSecret; }
         public void setSetupSecret(String setupSecret) { this.setupSecret = setupSecret; }
+        public String getFullName() { return fullName; }
+        public void setFullName(String fullName) { this.fullName = fullName; }
     }
 
     public static class DiarySubmitDto implements Serializable {

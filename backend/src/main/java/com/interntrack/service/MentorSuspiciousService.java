@@ -26,8 +26,8 @@ public class MentorSuspiciousService {
      * Retrieves all flagged suspicious diaries for investigative faculty review.
      * Can be filtered by mentor email or returned across all students for HOD oversight.
      */
-    public List<Map<String, Object>> getSuspiciousDiaries(String mentorEmail) {
-        log.info("Querying suspicious student diary logs for mentor evaluation [{}]", mentorEmail);
+    public List<Map<String, Object>> getSuspiciousDiaries(String mentorName, boolean isHod) {
+        log.info("Querying suspicious student diary logs for mentor evaluation [{}]", mentorName);
         List<Map<String, Object>> results = new ArrayList<>();
 
         if (firestore != null) {
@@ -35,16 +35,23 @@ public class MentorSuspiciousService {
                 List<QueryDocumentSnapshot> docs = firestore.collection("suspicious_diaries").get().get().getDocuments();
                 for (QueryDocumentSnapshot d : docs) {
                     Map<String, Object> data = d.getData();
-                    // Include if assigned or general HOD view
-                    results.add(data);
+                    if (data != null) {
+                        String studentUid = (String) data.get("uid");
+                        if (studentUid != null) {
+                            if (isHod) {
+                                results.add(data);
+                            } else {
+                                DocumentSnapshot internDoc = firestore.collection("internships").document(studentUid).get().get();
+                                if (internDoc.exists() && mentorName.equals(internDoc.getString("collegeMentor"))) {
+                                    results.add(data);
+                                }
+                            }
+                        }
+                    }
                 }
             } catch (Exception e) {
                 log.warn("Failed querying Firestore suspicious_diaries: {}", e.getMessage());
             }
-        }
-
-        if (results.isEmpty()) {
-            results.addAll(diaryService.getDevSuspiciousRegistry().values());
         }
 
         // Sort descending by flaggedAt or submittedAt timestamp
@@ -113,14 +120,15 @@ public class MentorSuspiciousService {
     /**
      * Computes count of unreviewed suspicious entries for live sidebar notification badge.
      */
-    public int getUnreviewedSuspiciousCount() {
+    public int getUnreviewedSuspiciousCount(String mentorName, boolean isHod) {
         if (firestore != null) {
             try {
-                return firestore.collection("suspicious_diaries").get().get().size();
+                // We reuse the list logic to ensure the badge count exactly matches the list count.
+                return getSuspiciousDiaries(mentorName, isHod).size();
             } catch (Exception e) {
                 log.trace("Fallback count usage due to Firestore exception: {}", e.getMessage());
             }
         }
-        return diaryService.getDevSuspiciousRegistry().size();
+        return 0;
     }
 }

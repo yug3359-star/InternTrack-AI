@@ -25,7 +25,7 @@ const Sidebar = () => {
     try {
       const resp = await axios.get(`${API_BASE}/api/mentor/suspicious/count`);
       if (resp.data && typeof resp.data.count === 'number') {
-        setSuspiciousCount();
+        setSuspiciousCount(resp.data.count);
       }
     } catch (err) {
       console.error("Could not load suspicious badge count:", err);
@@ -40,7 +40,7 @@ const Sidebar = () => {
       }
     } catch (err) {
       console.warn("Could not load highlighted student badge count, utilizing simulated fallback counter:", err);
-      setHighlightedCount();
+      setHighlightedCount(0);
     }
   };
 
@@ -80,7 +80,7 @@ const Sidebar = () => {
               </a>
             </li>
             <li>
-              <a href="#advisor-contact" className={styles.itemLink} onClick={(e) => { e.preventDefault(); alert("Your Faculty Mentor: Dr. Rajesh K., Associate Professor, Dept of CS."); }}>
+              <a href="#advisor-contact" className={styles.itemLink} onClick={(e) => { e.preventDefault(); alert("Your Faculty Mentor details can be viewed in your dashboard."); }}>
                 Assigned Advisor
               </a>
             </li>
@@ -107,12 +107,12 @@ const Sidebar = () => {
               </NavLink>
             </li>
             <li>
-              <a href="#roster" className={styles.itemLink} onClick={(e) => { e.preventDefault(); alert("Assigned Roster: B.Tech Computer Science Cohort IV-B (24 Students)"); }}>
-                Student Roster (CS)
+              <a href="#roster" className={styles.itemLink} onClick={(e) => { e.preventDefault(); alert("Assigned Roster: Please view your allocated mentees on the Dashboard."); }}>
+                Student Roster
               </a>
             </li>
             <li>
-              <a href="#attendance-flags" className={styles.itemLink} onClick={(e) => { e.preventDefault(); alert("0 active attendance compliance infractions recorded."); }}>
+              <a href="#attendance-flags" className={styles.itemLink} onClick={(e) => { e.preventDefault(); alert("Discrepancy Alerts: Review flagged students on your dashboard."); }}>
                 Discrepancy Alerts
               </a>
             </li>

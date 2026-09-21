@@ -43,6 +43,7 @@ public class TestService {
 
     private final ZoneId zoneId = ZoneId.of("Asia/Kolkata");
     private final Map<String, Map<String, Object>> localTestLedger = new ConcurrentHashMap<>();
+    private final Map<String, Object> testLocks = new ConcurrentHashMap<>();
 
     private Firestore getDb() {
         if (this.firestore != null)
@@ -60,59 +61,62 @@ public class TestService {
      * Notice: questions array is initialized empty so exam questions are never
      * leaked to client before start!
      */
-    public synchronized Map<String, Object> createTestDoc(String uid, String date, long triggeredAt, int windowMinutes,
+    public Map<String, Object> createTestDoc(String uid, String date, long triggeredAt, int windowMinutes,
             String internshipDomain, String referencePhotoUrl) {
         String testId = uid + "_" + date;
-        Map<String, Object> doc = new HashMap<>();
-        doc.put("id", testId);
-        doc.put("uid", uid);
-        doc.put("date", date);
-        doc.put("status", "awaiting_start");
-        doc.put("triggeredAt", triggeredAt);
-        doc.put("window", triggeredAt + (windowMinutes * 60000L));
-        doc.put("windowMinutes", windowMinutes);
-        doc.put("internshipDomain", internshipDomain != null ? internshipDomain : "Software Architecture");
-        String finalRefUrl = referencePhotoUrl;
-        if (finalRefUrl == null || finalRefUrl.contains("interntrack-ai-98f45.firebasestorage.app")) {
-            try {
-                Firestore dbForLookup = getDb();
-                if (dbForLookup != null) {
-                    DocumentSnapshot userDoc = dbForLookup.collection("internships").document(uid).get().get();
-                    if (userDoc.exists() && userDoc.getString("referencePhotoUrl") != null) {
-                        finalRefUrl = userDoc.getString("referencePhotoUrl");
+        Object lock = testLocks.computeIfAbsent(testId, k -> new Object());
+        synchronized (lock) {
+            Map<String, Object> doc = new HashMap<>();
+            doc.put("id", testId);
+            doc.put("uid", uid);
+            doc.put("date", date);
+            doc.put("status", "awaiting_start");
+            doc.put("triggeredAt", triggeredAt);
+            doc.put("window", triggeredAt + (windowMinutes * 60000L));
+            doc.put("windowMinutes", windowMinutes);
+            doc.put("internshipDomain", internshipDomain != null ? internshipDomain : "Software Architecture");
+            String finalRefUrl = referencePhotoUrl;
+            if (finalRefUrl == null || finalRefUrl.contains("interntrack-ai-98f45.firebasestorage.app")) {
+                try {
+                    Firestore dbForLookup = getDb();
+                    if (dbForLookup != null) {
+                        com.google.cloud.firestore.DocumentSnapshot userDoc = dbForLookup.collection("internships").document(uid).get().get();
+                        if (userDoc.exists() && userDoc.getString("referencePhotoUrl") != null) {
+                            finalRefUrl = userDoc.getString("referencePhotoUrl");
+                        }
                     }
+                } catch (Exception e) {
+                    log.warn("TestService could not fetch real referencePhotoUrl for uid {}: {}", uid, e.getMessage());
                 }
-            } catch (Exception e) {
-                log.warn("TestService could not fetch real referencePhotoUrl for uid {}: {}", uid, e.getMessage());
             }
-        }
 
-        doc.put("referencePhotoUrl", finalRefUrl != null ? finalRefUrl
-                : "https://firebasestorage.googleapis.com/v0/b/interntrack-ai-98f45.firebasestorage.app/o/reference-photos%2F"
-                        + uid + ".jpg");
-        doc.put("questions", new ArrayList<Map<String, Object>>()); // Protected empty list until started
-        doc.put("answers", new HashMap<String, Object>());
-        doc.put("rescheduled", false);
-        doc.put("tabSwitchCount", 0);
-        doc.put("score", null);
-        doc.put("startPhotoUrl", null);
-        doc.put("submitPhotoUrl", null);
-        doc.put("actualStartTime", null);
-        doc.put("testDeadline", null);
-        doc.put("actualSubmitTime", null);
+            doc.put("referencePhotoUrl", finalRefUrl != null ? finalRefUrl
+                    : "https://firebasestorage.googleapis.com/v0/b/interntrack-ai-98f45.firebasestorage.app/o/reference-photos%2F"
+                            + uid + ".jpg");
+            doc.put("questions", new java.util.ArrayList<Map<String, Object>>()); // Protected empty list until started
+            doc.put("answers", new HashMap<String, Object>());
+            doc.put("rescheduled", false);
+            doc.put("tabSwitchCount", 0);
+            doc.put("score", null);
+            doc.put("startPhotoUrl", null);
+            doc.put("submitPhotoUrl", null);
+            doc.put("actualStartTime", null);
+            doc.put("testDeadline", null);
+            doc.put("actualSubmitTime", null);
 
-        localTestLedger.put(testId, doc);
+            localTestLedger.put(testId, doc);
 
-        Firestore db = getDb();
-        if (db != null) {
-            try {
-                db.collection("tests").document(testId).set(doc);
-                log.info("Created real proctored test document in Firestore: tests/{}", testId);
-            } catch (Exception e) {
-                log.error("Error writing test doc tests/{} to cloud Firestore: {}", testId, e.getMessage());
+            Firestore db = getDb();
+            if (db != null) {
+                try {
+                    db.collection("tests").document(testId).set(doc);
+                    log.info("Created real proctored test document in Firestore: tests/{}", testId);
+                } catch (Exception e) {
+                    log.error("Error writing test doc tests/{} to cloud Firestore: {}", testId, e.getMessage());
+                }
             }
+            return doc;
         }
-        return doc;
     }
 
     /**
@@ -120,8 +124,10 @@ public class TestService {
      * hydrates questions,
      * and computes the immutable server-side testDeadline.
      */
-    public synchronized Map<String, Object> startTest(String testId, String startPhotoBase64OrUrl,
+    public Map<String, Object> startTest(String testId, String startPhotoBase64OrUrl,
             Double similarityScore) throws InvalidRegistrationException {
+        Object lock = testLocks.computeIfAbsent(testId, k -> new Object());
+        synchronized (lock) {
         Map<String, Object> test = getTestDoc(testId);
         if (test == null) {
             throw new InvalidRegistrationException("Test document not found in active collection: " + testId);
@@ -202,6 +208,7 @@ public class TestService {
 
         saveTestDoc(testId, test);
         return test;
+        }
     }
 
     /**
@@ -209,8 +216,10 @@ public class TestService {
      * Rejects with HTTP 400 exception if server time exceeds testDeadline.
      */
     @SuppressWarnings("unchecked")
-    public synchronized Map<String, Object> submitAnswer(String testId, int questionIndex, Object answer)
+    public Map<String, Object> submitAnswer(String testId, int questionIndex, Object answer)
             throws InvalidRegistrationException {
+        Object lock = testLocks.computeIfAbsent(testId, k -> new Object());
+        synchronized (lock) {
         Map<String, Object> test = getTestDoc(testId);
         if (test == null) {
             throw new InvalidRegistrationException("Test document not found: " + testId);
@@ -234,6 +243,7 @@ public class TestService {
 
         saveTestDoc(testId, test);
         return test;
+        }
     }
 
     /**
@@ -241,9 +251,11 @@ public class TestService {
      * tab-switch count, and calculates integer score out of 5.
      */
     @SuppressWarnings("unchecked")
-    public synchronized Map<String, Object> submitTest(String testId, String submitPhotoUrl, int tabSwitchCount,
+    public Map<String, Object> submitTest(String testId, String submitPhotoUrl, int tabSwitchCount,
             Map<String, Object> answers, Double similarityScore) throws InvalidRegistrationException {
-        Map<String, Object> test = getTestDoc(testId);
+        Object lock = testLocks.computeIfAbsent(testId, k -> new Object());
+        synchronized (lock) {
+            Map<String, Object> test = getTestDoc(testId);
         if (test == null) {
             throw new InvalidRegistrationException("Test document not found: " + testId);
         }
@@ -312,14 +324,17 @@ public class TestService {
 
         saveTestDoc(testId, test);
         return test;
+        }
     }
 
     /**
      * Handles meeting quota reschedule requests. Only permitted exactly once per
      * test document.
      */
-    public synchronized Map<String, Object> rescheduleTest(String testId, String reason)
+    public Map<String, Object> rescheduleTest(String testId, String reason)
             throws InvalidRegistrationException {
+        Object lock = testLocks.computeIfAbsent(testId, k -> new Object());
+        synchronized (lock) {
         Map<String, Object> test = getTestDoc(testId);
         if (test == null) {
             throw new InvalidRegistrationException("Test document not found: " + testId);
@@ -350,14 +365,17 @@ public class TestService {
                 "Test [{}] successfully rescheduled via Meeting Quota for student [{}]. New start window expires at [{}]",
                 testId, uid, newWindowEnd);
         return test;
+        }
     }
 
     /**
      * Faculty Mentor action: Manually override a completed test to 'absent'
      * following photo or audit review.
      */
-    public synchronized Map<String, Object> overrideAbsent(String testId, String mentorReason)
+    public Map<String, Object> overrideAbsent(String testId, String mentorReason)
             throws InvalidRegistrationException {
+        Object lock = testLocks.computeIfAbsent(testId, k -> new Object());
+        synchronized (lock) {
         if (mentorReason == null || mentorReason.trim().isEmpty()) {
             throw new InvalidRegistrationException(
                     "A mandatory rejection reason is required when manually overriding exam status to absent.");
@@ -377,6 +395,7 @@ public class TestService {
                 "Faculty Mentor manual override to absent: " + mentorReason);
         log.info("Faculty mentor override to 'absent' committed for test [{}]. Reason: {}", testId, mentorReason);
         return test;
+        }
     }
 
     /**
@@ -447,7 +466,7 @@ public class TestService {
      * to 'absent',
      * and any 'in_progress' test past its testDeadline to 'absent'.
      */
-    public synchronized void cleanupExpiredTests() {
+    public void cleanupExpiredTests() {
         long now = System.currentTimeMillis();
         List<Map<String, Object>> allTests = new ArrayList<>(localTestLedger.values());
 
@@ -533,7 +552,7 @@ public class TestService {
         return createTestDoc(uid, date, System.currentTimeMillis(), 60, "Software Architecture & Microservices", null);
     }
 
-    public synchronized void saveTestDoc(String testId, Map<String, Object> test) {
+    public void saveTestDoc(String testId, Map<String, Object> test) {
         localTestLedger.put(testId, test);
         Firestore db = getDb();
         if (db != null) {

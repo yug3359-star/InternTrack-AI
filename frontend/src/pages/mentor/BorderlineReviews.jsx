@@ -44,13 +44,8 @@ const BorderlineReviews = () => {
         notify(`Discrepancy confirmed: ${studentName}'s check-in rejected due to identity mismatch.`, "error", 6000);
       }
     } catch (err) {
-      console.warn('[DEV MOCK PORTAL] Simulating local resolution for review:', reviewId);
-      setReviews(prev => prev.filter(r => r.reviewId !== reviewId));
-      if (action === 'APPROVE') {
-        notify(`Override confirmed in local review ledger: ${studentName}'s check-in Approved.`, "success", 5000);
-      } else {
-        notify(`Discrepancy confirmed in local ledger: ${studentName}'s check-in rejected.`, "error", 5000);
-      }
+      console.error('Resolution failed:', err);
+      notify(`Failed to process resolution for ${studentName}. Ensure backend is active.`, "error", 6000);
     }
   };
 

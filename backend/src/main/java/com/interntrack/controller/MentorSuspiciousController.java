@@ -19,14 +19,26 @@ public class MentorSuspiciousController {
     @Autowired
     private MentorSuspiciousService mentorSuspiciousService;
 
+    @Autowired
+    private com.interntrack.service.HodService hodService;
+
     /**
      * Fetch list of suspicious diaries for assigned faculty mentor review.
      */
     @GetMapping({"/api/mentor/suspicious", "/api/hod/suspicious"})
-    public ResponseEntity<List<Map<String, Object>>> getSuspiciousQueue(
-            @RequestParam(required = false) String mentorEmail) {
+    public ResponseEntity<List<Map<String, Object>>> getSuspiciousQueue() {
         log.info("REST GET request to query flagged suspicious diary queue for faculty review");
-        List<Map<String, Object>> queue = mentorSuspiciousService.getSuspiciousDiaries(mentorEmail);
+        
+        org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || auth.getName() == null) {
+            return ResponseEntity.status(401).build();
+        }
+        
+        String uid = auth.getName();
+        boolean isHod = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_HOD"));
+        String mentorName = hodService.getMentorNameByUid(uid);
+        
+        List<Map<String, Object>> queue = mentorSuspiciousService.getSuspiciousDiaries(mentorName, isHod);
         return ResponseEntity.ok(queue);
     }
 
@@ -35,7 +47,16 @@ public class MentorSuspiciousController {
      */
     @GetMapping({"/api/mentor/suspicious/count", "/api/hod/suspicious/count"})
     public ResponseEntity<Map<String, Object>> getSuspiciousCount() {
-        int count = mentorSuspiciousService.getUnreviewedSuspiciousCount();
+        org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || auth.getName() == null) {
+            return ResponseEntity.status(401).build();
+        }
+        
+        String uid = auth.getName();
+        boolean isHod = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_HOD"));
+        String mentorName = hodService.getMentorNameByUid(uid);
+
+        int count = mentorSuspiciousService.getUnreviewedSuspiciousCount(mentorName, isHod);
         Map<String, Object> resp = new HashMap<>();
         resp.put("count", count);
         return ResponseEntity.ok(resp);

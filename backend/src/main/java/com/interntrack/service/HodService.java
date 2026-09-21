@@ -166,19 +166,24 @@ public class HodService {
                             record.put("collegeEmail", internData.getOrDefault("collegeEmail", "unknown@college.edu"));
                             record.put("branch", internData.getOrDefault("branch", "Computer Science & Engineering"));
                         }
+
+                        Object attStr = internData.get("attendancePercentage");
+                        if (attStr != null) {
+                            try {
+                                record.put("attendancePercentage", Double.parseDouble(attStr.toString()));
+                            } catch (NumberFormatException e) {
+                                record.put("attendancePercentage", 0.0);
+                            }
+                        } else {
+                            record.put("attendancePercentage", 0.0);
+                        }
+
                         matchedRecords.add(record);
                     }
                 }
             }
         } catch (Exception e) {
             log.error("Failed to query mentor students from Firestore: {}", e.getMessage());
-        }
-
-        // Include dev simulations if applicable
-        for (Map<String, Object> record : devSimulatedApplications.values()) {
-            if (mentorName.equals(record.get("collegeMentor"))) {
-                matchedRecords.add(record);
-            }
         }
 
         return matchedRecords;
@@ -433,4 +438,45 @@ public class HodService {
         return result;
     }
 
+    public String getMentorNameByUid(String uid) {
+        try {
+            Firestore db = FirestoreClient.getFirestore();
+            if (db != null) {
+                DocumentSnapshot doc = db.collection("users").document(uid).get().get();
+                if (doc.exists() && doc.getString("fullName") != null) {
+                    return doc.getString("fullName");
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Could not fetch mentor name for uid {}: {}", uid, e.getMessage());
+        }
+        return uid; // Fallback to UID if name not found
+    }
+
+    public List<Map<String, Object>> getFacultyMentors() {
+        List<Map<String, Object>> mentors = new ArrayList<>();
+        try {
+            Firestore db = FirestoreClient.getFirestore();
+            if (db != null) {
+                // Query both lowercase and uppercase to be safe
+                ApiFuture<QuerySnapshot> future = db.collection("users").whereIn("role", java.util.Arrays.asList("MENTOR", "mentor")).get();
+                List<? extends DocumentSnapshot> documents = future.get().getDocuments();
+                for (DocumentSnapshot doc : documents) {
+                    Map<String, Object> data = doc.getData();
+                    if (data != null) {
+                        Map<String, Object> mentor = new HashMap<>();
+                        mentor.put("uid", doc.getId());
+                        mentor.put("fullName", data.get("fullName"));
+                        mentor.put("email", data.get("collegeEmail"));
+                        mentor.put("department", data.get("department"));
+                        mentors.add(mentor);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.error("Failed to query faculty mentors from remote database.", e);
+        }
+
+        return mentors;
+    }
 }

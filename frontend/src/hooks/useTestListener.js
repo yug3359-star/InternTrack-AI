@@ -82,7 +82,7 @@ export function useTestListener(studentUid, onNavigate) {
             );
           }
         }, (err) => {
-          console.warn('Firestore subscription error in useTestListener, falling back to REST poll:', err.message);
+          // Silent fallback to REST if firestore rules deny access (e.g. mentor masquerading as student)
           fetchHistoryFromBackend();
         });
       } else {

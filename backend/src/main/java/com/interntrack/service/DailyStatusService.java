@@ -65,6 +65,41 @@ public class DailyStatusService {
             }
         }
 
+        // Step 1.5: Read Diary Signal
+        boolean diaryRejected = false;
+        boolean diaryAccepted = false;
+        boolean forcedDiaryAbsence = false;
+        
+        if (db != null) {
+            try {
+                DocumentSnapshot s = db.collection("suspicious_diaries").document(docId).get().get();
+                if (s.exists()) {
+                    diaryRejected = true;
+                } else {
+                    DocumentSnapshot d = db.collection("diaries").document(docId).get().get();
+                    if (d.exists() && "accepted".equalsIgnoreCase(d.getString("status"))) {
+                        diaryAccepted = true;
+                    }
+                }
+                
+                DocumentSnapshot currentStatus = db.collection("daily_status").document(docId).get().get();
+                if (currentStatus.exists()) {
+                    if ("absent".equalsIgnoreCase(currentStatus.getString("status"))) {
+                        String existingReason = currentStatus.getString("absenceReason");
+                        if (existingReason != null && existingReason.contains("Failed to submit mandatory daily work diary")) {
+                            forcedDiaryAbsence = true;
+                        }
+                    }
+                    if (missedPopupsCount == 0 && currentStatus.contains("missedPopupsCount")) {
+                        Long existingPopups = currentStatus.getLong("missedPopupsCount");
+                        if (existingPopups != null) {
+                            missedPopupsCount = existingPopups.intValue();
+                        }
+                    }
+                }
+            } catch (Exception ignored) {}
+        }
+
         // Step 2: Evaluate unified compliance rules
         boolean isAbsent = false;
         String absenceReason = null;
@@ -75,9 +110,26 @@ public class DailyStatusService {
         } else if (missedPopupsCount >= 3) {
             isAbsent = true;
             absenceReason = "Accrued " + missedPopupsCount + " unanswered working hour engagement popups today (threshold >= 3).";
+        } else if (diaryRejected) {
+            isAbsent = true;
+            absenceReason = "Daily work diary was rejected by AI verification.";
+        } else if (forcedDiaryAbsence) {
+            isAbsent = true;
+            absenceReason = "Failed to submit mandatory daily work diary.";
         }
 
-        String finalStatus = isAbsent ? "absent" : ("present".equalsIgnoreCase(attendanceStatus) || "excused_meeting".equalsIgnoreCase(attendanceStatus) ? "present" : "in_progress");
+        String finalStatus;
+        if (isAbsent) {
+            finalStatus = "absent";
+        } else {
+            // To be completely present, ALL THREE MUST MATCH
+            boolean attPresent = "present".equalsIgnoreCase(attendanceStatus) || "excused_meeting".equalsIgnoreCase(attendanceStatus);
+            if (attPresent && diaryAccepted) {
+                finalStatus = "present";
+            } else {
+                finalStatus = "in_progress";
+            }
+        }
 
         Map<String, Object> record = new HashMap<>();
         record.put("uid", uid);

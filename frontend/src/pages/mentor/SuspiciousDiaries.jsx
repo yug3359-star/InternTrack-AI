@@ -13,7 +13,7 @@ const SuspiciousDiaries = () => {
   const [notification, setNotification] = useState(null);
 
   const isHod = role === 'HOD' || window.location.pathname.includes('/hod/');
-  const mentorUid = user?.uid || (isHod ? 'Dr. Sharma (Head of Department)' : 'Prof. Rajesh K. (Faculty Advisor)');
+  const mentorUid = user?.fullName || user?.uid || 'Unknown';
 
   useEffect(() => {
     fetchSuspiciousQueue();

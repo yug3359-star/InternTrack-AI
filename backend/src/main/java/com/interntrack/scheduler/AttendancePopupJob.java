@@ -4,6 +4,7 @@ import com.google.api.core.ApiFuture;
 import com.google.cloud.firestore.DocumentSnapshot;
 import com.google.cloud.firestore.Firestore;
 import com.google.cloud.firestore.QuerySnapshot;
+import com.google.cloud.firestore.QueryDocumentSnapshot;
 import com.google.firebase.cloud.FirestoreClient;
 import com.interntrack.service.DailyStatusService;
 import org.slf4j.Logger;
@@ -13,15 +14,16 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import jakarta.annotation.PostConstruct;
 
 /**
  * Scheduled cron job managing formal daily attendance marking (Module 5b).
- * Issues 1x daily attendance checks (attendance/{uid}_{date}) with a 1-hour window for Ongoing students.
- * Continuously sweeps for expired windows, transitioning unanswered check-ins to 'missed' and recording daily absences.
+ * Issues 1x daily attendance checks strictly tied to a student's working hours.
+ * 100% Firestore-backed for production crash resiliency.
  */
 @Component
 public class AttendancePopupJob {
@@ -41,11 +43,7 @@ public class AttendancePopupJob {
 
     private final ZoneId applicationZoneId = ZoneId.of("Asia/Kolkata");
 
-    // Authoritative in-memory cache and simulation ledger
-    private final Map<String, Map<String, Object>> attendanceLedger = new ConcurrentHashMap<>();
-
     public AttendancePopupJob() {
-        initDefaultHistoricalRecords("dev-stud-107");
     }
 
     private Firestore getDb() {
@@ -58,113 +56,121 @@ public class AttendancePopupJob {
     }
 
     /**
-     * @Scheduled job triggering once daily per student (e.g. 09:30 AM server time, 30 min after standard 09:00 start)
-     * exclusively for students with status == 'Ongoing' in real Firestore.
+     * Initializes the attendance records at midnight for all ongoing students.
+     * Starts them in 'scheduled' status so they don't appear until exactly shift start time.
      */
-    @Scheduled(cron = "0 30 9 * * *")
+    @Scheduled(cron = "0 0 0 * * *")
     public void generateDailyAttendanceChecks() {
-        log.info("Executing daily formal attendance generation for all Ongoing internships (Timezone: [{}])", applicationZoneId.getId());
+        log.info("Midnight init: Creating scheduled attendance windows for Ongoing internships.");
         Firestore db = getDb();
+        if (db == null) return;
 
-        List<String> ongoingUids = new ArrayList<>();
-        if (db != null) {
-            try {
-                ApiFuture<QuerySnapshot> future = db.collection("internships").whereEqualTo("status", "Ongoing").get();
-                List<? extends DocumentSnapshot> docs = future.get().getDocuments();
-                for (DocumentSnapshot d : docs) {
-                    ongoingUids.add(d.getId());
-                }
-            } catch (Exception e) {
-                log.warn("Cloud Firestore unreachable during ongoing internship query: {}", e.getMessage());
+        Map<String, DocumentSnapshot> ongoingDocs = new HashMap<>();
+        try {
+            ApiFuture<QuerySnapshot> future = db.collection("internships").whereEqualTo("status", "Ongoing").get();
+            for (DocumentSnapshot d : future.get().getDocuments()) {
+                ongoingDocs.put(d.getId(), d);
             }
+        } catch (Exception e) {
+            log.warn("Cloud Firestore unreachable during ongoing internship query: {}", e.getMessage());
         }
 
-        // Include default dev testing cohort if cloud query was empty or offline
-        if (ongoingUids.isEmpty()) {
-            ongoingUids.add("dev-stud-107");
-        }
+        if (!ongoingDocs.containsKey("dev-stud-107")) ongoingDocs.put("dev-stud-107", null);
+        if (!ongoingDocs.containsKey("dev-stud-102")) ongoingDocs.put("dev-stud-102", null);
 
-        for (String uid : ongoingUids) {
-            triggerAttendanceForToday(uid);
-        }
-    }
+        LocalDate today = LocalDate.now(applicationZoneId);
+        String todayStr = today.format(DATE_FORMATTER);
+        String currentDayName = today.getDayOfWeek().getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.ENGLISH);
 
-    /**
-     * Triggers today's attendance document for a student in real Firestore (also invokable via test endpoints).
-     */
-    public Map<String, Object> triggerAttendanceForToday(String uid) {
-        String todayStr = LocalDate.now(applicationZoneId).format(DATE_FORMATTER);
-        String docId = uid + "_" + todayStr;
-        long now = System.currentTimeMillis();
+        for (Map.Entry<String, DocumentSnapshot> entry : ongoingDocs.entrySet()) {
+            String uid = entry.getKey();
+            DocumentSnapshot d = entry.getValue();
 
-        Map<String, Object> attDoc = new HashMap<>();
-        attDoc.put("id", docId);
-        attDoc.put("uid", uid);
-        attDoc.put("date", todayStr);
-        attDoc.put("status", "awaiting_response");
-        attDoc.put("triggeredAt", now);
-        attDoc.put("deadline", now + WINDOW_MS);
-        attDoc.put("windowMinutes", 60);
+            if (d != null && d.contains("workingDays")) {
+                List<String> workingDays = (List<String>) d.get("workingDays");
+                if (workingDays != null && !workingDays.isEmpty() && !workingDays.contains(currentDayName)) {
+                    log.info("Skipping attendance window init for student [{}] because today ({}) is a rest day.", uid, currentDayName);
+                    continue;
+                }
+            }
 
-        attendanceLedger.put(docId, attDoc);
+            String startStr = (d != null && d.getString("officeStartTime") != null) ? d.getString("officeStartTime") : (uid.equals("dev-stud-102") ? "08:30" : "09:00");
+            String[] parts = startStr.split(":");
+            LocalDateTime startDateTime = today.atTime(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]));
+            long windowStart = startDateTime.atZone(applicationZoneId).toInstant().toEpochMilli();
+            long deadline = windowStart + WINDOW_MS;
 
-        Firestore db = getDb();
-        if (db != null) {
+            String docId = uid + "_" + todayStr;
+
+            Map<String, Object> attDoc = new HashMap<>();
+            attDoc.put("id", docId);
+            attDoc.put("uid", uid);
+            attDoc.put("date", todayStr);
+            attDoc.put("status", "scheduled"); // Will be activated exactly at shift start
+            attDoc.put("windowStart", windowStart);
+            attDoc.put("deadline", deadline);
+            attDoc.put("windowMinutes", 60);
+
             try {
                 db.collection("attendance").document(docId).set(attDoc);
-                log.info("Created real attendance doc in Firestore: attendance/{} (Window: 1 hour)", docId);
-            } catch (Exception e) {
-                log.error("Failed to commit attendance check-in to Firestore doc {}: {}", docId, e.getMessage());
-            }
-        } else {
-            log.info("Offline simulation: Generated attendance check-in for doc [{}]", docId);
+            } catch (Exception ignored) {}
         }
-
-        return attDoc;
     }
 
     /**
-     * Cleanup job running every 3 minutes to inspect records past their 1-hour window.
-     * Transitions unaddressed 'awaiting_response' records to 'missed' and updates DailyStatusService.
+     * Runs every minute to strictly open the 1-hour window exactly when a student's shift starts.
+     */
+    @Scheduled(cron = "0 * * * * *")
+    public void dispatchAttendanceWindows() {
+        long currentMillis = System.currentTimeMillis();
+        String todayStr = LocalDate.now(applicationZoneId).format(DATE_FORMATTER);
+        Firestore db = getDb();
+        if (db == null) return;
+
+        try {
+            ApiFuture<QuerySnapshot> future = db.collection("attendance")
+                .whereEqualTo("date", todayStr)
+                .whereEqualTo("status", "scheduled")
+                .get();
+
+            for (QueryDocumentSnapshot doc : future.get().getDocuments()) {
+                Long windowStart = doc.getLong("windowStart");
+                if (windowStart != null && currentMillis >= windowStart) {
+                    log.info("Shift started! Opening 1-hour attendance window for [{}]", doc.getId());
+                    doc.getReference().update(
+                        "status", "awaiting_response",
+                        "triggeredAt", currentMillis
+                    );
+                }
+            }
+        } catch (Exception ignored) {}
+    }
+
+    /**
+     * Cleanup job running every 3 minutes to inspect records past their strict 1-hour window.
      */
     @Scheduled(fixedRate = 180_000)
     public void cleanupExpiredAttendanceWindows() {
         long currentMillis = System.currentTimeMillis();
         Firestore db = getDb();
+        if (db == null) return;
 
-        // Step 1: Check cloud Firestore records if connected
-        if (db != null) {
-            try {
-                ApiFuture<QuerySnapshot> future = db.collection("attendance").whereEqualTo("status", "awaiting_response").get();
-                List<? extends DocumentSnapshot> docs = future.get().getDocuments();
-                for (DocumentSnapshot d : docs) {
-                    Long deadline = d.getLong("deadline");
-                    if (deadline != null && currentMillis > deadline) {
-                        transitionToMissed(d.getId(), d.getString("uid"), d.getString("date"));
-                    }
-                }
-            } catch (Exception ignored) {}
-        }
-
-        // Step 2: Check local tracking ledger
-        for (Map.Entry<String, Map<String, Object>> entry : attendanceLedger.entrySet()) {
-            Map<String, Object> rec = entry.getValue();
-            if ("awaiting_response".equalsIgnoreCase(String.valueOf(rec.get("status")))) {
-                long deadline = ((Number) rec.getOrDefault("deadline", Long.MAX_VALUE)).longValue();
-                if (currentMillis > deadline) {
-                    transitionToMissed(entry.getKey(), (String) rec.get("uid"), (String) rec.get("date"));
+        try {
+            ApiFuture<QuerySnapshot> future = db.collection("attendance")
+                .whereEqualTo("status", "awaiting_response")
+                .get();
+            
+            for (QueryDocumentSnapshot d : future.get().getDocuments()) {
+                Long deadline = d.getLong("deadline");
+                if (deadline != null && currentMillis > deadline) {
+                    transitionToMissed(d.getId(), d.getString("uid"), d.getString("date"));
                 }
             }
-        }
+        } catch (Exception ignored) {}
     }
 
     private void transitionToMissed(String docId, String uid, String dateStr) {
-        log.warn("Attendance check window expired for [{}]. Marking status as MISSED.", docId);
-        Map<String, Object> rec = attendanceLedger.getOrDefault(docId, new HashMap<>());
-        rec.put("status", "missed");
-        rec.put("closedAt", System.currentTimeMillis());
-        attendanceLedger.put(docId, rec);
-
+        log.warn("Strict 1-hour attendance check window expired for [{}]. Marking status as MISSED.", docId);
         Firestore db = getDb();
         if (db != null) {
             try {
@@ -182,22 +188,94 @@ public class AttendancePopupJob {
         }
     }
 
+    /**
+     * Daily midnight auditor that backfills any missing attendance records from the student's
+     * start date up until yesterday. Ensures a perfect mathematical audit trail even if the server was offline.
+     */
+    @PostConstruct
+    @Scheduled(cron = "0 5 0 * * *") // Runs 5 minutes after midnight
+    public void auditAndBackfillMissingDays() {
+        log.info("Executing daily formal attendance backfill audit.");
+        Firestore db = getDb();
+        if (db == null) return;
+
+        try {
+            ApiFuture<QuerySnapshot> future = db.collection("internships").whereEqualTo("status", "Ongoing").get();
+            LocalDate today = LocalDate.now(applicationZoneId);
+
+            for (QueryDocumentSnapshot d : future.get().getDocuments()) {
+                String uid = d.getId();
+                
+                // Attempt to parse 'startDate', default to 7 days ago if missing
+                LocalDate startDate = today.minusDays(7); 
+                String startDateStr = d.getString("startDate");
+                if (startDateStr != null) {
+                    try {
+                        startDate = LocalDate.parse(startDateStr, DATE_FORMATTER);
+                    } catch (Exception ignored) {}
+                }
+
+                // Fetch all existing attendance dates for this UID
+                Set<String> existingDates = new HashSet<>();
+                ApiFuture<QuerySnapshot> attFuture = db.collection("attendance").whereEqualTo("uid", uid).get();
+                for (QueryDocumentSnapshot att : attFuture.get().getDocuments()) {
+                    existingDates.add(att.getString("date"));
+                }
+
+                // Iterate from startDate to yesterday
+                LocalDate currentDate = startDate;
+                while (currentDate.isBefore(today)) {
+                    String dateStr = currentDate.format(DATE_FORMATTER);
+                    String dayName = currentDate.getDayOfWeek().getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.ENGLISH);
+
+                    if (d != null && d.contains("workingDays")) {
+                        List<String> workingDays = (List<String>) d.get("workingDays");
+                        if (workingDays != null && !workingDays.isEmpty() && !workingDays.contains(dayName)) {
+                            currentDate = currentDate.plusDays(1);
+                            continue;
+                        }
+                    }
+
+                    String docId = uid + "_" + dateStr;
+
+                    if (!existingDates.contains(dateStr)) {
+                        log.warn("Backfill Audit: Missing attendance record found for [{}] on [{}]. Marking as missed.", uid, dateStr);
+                        Map<String, Object> record = new HashMap<>();
+                        record.put("id", docId);
+                        record.put("uid", uid);
+                        record.put("date", dateStr);
+                        record.put("status", "missed");
+                        record.put("closedAt", System.currentTimeMillis());
+                        record.put("auditNote", "Auto-generated by Daily Backfill Auditor due to missing historical record.");
+                        
+                        db.collection("attendance").document(docId).set(record);
+                        
+                        if (dailyStatusService != null) {
+                            dailyStatusService.evaluateDailyStatus(uid, currentDate, 0);
+                        }
+                    }
+                    currentDate = currentDate.plusDays(1);
+                }
+            }
+        } catch (Exception e) {
+            log.error("Error executing attendance backfill audit: {}", e.getMessage());
+        }
+    }
+
     public Map<String, Object> getAttendanceRecord(String docId) {
         Firestore db = getDb();
         if (db != null) {
             try {
                 DocumentSnapshot d = db.collection("attendance").document(docId).get().get();
                 if (d.exists() && d.getData() != null) {
-                    attendanceLedger.put(docId, new HashMap<>(d.getData()));
                     return d.getData();
                 }
             } catch (Exception ignored) {}
         }
-        return attendanceLedger.get(docId);
+        return null;
     }
 
     public void saveAttendanceRecord(String docId, Map<String, Object> rec) {
-        attendanceLedger.put(docId, rec);
         Firestore db = getDb();
         if (db != null) {
             try {
@@ -208,8 +286,6 @@ public class AttendancePopupJob {
 
     public List<Map<String, Object>> getStudentHistory(String uid) {
         List<Map<String, Object>> list = new ArrayList<>();
-        Set<String> addedIds = new HashSet<>();
-
         Firestore db = getDb();
         if (db != null) {
             try {
@@ -217,45 +293,54 @@ public class AttendancePopupJob {
                 List<? extends DocumentSnapshot> docs = future.get().getDocuments();
                 for (DocumentSnapshot d : docs) {
                     if (d.getData() != null) {
-                        list.add(new HashMap<>(d.getData()));
-                        addedIds.add(d.getId());
+                        Map<String, Object> rec = d.getData();
+                        // Ignore "scheduled" ones so frontend doesn't show them early
+                        if (!"scheduled".equals(rec.get("status"))) {
+                            list.add(rec);
+                        }
                     }
                 }
             } catch (Exception ignored) {}
         }
 
-        for (Map.Entry<String, Map<String, Object>> entry : attendanceLedger.entrySet()) {
-            if (uid.equals(entry.getValue().get("uid")) && !addedIds.contains(entry.getKey())) {
-                list.add(new HashMap<>(entry.getValue()));
-            }
-        }
-
-        // Sort descending by date
         list.sort((a, b) -> String.valueOf(b.getOrDefault("date", "")).compareTo(String.valueOf(a.getOrDefault("date", ""))));
         return list;
     }
 
-    private void initDefaultHistoricalRecords(String uid) {
-        LocalDate today = LocalDate.now(applicationZoneId);
+    public Map<String, Object> triggerAttendanceForToday(String uid) {
+        String todayStr = LocalDate.now(applicationZoneId).format(DATE_FORMATTER);
+        String docId = uid + "_" + todayStr;
         long now = System.currentTimeMillis();
 
-        // Populate 3 days of prior working attendance for realistic analytics
-        String d1 = today.minusDays(1).format(DATE_FORMATTER);
-        String id1 = uid + "_" + d1;
-        Map<String, Object> r1 = new HashMap<>();
-        r1.put("id", id1); r1.put("uid", uid); r1.put("date", d1); r1.put("status", "present"); r1.put("respondedAt", now - 86400000L);
-        attendanceLedger.put(id1, r1);
+        String startStr = uid.equals("dev-stud-102") ? "08:30" : "09:00";
+        String[] parts = startStr.split(":");
+        LocalDateTime startDateTime = LocalDate.now(applicationZoneId).atTime(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]));
+        long windowStart = startDateTime.atZone(applicationZoneId).toInstant().toEpochMilli();
+        long deadline = windowStart + WINDOW_MS;
 
-        String d2 = today.minusDays(2).format(DATE_FORMATTER);
-        String id2 = uid + "_" + d2;
-        Map<String, Object> r2 = new HashMap<>();
-        r2.put("id", id2); r2.put("uid", uid); r2.put("date", d2); r2.put("status", "excused_meeting"); r2.put("respondedAt", now - 172800000L);
-        attendanceLedger.put(id2, r2);
+        Map<String, Object> attDoc = new HashMap<>();
+        attDoc.put("id", docId);
+        attDoc.put("uid", uid);
+        attDoc.put("date", todayStr);
+        attDoc.put("windowStart", windowStart);
+        attDoc.put("deadline", deadline);
+        attDoc.put("windowMinutes", 60);
 
-        String d3 = today.minusDays(3).format(DATE_FORMATTER);
-        String id3 = uid + "_" + d3;
-        Map<String, Object> r3 = new HashMap<>();
-        r3.put("id", id3); r3.put("uid", uid); r3.put("date", d3); r3.put("status", "present"); r3.put("respondedAt", now - 259200000L);
-        attendanceLedger.put(id3, r3);
+        if (now > deadline) {
+            log.warn("Late fallback trigger: Marking attendance immediately missed for [{}]", docId);
+            attDoc.put("status", "missed");
+            attDoc.put("closedAt", now);
+        } else {
+            attDoc.put("status", "awaiting_response");
+            attDoc.put("triggeredAt", now);
+        }
+
+        saveAttendanceRecord(docId, attDoc);
+        
+        if (now > deadline) {
+            transitionToMissed(docId, uid, todayStr);
+        }
+        
+        return attDoc;
     }
 }

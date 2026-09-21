@@ -49,17 +49,8 @@ const StudentDetail = () => {
           computePercentage(list);
         }
       } catch (err) {
-        console.warn("[DEV MOCK PORTAL] Attendance API offline, loading demonstration cohort records:", err.message);
-        const d1 = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-        const d2 = new Date(Date.now() - 172800000).toISOString().split('T')[0];
-        const d3 = new Date(Date.now() - 259200000).toISOString().split('T')[0];
-        const sample = [
-          { id: `${uid}_${d1}`, uid, date: d1, status: 'present', respondedAt: Date.now() - 82000000 },
-          { id: `${uid}_${d2}`, uid, date: d2, status: 'excused_meeting', respondedAt: Date.now() - 168000000 },
-          { id: `${uid}_${d3}`, uid, date: d3, status: 'present', respondedAt: Date.now() - 254000000 }
-        ];
-        setRecords(sample);
-        computePercentage(sample);
+        console.error("Failed to load attendance history:", err.message);
+        setRecords([]);
       }
 
       try {
@@ -109,7 +100,7 @@ const StudentDetail = () => {
             Student Compliance Profile & Formal Attendance Ledger
           </h1>
           <p className={styles.subtitle}>
-            Target Student UID: <strong>{uid}</strong> | Program: Engineering Internship | Mentor: Dr. Rajesh K.
+            Target Student UID: <strong>{uid}</strong> | Program: Engineering Internship
           </p>
         </div>
         <Link to="/mentor" className={styles.backLink}>

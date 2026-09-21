@@ -33,8 +33,8 @@ const CompletionSummary = () => {
           setErrorMsg(`Your internship is ongoing. Your final report will be generated when you successfully complete your internship.`);
         } else {
           setErrorMsg(`Your internship is ongoing. Your final report will be generated when you successfully complete your internship.`);
+          console.error("Error loading completion summary:", err);
         }
-        console.error("Error loading completion summary:", err);
       } finally {
         setLoading(false);
       }

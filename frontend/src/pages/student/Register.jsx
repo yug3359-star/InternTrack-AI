@@ -226,17 +226,13 @@ const StudentRegister = () => {
       await registerStudent(formData);
 
       setSubmitSuccessMessage("Application submitted. You'll be notified once your HOD reviews it.");
-      setTimeout(() => {
-        navigate('/login');
-      }, 3000);
+      navigate('/login');
     } catch (err) {
       // Automatic developer demo evaluation fallback when Java backend server is offline
       if (!err.response || err.code === 'ERR_NETWORK' || err.message === 'Network Error') {
         console.warn("[DEV MOCK PORTAL] Spring Boot service at http://localhost:8080 offline. Recording evaluation profile locally.");
         setSubmitSuccessMessage("Application submitted (Local Evaluation Mode — Java server offline). You'll be notified once your HOD reviews it.");
-        setTimeout(() => {
-          navigate('/login');
-        }, 3500);
+        navigate('/login');
         return;
       }
       // Show exact backend error message returned by running Java server
@@ -492,7 +488,7 @@ const StudentRegister = () => {
                     {errors.internshipDomain && <span className={styles.errorText}>{errors.internshipDomain.message}</span>}
                   </div>
 
-                  <div className={styles.fieldCol}>
+                  {/* <div className={styles.fieldCol}>
                     <label className={styles.fieldLabel}>Primary Computing Peripheral</label>
                     <div className={styles.radioGroup}>
                       <label className={styles.radioLabel}>
@@ -504,7 +500,7 @@ const StudentRegister = () => {
                         <span>Mobile / Tablet Peripheral</span>
                       </label>
                     </div>
-                  </div>
+                  </div> */}
                 </div>
 
                 <div className={styles.fieldRow}>

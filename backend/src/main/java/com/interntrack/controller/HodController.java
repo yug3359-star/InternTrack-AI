@@ -10,6 +10,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -93,5 +94,10 @@ public class HodController {
         Map<String, Object> result = hodService.deleteApplication(uid, hodUid);
         auditLogger.logAdminAction("HOD_APPLICATION_DELETION", hodUid, uid, "Manually deleted student application");
         return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/mentors")
+    public ResponseEntity<List<Map<String, Object>>> getFacultyMentors() {
+        return ResponseEntity.ok(hodService.getFacultyMentors());
     }
 }

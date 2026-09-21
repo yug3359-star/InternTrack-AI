@@ -48,7 +48,13 @@ public class PortalController {
     // --- MENTOR ENDPOINTS (Requires ROLE_MENTOR or ROLE_HOD) ---
 
     @GetMapping("/mentor/students")
-    public ResponseEntity<List<Map<String, Object>>> getMentorStudents(@RequestParam(name = "mentorName", defaultValue = "Dr. Rajesh K. (CS Dept)") String mentorName) {
+    public ResponseEntity<List<Map<String, Object>>> getMentorStudents() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || auth.getName() == null) {
+            return ResponseEntity.status(401).build();
+        }
+        String mentorUid = auth.getName();
+        String mentorName = hodService.getMentorNameByUid(mentorUid);
         return ResponseEntity.ok(hodService.getMentorStudents(mentorName));
     }
 

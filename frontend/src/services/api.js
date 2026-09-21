@@ -73,207 +73,13 @@ export const registerStudent = async (formData) => {
  * Includes seamless local evaluation fallback when central Spring Boot service is offline.
  * ========================================================================================= */
 
-// Simulated evaluation roster for presentation demonstrations when offline
-let mockOfflinePendingList = [
-  {
-    uid: 'dev-stud-101',
-    fullName: 'Ananya Sharma',
-    collegeEmail: 'ananya.sharma@cs.college.edu',
-    branch: 'Computer Science & Engineering',
-    internshipDomain: 'Cloud Infrastructure & DevOps',
-    mentorName: 'Vikram Aditya',
-    mentorEmail: 'vikram@cloudcorp.org',
-    deviceType: 'Desktop',
-    joiningDate: '2026-08-01',
-    completionDate: '2026-11-30',
-    officeStartTime: '09:00',
-    officeEndTime: '17:00',
-    breakStartTime: '13:00',
-    breakEndTime: '14:00',
-    workingDays: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
-    status: 'Applied',
-    consentGiven: true,
-    consentTimestamp: Date.now() - 432000000,
-    createdAt: Date.now() - 432000000,
-    referencePhotoUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
-    offerLetterUrl: 'https://interntrack.dev/documents/dev-stud-101/offer-letter.pdf',
-    approvalLetterUrl: 'https://interntrack.dev/documents/dev-stud-101/approval-letter.pdf'
-  },
-  {
-    uid: 'dev-stud-102',
-    fullName: 'Rohit Verma',
-    collegeEmail: 'rohit.verma@cs.college.edu',
-    branch: 'Information Technology',
-    internshipDomain: 'Artificial Intelligence & Machine Learning',
-    mentorName: 'Priya Nair',
-    mentorEmail: 'priya.nair@ai-labs.io',
-    deviceType: 'Desktop',
-    joiningDate: '2026-08-05',
-    completionDate: '2026-12-05',
-    officeStartTime: '09:30',
-    officeEndTime: '17:30',
-    breakStartTime: '13:00',
-    breakEndTime: '14:00',
-    workingDays: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
-    status: 'Applied',
-    consentGiven: true,
-    consentTimestamp: Date.now() - 345600000,
-    createdAt: Date.now() - 345600000,
-    referencePhotoUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80',
-    offerLetterUrl: 'https://interntrack.dev/documents/dev-stud-102/offer-letter.pdf',
-    approvalLetterUrl: 'https://interntrack.dev/documents/dev-stud-102/approval-letter.pdf'
-  },
-  {
-    uid: 'dev-stud-103',
-    fullName: 'Siddharth Rao',
-    collegeEmail: 'siddharth.r@ai.college.edu',
-    branch: 'Artificial Intelligence & Data Science',
-    internshipDomain: 'Cybersecurity & Vulnerability Assessment',
-    mentorName: 'Amitabh Ghosh',
-    mentorEmail: 'aghosh@sec-guard.com',
-    deviceType: 'Desktop',
-    joiningDate: '2026-08-10',
-    completionDate: '2026-12-10',
-    officeStartTime: '10:00',
-    officeEndTime: '18:00',
-    breakStartTime: '13:30',
-    breakEndTime: '14:30',
-    workingDays: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
-    status: 'Applied',
-    consentGiven: true,
-    consentTimestamp: Date.now() - 259200000,
-    createdAt: Date.now() - 259200000,
-    referencePhotoUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80',
-    offerLetterUrl: 'https://interntrack.dev/documents/dev-stud-103/offer-letter.pdf',
-    approvalLetterUrl: 'https://interntrack.dev/documents/dev-stud-103/approval-letter.pdf'
-  },
-  {
-    uid: 'dev-stud-104',
-    fullName: 'Kavya Patel',
-    collegeEmail: 'kavya.p@ec.college.edu',
-    branch: 'Electronics & Communication',
-    internshipDomain: 'Embedded IoT Systems & Firmware',
-    mentorName: 'Dr. Rajeshwar Singh',
-    mentorEmail: 'rsingh@tech-devices.org',
-    deviceType: 'Desktop',
-    joiningDate: '2026-08-12',
-    completionDate: '2026-11-15',
-    officeStartTime: '09:00',
-    officeEndTime: '17:00',
-    breakStartTime: '13:00',
-    breakEndTime: '14:00',
-    workingDays: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
-    status: 'Applied',
-    consentGiven: true,
-    consentTimestamp: Date.now() - 172800000,
-    createdAt: Date.now() - 172800000,
-    referencePhotoUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&auto=format&fit=crop&q=80',
-    offerLetterUrl: 'https://interntrack.dev/documents/dev-stud-104/offer-letter.pdf',
-    approvalLetterUrl: 'https://interntrack.dev/documents/dev-stud-104/approval-letter.pdf'
-  },
-  {
-    uid: 'dev-stud-105',
-    fullName: 'Arjun Mehta',
-    collegeEmail: 'arjun.mehta@cs.college.edu',
-    branch: 'Computer Science & Engineering',
-    internshipDomain: 'Software Development & Architecture',
-    mentorName: 'Sneha Kulkarni',
-    mentorEmail: 'sneha@fintech-solutions.co',
-    deviceType: 'Desktop',
-    joiningDate: '2026-08-15',
-    completionDate: '2026-12-20',
-    officeStartTime: '09:00',
-    officeEndTime: '17:30',
-    breakStartTime: '13:00',
-    breakEndTime: '14:00',
-    workingDays: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
-    status: 'Applied',
-    consentGiven: true,
-    consentTimestamp: Date.now() - 86400000,
-    createdAt: Date.now() - 86400000,
-    referencePhotoUrl: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=200&auto=format&fit=crop&q=80',
-    offerLetterUrl: 'https://interntrack.dev/documents/dev-stud-105/offer-letter.pdf',
-    approvalLetterUrl: 'https://interntrack.dev/documents/dev-stud-105/approval-letter.pdf'
-  },
-  {
-    uid: 'dev-stud-106',
-    fullName: 'Priya Shinde',
-    collegeEmail: 'priya.s@cs.college.edu',
-    branch: 'Computer Science & Engineering',
-    internshipDomain: 'Cloud Infrastructure & DevOps',
-    mentorName: 'Vikram Aditya',
-    mentorEmail: 'vikram@cloudcorp.org',
-    deviceType: 'Desktop',
-    joiningDate: new Date().toISOString().split('T')[0], // Today's date to test automatic Ongoing transition
-    completionDate: '2026-11-30',
-    officeStartTime: '09:00',
-    officeEndTime: '17:30',
-    breakStartTime: '13:00',
-    breakEndTime: '14:00',
-    workingDays: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
-    status: 'Approved',
-    approvedAt: Date.now() - 3600000,
-    consentGiven: true,
-    consentTimestamp: Date.now() - 172800000,
-    createdAt: Date.now() - 172800000,
-    referencePhotoUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
-    offerLetterUrl: 'https://interntrack.dev/documents/dev-stud-106/offer-letter.pdf',
-    approvalLetterUrl: 'https://interntrack.dev/documents/dev-stud-106/approval-letter.pdf'
-  },
-  {
-    uid: 'dev-stud-107',
-    fullName: 'Rahul Nair',
-    collegeEmail: 'rahul.n@it.college.edu',
-    branch: 'Information Technology',
-    internshipDomain: 'Data Systems & ETL Pipelines',
-    mentorName: 'Dr. Rajesh K.',
-    mentorEmail: 'rajesh.k@cs.college.edu',
-    deviceType: 'Desktop',
-    joiningDate: '2026-07-01',
-    completionDate: '2026-10-31',
-    officeStartTime: '09:00',
-    officeEndTime: '17:00',
-    breakStartTime: '13:00',
-    breakEndTime: '14:00',
-    workingDays: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
-    status: 'Ongoing',
-    approvedAt: Date.now() - 604800000,
-    ongoingSince: Date.now() - 518400000,
-    consentGiven: true,
-    consentTimestamp: Date.now() - 700000000,
-    createdAt: Date.now() - 700000000,
-    referencePhotoUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80',
-    offerLetterUrl: `https://interntrack.dev/documents/dev-stud-107/offer-letter.pdf`,
-    approvalLetterUrl: `https://interntrack.dev/documents/dev-stud-107/approval-letter.pdf`
-  }
-];
 
 export const getPendingApplications = async (page = 1, status = 'ALL') => {
   try {
     const response = await api.get(`/hod/applications?page=${page}&status=${encodeURIComponent(status)}`);
     return response.data;
   } catch (err) {
-    if (!err.response || err.code === 'ERR_NETWORK' || err.message === 'Network Error') {
-      console.warn(`[DEV MOCK PORTAL] Central backend offline. Loading local evaluation ledger (Filter: ${status}).`);
-      const cleanFilter = String(status || 'ALL').trim().toUpperCase();
-      const activeFiltered = mockOfflinePendingList.filter(item => {
-        if (cleanFilter === 'ALL' || cleanFilter === 'ALL STATUSES') return true;
-        return item.status && item.status.toUpperCase() === cleanFilter;
-      });
-      const pageSize = 20;
-      const totalRecords = activeFiltered.length;
-      const totalPages = Math.ceil(totalRecords / pageSize) || 1;
-      const fromIndex = (page - 1) * pageSize;
-      const slice = activeFiltered.slice(fromIndex, fromIndex + pageSize);
-      return {
-        applications: slice,
-        currentPage: page,
-        pageSize,
-        totalRecords,
-        totalPages,
-        activeFilter: status
-      };
-    }
+    console.error("Failed to fetch pending applications:", err.message);
     throw err;
   }
 };
@@ -497,8 +303,15 @@ export const runEscalationCheckNow = async (targetMonth) => {
 };
 
 export const getCompletionSummary = async (uid = 'CS001') => {
-  const response = await api.get(`/completion/${uid}`);
-  return response.data;
+  try {
+    const response = await api.get(`/completion/${uid}`);
+    return response.data;
+  } catch (err) {
+    if (err.response && err.response.status === 404) {
+      return null;
+    }
+    throw err;
+  }
 };
 
 export const getCompletedStudents = async () => {
@@ -615,6 +428,17 @@ export const getHodBranchComparison = async () => {
         { branch: 'IT', fullName: 'Information Technology', attendance: 94.1, testScore: 88.0, studentCount: 28, hasData: true },
         { branch: 'ME', fullName: 'Mechanical Engineering', attendance: 0.0, testScore: 0.0, studentCount: 0, hasData: false, statusText: 'No data yet' }
       ];
+    }
+    throw err;
+  }
+};
+export const getFacultyMentors = async () => {
+  try {
+    const response = await api.get('/hod/applications/mentors');
+    return response.data;
+  } catch (err) {
+    if (!err.response || err.code === 'ERR_NETWORK') {
+       return [];
     }
     throw err;
   }

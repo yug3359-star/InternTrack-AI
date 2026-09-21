@@ -67,6 +67,23 @@ public class AttendanceController {
         String dateStr = String.valueOf(doc.getOrDefault("date", LocalDate.now(applicationZoneId).format(DATE_FORMATTER)));
         long now = System.currentTimeMillis();
 
+        String currentStatus = (String) doc.get("status");
+        if ("missed".equalsIgnoreCase(currentStatus)) {
+            log.warn("Student [{}] attempted to mark attendance for [{}] but status is already MISSED.", uid, attendanceId);
+            doc.put("error", "Attendance window expired. Status is already marked as MISSED.");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(doc);
+        }
+
+        Object deadlineObj = doc.get("deadline");
+        if (deadlineObj instanceof Number) {
+            long deadline = ((Number) deadlineObj).longValue();
+            if (now > deadline) {
+                log.warn("Student [{}] attempted to mark attendance for [{}] but deadline expired.", uid, attendanceId);
+                doc.put("error", "Attendance time window has strictly expired.");
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(doc);
+            }
+        }
+
         if ("meeting".equals(action) || "in_meeting".equals(action)) {
             // Attempt consumption from shared meeting quota pool
             boolean quotaConsumed = quotaService.tryConsumeMeetingQuota(uid);
