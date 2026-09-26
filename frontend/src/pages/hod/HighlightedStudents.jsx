@@ -100,7 +100,7 @@ const HighlightedStudents = () => {
           </div>
         ) : students.length === 0 ? (
           <div className={styles.emptyState}>
-            No students currently meet or exceed monthly institutional warning thresholds (3+ diary rejections, 3+ absences, or &ge;25% excuse usage).
+            No students currently meet or exceed monthly institutional warning thresholds (3+ absences).
           </div>
         ) : (
           <table className={styles.table}>

@@ -96,6 +96,15 @@ public class HodController {
         return ResponseEntity.ok(result);
     }
 
+    @DeleteMapping("/cleanup-orphans")
+    public ResponseEntity<Map<String, Object>> cleanupOrphans() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String hodUid = (auth != null && auth.getName() != null) ? auth.getName() : "hod-directory-admin";
+        Map<String, Object> result = hodService.cleanupOrphanedData();
+        auditLogger.logAdminAction("HOD_RETROACTIVE_CLEANUP", hodUid, "ALL", "Triggered retroactive cleanup of all orphaned student data");
+        return ResponseEntity.ok(result);
+    }
+
     @GetMapping("/mentors")
     public ResponseEntity<List<Map<String, Object>>> getFacultyMentors() {
         return ResponseEntity.ok(hodService.getFacultyMentors());

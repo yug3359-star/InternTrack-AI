@@ -208,7 +208,7 @@ const StudentDashboard = () => {
                 {popupStatus?.popupsRemaining ?? '-'} Remaining
               </div>
               <span style={{ fontSize: '13px', color: '#475569' }}>
-                Completed: <strong>{popupStatus?.popupsElapsed ?? '-'}</strong> / {popupStatus?.totalPopupsScheduled ?? '-'} | Missed: <strong style={{ color: popupStatus?.missedToday > 0 ? '#DC2626' : 'inherit' }}>{popupStatus?.missedToday ?? 0}</strong> / 3
+                Completed: <strong>{popupStatus?.completedToday ?? 0}</strong> / {popupStatus?.totalPopupsScheduled ?? '-'} | Missed: <strong style={{ color: popupStatus?.missedToday > 0 ? '#DC2626' : 'inherit' }}>{popupStatus?.missedToday ?? 0}</strong> / 3
               </span>
             </div>
           </div>
@@ -246,14 +246,6 @@ const StudentDashboard = () => {
       <section className={styles.engagementSection} style={{ borderTop: '4px solid #16A34A' }}>
         <div className={styles.engagementHeader}>
           <span className={styles.engagementTitle} style={{ color: '#15803D' }}>Daily Attendance Check (1x Daily Check)</span>
-          <button
-            type="button"
-            onClick={triggerTestAttendance}
-            className={styles.testTriggerBtn}
-            style={{ backgroundColor: '#16A34A' }}
-          >
-            Test Daily Attendance Check (1-Hour Window)
-          </button>
         </div>
         <div className={styles.quotaContainer}>
           <div className={styles.quotaBox} style={{ minWidth: '220px' }}>
@@ -393,7 +385,7 @@ const StudentDashboard = () => {
                 attendanceHistory.map((rec) => {
                   const isPresent = rec.status === 'present';
                   const isExcused = rec.status === 'excused_meeting';
-                  const isMissed = rec.status === 'missed';
+                  const isMissed = rec.status === 'missed' || rec.status === 'absent';
                   return (
                     <tr key={rec.id}>
                       <td className={styles.dateCell}><strong>{rec.date}</strong></td>
@@ -409,7 +401,7 @@ const StudentDashboard = () => {
                       </td>
                       <td>{isExcused ? 'Yes (1 Pass Deducted)' : 'No (Direct Confirm)'}</td>
                       <td className={styles.numCell}>
-                        {rec.respondedAt ? new Date(rec.respondedAt).toLocaleTimeString() : 'Awaiting Response...'}
+                        {rec.respondedAt ? new Date(rec.respondedAt).toLocaleTimeString() : (isMissed ? 'No Response Logged' : 'Awaiting Response...')}
                       </td>
                     </tr>
                   );

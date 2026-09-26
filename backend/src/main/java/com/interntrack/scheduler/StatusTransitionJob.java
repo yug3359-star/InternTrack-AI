@@ -30,7 +30,7 @@ public class StatusTransitionJob {
      * and Ongoing records against completion dates.
      * Transitions applications cleanly through their academic lifecycle stages and stamps permanent compliance ledgers.
      */
-    @Scheduled(cron = "0 0 * * * *")
+    @Scheduled(cron = "0 * * * * *")
     public void executeHourlyStatusAudit() {
         log.info("===================================================================================");
         log.info("   CRON INITIALIZED: Starting hourly automated internship status & completion audit");

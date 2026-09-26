@@ -62,6 +62,13 @@ export const useAttendanceListener = (userUid, role = 'STUDENT') => {
   useEffect(() => {
     if (role === 'STUDENT' || role === 'student') {
       fetchAttendanceHistory();
+      
+      // Flawless Automated Polling: Continuously check backend every 10s for newly generated attendance windows
+      const interval = setInterval(() => {
+        fetchAttendanceHistory();
+      }, 10000);
+      
+      return () => clearInterval(interval);
     }
   }, [role, fetchAttendanceHistory]);
 

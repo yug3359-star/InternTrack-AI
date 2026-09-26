@@ -68,6 +68,14 @@ export const registerStudent = async (formData) => {
   return response.data;
 };
 
+/**
+ * Resend verification email
+ */
+export const resendVerificationEmail = async (email) => {
+  const response = await api.post('/auth/resend-verification', { email });
+  return response.data;
+};
+
 /* =========================================================================================
  * MODULE 3: HOD APPROVAL & COMPLIANCE EVALUATION API ENDPOINTS
  * Includes seamless local evaluation fallback when central Spring Boot service is offline.
@@ -184,6 +192,25 @@ export const deleteApplication = async (uid) => {
       console.warn(`[DEV MOCK PORTAL] Simulating deletion for application ${uid}`);
       mockOfflinePendingList = mockOfflinePendingList.filter(item => item.uid !== uid);
       return { uid, message: "Application deleted (Local Evaluation Mode)" };
+    }
+    throw err;
+  }
+};
+
+export const exportExcelReport = async (branch = '', status = '') => {
+  try {
+    const params = new URLSearchParams();
+    if (branch) params.append('branch', branch);
+    if (status) params.append('status', status);
+
+    const response = await api.get(`/hod/export-excel?${params.toString()}`, {
+      responseType: 'blob' // Essential for receiving binary files
+    });
+    return response.data;
+  } catch (err) {
+    if (!err.response || err.code === 'ERR_NETWORK' || err.message === 'Network Error') {
+      console.warn(`[DEV MOCK PORTAL] Simulating Excel export failure (Network offline)`);
+      throw new Error("Unable to download Excel report in offline simulation mode.");
     }
     throw err;
   }
@@ -438,7 +465,7 @@ export const getFacultyMentors = async () => {
     return response.data;
   } catch (err) {
     if (!err.response || err.code === 'ERR_NETWORK') {
-       return [];
+      return [];
     }
     throw err;
   }

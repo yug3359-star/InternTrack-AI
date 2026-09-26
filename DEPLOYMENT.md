@@ -143,3 +143,23 @@ After completing deployment, immediately perform this 3-point compliance verific
 * **HTTPS Enforcement:** Try accessing your backend via `http://` instead of `https://`. You will observe an automatic 301 redirection or security rejection from `SecurityDefensesFilter`.
 * **Rate Limit Auditing:** Refresh or repeatedly hit `/api/auth/register` more than 5 times within 60 seconds from the same network IP. The server will intercept and block requests with HTTP Status `429 Too Many Requests`.
 * **RBAC Route Security:** Attempt typing `/hod/dashboard` into your web browser while authenticated as a Student account. You will be instantly redirected to the styled 403 Access Denied interface without exposing any institutional governance ledgers.
+
+---
+
+## Section 7: Administrative Maintenance Endpoints
+
+### One-Time Legacy Student Backfill
+If there are legacy student records generated prior to the enforcement of the newly expanded identity fields (Roll Number, Section, Semester, Mobile Number), Heads of Department can utilize an internal emergency cleanup endpoint to retroactively inject these identity attributes into an existing user's Firestore ledger.
+
+* **Endpoint URL:** `POST /api/hod/backfill-student-details/{uid}`
+* **Authorization:** Strict `HOD` Role Required (Bearer Token)
+* **Payload Structure (JSON):**
+  ```json
+  {
+    "rollNo": "2023ACSE1101169",
+    "section": "A",
+    "semester": 7,
+    "mobileNumber": "9876543210"
+  }
+  ```
+* **Disclaimer:** This is a designated internal cleanup endpoint, designed for one-time historical batch rectifications rather than daily operational usage.

@@ -30,10 +30,10 @@ public class DiaryController {
     public ResponseEntity<Map<String, Object>> submitDiary(@Valid @RequestBody SecurityValidationDtos.DiarySubmitDto payload) {
         log.info("REST POST request to submit student activity log for candidate UID [{}] on date [{}]", payload.getUid(), payload.getDate());
 
-        String uid = (payload.getUid() != null) ? payload.getUid() : "dev-stud-107";
+        String uid = (payload.getUid() != null) ? payload.getUid() : "unknown";
         String date = (payload.getDate() != null) ? payload.getDate() : LocalDate.now().toString();
         String entryText = (payload.getEntryText() != null) ? payload.getEntryText() : "";
-        String studentName = (payload.getStudentName() != null) ? payload.getStudentName() : "Alex Vance (2023CSB104)";
+        String studentName = (payload.getStudentName() != null) ? payload.getStudentName() : "Unknown Student";
         boolean rejectedDueToFaceMismatch = Boolean.TRUE.equals(payload.getRejectedDueToFaceMismatch());
 
         try {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../../services/api';
 import { useAuth } from '../../hooks/useAuth';
 import styles from './SuspiciousDiaries.module.css';
 
@@ -22,8 +22,8 @@ const SuspiciousDiaries = () => {
   const fetchSuspiciousQueue = async () => {
     setLoading(true);
     try {
-      const url = isHod ? `${API_BASE}/api/hod/suspicious` : `${API_BASE}/api/mentor/suspicious`;
-      const resp = await axios.get(url);
+      const endpoint = isHod ? `/hod/suspicious` : `/mentor/suspicious`;
+      const resp = await api.get(endpoint);
       setQueue(resp.data || []);
     } catch (err) {
       console.error('Error fetching suspicious diaries:', err);
@@ -36,7 +36,7 @@ const SuspiciousDiaries = () => {
     setActionInProgress(item.id);
     setNotification(null);
     try {
-      await axios.post(`${API_BASE}/api/mentor/suspicious/${item.id}/override`, {
+      await api.post(`/mentor/suspicious/${item.id}/override`, {
         action: 'accept',
         mentorUid: mentorUid
       });
@@ -58,7 +58,7 @@ const SuspiciousDiaries = () => {
     setActionInProgress(item.id);
     setNotification(null);
     try {
-      await axios.post(`${API_BASE}/api/mentor/suspicious/${item.id}/override`, {
+      await api.post(`/mentor/suspicious/${item.id}/override`, {
         action: 'delete',
         mentorUid: mentorUid
       });
@@ -126,7 +126,7 @@ const SuspiciousDiaries = () => {
                   <tr key={item.id || item.date} className={styles.tr}>
                     <td className={styles.td}>
                       <div className={styles.studentInfo}>
-                        <span className={styles.studentName}>{item.studentName || 'Alex Vance'}</span>
+                        <span className={styles.studentName}>{item.studentName || 'Unknown Student'}</span>
                         <span className={styles.studentUid}>{item.uid}</span>
                       </div>
                     </td>

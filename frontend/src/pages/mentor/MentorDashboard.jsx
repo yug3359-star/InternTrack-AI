@@ -138,7 +138,7 @@ const MentorDashboard = () => {
                     <td>
                       <div className={styles.studentCell}>
                         <strong className={styles.studentName}>{item.fullName}</strong>
-                        <span className={styles.rollCode}>{item.rollNo || 'Enrollment: ' + item.enrollmentNo || 'N/A'}</span>
+                        <span className={styles.rollCode}>{item.rollNo || 'Registration: ' + (item.registrationNumber || item.enrollmentNo) || 'N/A'}</span>
                         <span style={{ fontSize: '11px', color: '#64748B' }}>{item.collegeEmail}</span>
                       </div>
                     </td>

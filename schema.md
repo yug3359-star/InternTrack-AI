@@ -23,7 +23,12 @@ Stores identity attributes, institutional contact parameters, and custom access 
 | :--- | :--- | :--- |
 | `fullName` | `string` | Legal name and enrolled academic roll identifier |
 | `collegeEmail` | `string` | Official university domain email address |
+| `mobileNumber` | `string` | 10-digit mobile contact number |
 | `branch` | `string` | Enrolled department faculty (e.g., Computer Science & Engineering) |
+| `registrationNumber` | `string` | Official college identifier (Note: This replaces the legacy `enrollmentNo` field; they are the same identifier) |
+| `rollNo` | `string` | Academic roll number |
+| `section` | `string` | Class section (A, B, C, etc.) |
+| `semester` | `number` | Academic semester (1-8) |
 | `role` | `string` | Institutional role assignment (`STUDENT`, `MENTOR`, or `HOD`) |
 | `createdAt` | `number` | Epoch millisecond timestamp of identity creation |
 

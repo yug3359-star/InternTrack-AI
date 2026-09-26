@@ -8,17 +8,18 @@ import styles from './Unauthorized.module.css';
  */
 const Unauthorized = () => {
   const navigate = useNavigate();
-  const { role } = useAuth();
+  const { role, logout } = useAuth();
 
-  const getHomeRoute = () => {
-    const currentRole = role ? String(role).toLowerCase() : '';
-    if (currentRole === 'hod') return '/hod/dashboard';
-    if (currentRole === 'mentor') return '/mentor/dashboard';
-    return '/student/dashboard';
-  };
-
-  const handleReturnHome = () => {
-    navigate(getHomeRoute(), { replace: true });
+  const handleLogout = async () => {
+    try {
+      if (logout) {
+        await logout();
+      }
+      navigate('/login', { replace: true });
+    } catch (err) {
+      console.error("Logout failed", err);
+      navigate('/login', { replace: true });
+    }
   };
 
   return (
@@ -33,7 +34,7 @@ const Unauthorized = () => {
         </div>
         
         <h1 className={styles.title}>Access Denied</h1>
-        <p className={styles.message}>You don't have permission to view this page.</p>
+        <p className={styles.message}>You entered with an incorrect role.</p>
         
         <p className={styles.description}>
           This module is restricted to designated faculty members or institutional administrators. Your current authentication credentials do not include authorization for this department view.
@@ -42,8 +43,8 @@ const Unauthorized = () => {
         </p>
 
         <div className={styles.actions}>
-          <button onClick={handleReturnHome} className={styles.homeButton}>
-            Return to My Dashboard
+          <button onClick={handleLogout} className={styles.homeButton}>
+            Back to Login Page
           </button>
         </div>
       </div>

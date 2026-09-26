@@ -72,12 +72,7 @@ public class TestSchedulerJob {
             }
         }
 
-        // Guarantee active evaluation account has an exam available if testing offline or in fallback dev mode
-        if (triggeredCount == 0) {
-            log.info("Executing default evaluation test trigger for demonstration student [dev-stud-107]");
-            testService.createTestDoc("dev-stud-107", todayStr, now, 60, "Software Architecture & Microservices", "https://firebasestorage.googleapis.com/v0/b/interntrack-dev.appspot.com/o/reference-photos%2Fdev-stud-107.jpg");
-            triggeredCount = 1;
-        }
+        // Removed dev mock fallbacks
 
         log.info("Twice-weekly proctored exams created for {} Ongoing student practitioner(s) with 1-hour start windows.", triggeredCount);
         log.info("=========================================================================================");

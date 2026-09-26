@@ -33,6 +33,16 @@ public class HodService {
     // In-memory simulation registry to enable team review evaluations without active cloud database connectivity
     private final Map<String, Map<String, Object>> devSimulatedApplications = new ConcurrentHashMap<>();
 
+    @org.springframework.beans.factory.annotation.Autowired
+    @org.springframework.context.annotation.Lazy
+    private com.interntrack.service.StatusService statusService;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.interntrack.scheduler.AttendancePopupJob attendancePopupJob;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.interntrack.scheduler.EngagementPopupJob engagementPopupJob;
+
     public HodService() {
     }
 
@@ -65,15 +75,32 @@ public class HodService {
                 
                 ApiFuture<QuerySnapshot> future = query.get();
                 List<? extends DocumentSnapshot> documents = future.get().getDocuments();
+
+                // Batch fetch all user profiles in a single query to prevent N+1 30-second timeouts
+                java.util.Set<String> uids = new java.util.HashSet<>();
+                for (DocumentSnapshot doc : documents) {
+                    uids.add(doc.getId());
+                }
+                Map<String, DocumentSnapshot> userDocMap = new HashMap<>();
+                if (!uids.isEmpty()) {
+                    com.google.cloud.firestore.DocumentReference[] userRefs = uids.stream()
+                            .map(uid -> db.collection("users").document(uid))
+                            .toArray(com.google.cloud.firestore.DocumentReference[]::new);
+                    List<DocumentSnapshot> userDocs = db.getAll(userRefs).get();
+                    for (DocumentSnapshot uDoc : userDocs) {
+                        userDocMap.put(uDoc.getId(), uDoc);
+                    }
+                }
+
                 for (DocumentSnapshot doc : documents) {
                     Map<String, Object> internData = doc.getData();
                     if (internData != null) {
                         Map<String, Object> record = new HashMap<>(internData);
                         record.put("uid", doc.getId());
 
-                        // Read 2: Second read for matching users/{uid} doc to retrieve fullName and collegeEmail
-                        DocumentSnapshot userDoc = db.collection("users").document(doc.getId()).get().get();
-                        if (userDoc.exists() && userDoc.getData() != null) {
+                        // Read 2: Retrieve from pre-fetched batch map
+                        DocumentSnapshot userDoc = userDocMap.get(doc.getId());
+                        if (userDoc != null && userDoc.exists() && userDoc.getData() != null) {
                             record.put("fullName", userDoc.getString("fullName"));
                             record.put("collegeEmail", userDoc.getString("collegeEmail"));
                             record.put("branch", userDoc.getString("branch"));
@@ -233,7 +260,7 @@ public class HodService {
 
         try {
             Firestore db = FirestoreClient.getFirestore();
-            if (db != null && !devSimulatedApplications.containsKey(uid)) {
+            if (db != null) {
                 Map<String, Object> updates = new HashMap<>();
                 updates.put("status", "Approved");
                 updates.put("approvedAt", timestamp);
@@ -259,6 +286,21 @@ public class HodService {
         response.put("uid", uid);
         response.put("status", "Approved");
         response.put("message", "Application approved");
+        
+        // INSTANT AUTOMATION: Instantly evaluate Ongoing transition and rebuild attendance schedule
+        if (statusService != null && attendancePopupJob != null && engagementPopupJob != null) {
+            java.util.concurrent.CompletableFuture.runAsync(() -> {
+                try {
+                    log.info("Executing immediate status transition and attendance generation automation post-approval...");
+                    statusService.runStatusTransitionCheck();
+                    attendancePopupJob.generateDailyAttendanceChecks();
+                    engagementPopupJob.generateDailyEngagementSchedules();
+                } catch (Exception ex) {
+                    log.error("Failed to execute instant automation", ex);
+                }
+            });
+        }
+        
         return response;
     }
 
@@ -271,7 +313,7 @@ public class HodService {
 
         try {
             Firestore db = FirestoreClient.getFirestore();
-            if (db != null && !devSimulatedApplications.containsKey(uid)) {
+            if (db != null) {
                 Map<String, Object> updates = new HashMap<>();
                 updates.put("status", "Rejected");
                 updates.put("rejectedAt", timestamp);
@@ -314,6 +356,8 @@ public class HodService {
         record.put("mentorEmail", dto.getMentorEmail());
         record.put("joiningDate", dto.getJoiningDate());
         record.put("completionDate", dto.getCompletionDate());
+        record.put("officeStartTime", dto.getOfficeStartTime() != null ? dto.getOfficeStartTime() : "09:00");
+        record.put("officeEndTime", dto.getOfficeEndTime() != null ? dto.getOfficeEndTime() : "17:00");
         record.put("status", dto.getStatus());
         record.put("createdAt", timestamp);
         record.put("createdBy", hodUid);
@@ -328,6 +372,19 @@ public class HodService {
         }
 
         devSimulatedApplications.put(newUid, record);
+
+        // INSTANT AUTOMATION: Instantly evaluate Ongoing transition for new applications
+        if (statusService != null && attendancePopupJob != null && engagementPopupJob != null) {
+            java.util.concurrent.CompletableFuture.runAsync(() -> {
+                try {
+                    statusService.runStatusTransitionCheck();
+                    attendancePopupJob.generateDailyAttendanceChecks();
+                    engagementPopupJob.generateDailyEngagementSchedules();
+                } catch (Exception ex) {
+                    log.error("Failed to execute instant automation", ex);
+                }
+            });
+        }
 
         Map<String, Object> response = new HashMap<>(record);
         response.put("message", "Application created");
@@ -346,13 +403,15 @@ public class HodService {
         updates.put("mentorEmail", dto.getMentorEmail());
         updates.put("joiningDate", dto.getJoiningDate());
         updates.put("completionDate", dto.getCompletionDate());
+        updates.put("officeStartTime", dto.getOfficeStartTime() != null ? dto.getOfficeStartTime() : "09:00");
+        updates.put("officeEndTime", dto.getOfficeEndTime() != null ? dto.getOfficeEndTime() : "17:00");
         updates.put("status", dto.getStatus());
         updates.put("updatedAt", timestamp);
         updates.put("updatedBy", hodUid);
 
         try {
             Firestore db = FirestoreClient.getFirestore();
-            if (db != null && !devSimulatedApplications.containsKey(uid)) {
+            if (db != null) {
                 db.collection("internships").document(uid).update(updates).get();
             }
         } catch (Exception e) {
@@ -364,6 +423,19 @@ public class HodService {
             record.putAll(updates);
         }
 
+        // INSTANT AUTOMATION: Instantly evaluate Ongoing transition for updated applications
+        if (statusService != null && attendancePopupJob != null && engagementPopupJob != null) {
+            java.util.concurrent.CompletableFuture.runAsync(() -> {
+                try {
+                    statusService.runStatusTransitionCheck();
+                    attendancePopupJob.generateDailyAttendanceChecks();
+                    engagementPopupJob.generateDailyEngagementSchedules();
+                } catch (Exception ex) {
+                    log.error("Failed to execute instant automation", ex);
+                }
+            });
+        }
+
         Map<String, Object> response = new HashMap<>();
         response.put("uid", uid);
         response.put("message", "Application updated");
@@ -371,21 +443,204 @@ public class HodService {
     }
 
     public Map<String, Object> deleteApplication(String uid, String hodUid) {
-        try {
-            Firestore db = FirestoreClient.getFirestore();
-            if (db != null && !devSimulatedApplications.containsKey(uid)) {
-                db.collection("internships").document(uid).delete().get();
-            }
-        } catch (Exception e) {
-            log.warn("Cloud Firestore update unreachable during application deletion for {}: {}", uid, e.getMessage());
-        }
-
+        log.info("HOD [{}] initiating complete wipe for student [{}]", hodUid, uid);
+        wipeStudentDataEntirely(uid);
         devSimulatedApplications.remove(uid);
 
         Map<String, Object> response = new HashMap<>();
         response.put("uid", uid);
         response.put("message", "Application deleted");
         return response;
+    }
+
+    private void wipeStudentDataEntirely(String uid) {
+        try {
+            Firestore db = FirestoreClient.getFirestore();
+            if (db != null) {
+                // Delete direct doc matches
+                db.collection("users").document(uid).delete();
+                db.collection("internships").document(uid).delete();
+                db.collection("completion_summaries").document(uid).delete();
+
+                String[] collections = {
+                    "attendance", "daily_status", "diaries", "suspicious_diaries",
+                    "warnings", "tests", "daily_engagement_schedules", "mentor_reviews",
+                    "test_results", "quotas"
+                };
+
+                for (String col : collections) {
+                    try {
+                        java.util.List<com.google.cloud.firestore.QueryDocumentSnapshot> docsUid = 
+                            db.collection(col).whereEqualTo("uid", uid).get().get().getDocuments();
+                        for (com.google.cloud.firestore.QueryDocumentSnapshot doc : docsUid) {
+                            doc.getReference().delete();
+                        }
+                        
+                        java.util.List<com.google.cloud.firestore.QueryDocumentSnapshot> docsStudentId = 
+                            db.collection(col).whereEqualTo("studentId", uid).get().get().getDocuments();
+                        for (com.google.cloud.firestore.QueryDocumentSnapshot doc : docsStudentId) {
+                            doc.getReference().delete();
+                        }
+                        
+                        java.util.List<com.google.cloud.firestore.QueryDocumentSnapshot> docsStudentUid = 
+                            db.collection(col).whereEqualTo("studentUid", uid).get().get().getDocuments();
+                        for (com.google.cloud.firestore.QueryDocumentSnapshot doc : docsStudentUid) {
+                            doc.getReference().delete();
+                        }
+                    } catch (Exception e) {}
+                }
+
+                try {
+                    db.collection("popups").document(uid).delete();
+                    java.util.List<com.google.cloud.firestore.QueryDocumentSnapshot> pendingPopups = 
+                        db.collection("popups").document(uid).collection("pending").get().get().getDocuments();
+                    for (com.google.cloud.firestore.QueryDocumentSnapshot doc : pendingPopups) {
+                        doc.getReference().delete();
+                    }
+                } catch (Exception e) {}
+            }
+        } catch (Exception e) {
+            log.warn("Failed to delete Firestore documents for {}: {}", uid, e.getMessage());
+        }
+
+        try {
+            com.google.cloud.storage.Bucket bucket = com.google.firebase.cloud.StorageClient.getInstance().bucket();
+            if (bucket != null) {
+                for (com.google.cloud.storage.Blob blob : bucket.list(com.google.cloud.storage.Storage.BlobListOption.prefix("documents/" + uid + "/")).iterateAll()) {
+                    blob.delete();
+                }
+                for (com.google.cloud.storage.Blob blob : bucket.list(com.google.cloud.storage.Storage.BlobListOption.prefix("reference-photos/" + uid)).iterateAll()) {
+                    blob.delete();
+                }
+            }
+        } catch (Exception e) {}
+
+        try {
+            com.google.firebase.auth.FirebaseAuth auth = com.google.firebase.auth.FirebaseAuth.getInstance();
+            if (auth != null) {
+                auth.deleteUser(uid);
+            }
+        } catch (Exception e) {}
+    }
+
+    @jakarta.annotation.PostConstruct
+    public Map<String, Object> cleanupOrphanedData() {
+        Map<String, Object> report = new HashMap<>();
+        int deletedCount = 0;
+        try {
+            Firestore db = FirestoreClient.getFirestore();
+            if (db == null) return report;
+
+            // 1. Gather all valid active student UIDs
+            java.util.Set<String> validUids = new java.util.HashSet<>();
+            java.util.List<com.google.cloud.firestore.QueryDocumentSnapshot> activeInterns = db.collection("internships").get().get().getDocuments();
+            for (com.google.cloud.firestore.QueryDocumentSnapshot doc : activeInterns) {
+                validUids.add(doc.getId());
+            }
+
+            String[] collections = {
+                "attendance", "daily_status", "diaries", "suspicious_diaries",
+                "warnings", "tests", "daily_engagement_schedules", "mentor_reviews",
+                "test_results", "quotas", "completion_summaries"
+            };
+
+            for (String col : collections) {
+                try {
+                    java.util.List<com.google.cloud.firestore.QueryDocumentSnapshot> docs = db.collection(col).get().get().getDocuments();
+                    for (com.google.cloud.firestore.QueryDocumentSnapshot doc : docs) {
+                        String uid = null;
+                        if (doc.contains("uid")) uid = doc.getString("uid");
+                        else if (doc.contains("studentId")) uid = doc.getString("studentId");
+                        else if (doc.contains("studentUid")) uid = doc.getString("studentUid");
+                        else uid = doc.getId(); // Fallback to document ID itself if it matches a UID
+
+                        // For daily_engagement_schedules, ID is like {uid}_{date}
+                        if (uid != null && uid.contains("_")) {
+                            uid = uid.split("_")[0];
+                        }
+
+                        if (uid != null && !validUids.contains(uid)) {
+                            // Wipe the document
+                            doc.getReference().delete();
+                            deletedCount++;
+                        }
+                    }
+                } catch (Exception e) {
+                    log.warn("Failed scanning collection {} during orphan cleanup: {}", col, e.getMessage());
+                }
+            }
+
+            // Specialized cleanup for popups using listDocuments to catch deleted parents with orphaned subcollections
+            try {
+                Iterable<com.google.cloud.firestore.DocumentReference> popupRefs = db.collection("popups").listDocuments();
+                for (com.google.cloud.firestore.DocumentReference popupRef : popupRefs) {
+                    if (!validUids.contains(popupRef.getId())) {
+                        try {
+                            java.util.List<com.google.cloud.firestore.QueryDocumentSnapshot> pending = popupRef.collection("pending").get().get().getDocuments();
+                            for (com.google.cloud.firestore.QueryDocumentSnapshot p : pending) {
+                                p.getReference().delete();
+                                deletedCount++;
+                            }
+                        } catch (Exception ignore) {}
+                        popupRef.delete();
+                        deletedCount++;
+                    }
+                }
+            } catch (Exception e) {}
+
+            // Cleanup isolated student users
+            try {
+                java.util.List<com.google.cloud.firestore.QueryDocumentSnapshot> userDocs = db.collection("users").get().get().getDocuments();
+                for (com.google.cloud.firestore.QueryDocumentSnapshot doc : userDocs) {
+                    String role = doc.getString("role");
+                    if (role != null && "student".equalsIgnoreCase(role)) {
+                        if (!validUids.contains(doc.getId())) {
+                            doc.getReference().delete();
+                            deletedCount++;
+                        }
+                    }
+                }
+            } catch (Exception e) {}
+
+            // Cleanup test questions (format: {uid}_WEEKLY_BANK)
+            try {
+                java.util.List<com.google.cloud.firestore.QueryDocumentSnapshot> tqDocs = db.collection("test_questions").get().get().getDocuments();
+                for (com.google.cloud.firestore.QueryDocumentSnapshot doc : tqDocs) {
+                    String id = doc.getId();
+                    if (id.contains("_")) {
+                        String uid = id.split("_")[0];
+                        if (!validUids.contains(uid)) {
+                            doc.getReference().delete();
+                            deletedCount++;
+                        }
+                    }
+                }
+            } catch (Exception e) {}
+
+            // Truncate non-student-specific logs/emails as requested for clean slate
+            try {
+                java.util.List<com.google.cloud.firestore.QueryDocumentSnapshot> mailDocs = db.collection("mail").get().get().getDocuments();
+                for (com.google.cloud.firestore.QueryDocumentSnapshot doc : mailDocs) {
+                    doc.getReference().delete();
+                    deletedCount++;
+                }
+            } catch (Exception e) {}
+
+            try {
+                java.util.List<com.google.cloud.firestore.QueryDocumentSnapshot> logDocs = db.collection("system_logs").get().get().getDocuments();
+                for (com.google.cloud.firestore.QueryDocumentSnapshot doc : logDocs) {
+                    doc.getReference().delete();
+                    deletedCount++;
+                }
+            } catch (Exception e) {}
+
+        } catch (Exception e) {
+            log.error("Failed to execute retroactive cleanup: {}", e.getMessage());
+        }
+        log.info("Retroactive automated orphan cleanup complete. Total documents wiped: {}", deletedCount);
+        report.put("success", true);
+        report.put("orphanedDocumentsDeleted", deletedCount);
+        return report;
     }
 
     /**
@@ -399,7 +654,23 @@ public class HodService {
                 if (joiningDateStr != null && !joiningDateStr.trim().isEmpty()) {
                     try {
                         LocalDate joinDate = LocalDate.parse(joiningDateStr.trim());
-                        if (!joinDate.isAfter(today)) {
+                        
+                        boolean shouldTransition = false;
+                        if (joinDate.isBefore(today)) {
+                            shouldTransition = true;
+                        } else if (joinDate.isEqual(today)) {
+                            String officeStartTimeStr = (String) app.get("officeStartTime");
+                            if (officeStartTimeStr == null || officeStartTimeStr.isEmpty()) {
+                                officeStartTimeStr = "09:00";
+                            }
+                            java.time.LocalTime officeStartTime = java.time.LocalTime.parse(officeStartTimeStr);
+                            java.time.LocalTime currentTime = java.time.LocalTime.now(java.time.ZoneId.of("Asia/Kolkata"));
+                            if (!currentTime.isBefore(officeStartTime)) {
+                                shouldTransition = true;
+                            }
+                        }
+                        
+                        if (shouldTransition) {
                             app.put("status", "Ongoing");
                             app.put("ongoingSince", nowMs);
                             log.info("Audit Dev Transition: HOD simulation record [{}] transitioned from Approved to Ongoing", app.get("uid"));
@@ -461,15 +732,41 @@ public class HodService {
                 // Query both lowercase and uppercase to be safe
                 ApiFuture<QuerySnapshot> future = db.collection("users").whereIn("role", java.util.Arrays.asList("MENTOR", "mentor")).get();
                 List<? extends DocumentSnapshot> documents = future.get().getDocuments();
+                // Extract identifiers for batch Firebase Auth verification
+                List<com.google.firebase.auth.UserIdentifier> identifiers = new ArrayList<>();
                 for (DocumentSnapshot doc : documents) {
-                    Map<String, Object> data = doc.getData();
-                    if (data != null) {
-                        Map<String, Object> mentor = new HashMap<>();
-                        mentor.put("uid", doc.getId());
-                        mentor.put("fullName", data.get("fullName"));
-                        mentor.put("email", data.get("collegeEmail"));
-                        mentor.put("department", data.get("department"));
-                        mentors.add(mentor);
+                    identifiers.add(new com.google.firebase.auth.UidIdentifier(doc.getId()));
+                }
+
+                java.util.Set<String> activeUids = new java.util.HashSet<>();
+                if (!identifiers.isEmpty()) {
+                    try {
+                        com.google.firebase.auth.GetUsersResult result = com.google.firebase.auth.FirebaseAuth.getInstance().getUsersAsync(identifiers).get();
+                        for (com.google.firebase.auth.UserRecord record : result.getUsers()) {
+                            activeUids.add(record.getUid());
+                        }
+                    } catch (Exception e) {
+                        log.warn("Failed to batch fetch Auth users. Falling back to accepting all DB records. Error: {}", e.getMessage());
+                        // Fallback: accept all to prevent UI crash
+                        for (DocumentSnapshot doc : documents) activeUids.add(doc.getId());
+                    }
+                }
+
+                for (DocumentSnapshot doc : documents) {
+                    if (activeUids.contains(doc.getId())) {
+                        Map<String, Object> data = doc.getData();
+                        if (data != null) {
+                            Map<String, Object> mentor = new HashMap<>();
+                            mentor.put("uid", doc.getId());
+                            mentor.put("fullName", data.get("fullName"));
+                            mentor.put("email", data.get("collegeEmail"));
+                            mentor.put("department", data.get("department"));
+                            mentors.add(mentor);
+                        }
+                    } else {
+                        log.warn("Mentor {} not found in Auth. Cleaning up automatically.", doc.getId());
+                        // Asynchronously delete the orphaned record from Firestore
+                        java.util.concurrent.CompletableFuture.runAsync(() -> doc.getReference().delete());
                     }
                 }
             }

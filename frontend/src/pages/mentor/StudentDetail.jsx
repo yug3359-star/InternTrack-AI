@@ -103,7 +103,7 @@ const StudentDetail = () => {
             Target Student UID: <strong>{uid}</strong> | Program: Engineering Internship
           </p>
         </div>
-        <Link to="/mentor" className={styles.backLink}>
+        <Link to="/mentor/dashboard" className={styles.backLink}>
           Back to Mentor Portal
         </Link>
       </header>

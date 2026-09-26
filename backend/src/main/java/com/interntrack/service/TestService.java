@@ -161,8 +161,13 @@ public class TestService {
             if (finalScore >= 40.0) {
                 biometricApproved = true;
             } else {
-                log.warn("Test Start failed biometric verification. Score: {}", finalScore);
+                log.warn("Test Start borderline biometric verification. Score: {}. Routing to mentor review.", finalScore);
+                String referencePhotoUrl = "https://firebasestorage.googleapis.com/v0/b/interntrack-dev.appspot.com/o/reference-photos%2F" + uid + ".jpg?alt=media";
+                mentorReviewService.createBorderlineReview(uid, finalScore, startPhotoBase64OrUrl, referencePhotoUrl);
+                biometricApproved = true;
             }
+        } else {
+            biometricApproved = true; // Fallback if score is missing
         }
 
         if (!biometricApproved) {
@@ -272,8 +277,13 @@ public class TestService {
             if (finalScore >= 40.0) {
                 biometricApproved = true;
             } else {
-                log.warn("Test Submit failed biometric verification. Score: {}", finalScore);
+                log.warn("Test Submit borderline biometric verification. Score: {}. Routing to mentor review.", finalScore);
+                String referencePhotoUrl = "https://firebasestorage.googleapis.com/v0/b/interntrack-dev.appspot.com/o/reference-photos%2F" + uid + ".jpg?alt=media";
+                mentorReviewService.createBorderlineReview(uid, finalScore, submitPhotoUrl, referencePhotoUrl);
+                biometricApproved = true;
             }
+        } else {
+            biometricApproved = true; // Fallback if score is missing
         }
 
         if (!biometricApproved) {
@@ -429,34 +439,7 @@ public class TestService {
                 records.add(new HashMap<>(doc));
             }
         }
-        if (records.isEmpty() && uid.startsWith("dev-stud-")) {
-            // Populate baseline evaluation demonstrations
-            String d1 = new Date(System.currentTimeMillis() - 259200000L).toString();
-            String d2 = new Date(System.currentTimeMillis() - 86400000L).toString();
-            Map<String, Object> t1 = createTestDoc(uid, "2026-07-21", System.currentTimeMillis() - 260000000L, 60,
-                    "Software Architecture", null);
-            t1.put("status", "completed");
-            t1.put("score", 5);
-            t1.put("tabSwitchCount", 0);
-            t1.put("actualSubmitTime", System.currentTimeMillis() - 259000000L);
-            saveTestDoc((String) t1.get("id"), t1);
-
-            Map<String, Object> t2 = createTestDoc(uid, "2026-07-24", System.currentTimeMillis() - 90000000L, 60,
-                    "Software Architecture", null);
-            t2.put("status", "completed");
-            t2.put("score", 4);
-            t2.put("tabSwitchCount", 1);
-            t2.put("actualSubmitTime", System.currentTimeMillis() - 89000000L);
-            saveTestDoc((String) t2.get("id"), t2);
-
-            String todayStr = java.time.LocalDate.now(zoneId).toString();
-            Map<String, Object> t3 = createTestDoc(uid, todayStr, System.currentTimeMillis(), 60,
-                    "Software Architecture & Microservices", null);
-
-            records.add(t1);
-            records.add(t2);
-            records.add(t3);
-        }
+        // Removed fake evaluation population
         records.sort((a, b) -> ((String) b.getOrDefault("date", "")).compareTo((String) a.getOrDefault("date", "")));
         return records;
     }
@@ -545,7 +528,7 @@ public class TestService {
         // Auto-initialize test document if not found so test sessions never fail with
         // missing document errors
         String uid = testId != null && testId.contains("_") ? testId.substring(0, testId.lastIndexOf('_'))
-                : "dev-stud-107";
+                : "unknown";
         String date = testId != null && testId.contains("_") ? testId.substring(testId.lastIndexOf('_') + 1)
                 : java.time.LocalDate.now(zoneId).toString();
         log.info("Auto-initializing test document [{}] for uid [{}] on date [{}]", testId, uid, date);

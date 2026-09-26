@@ -152,6 +152,9 @@ public class SecurityValidationDtos {
         @NotBlank(message = "Status is required")
         private String status;
 
+        private String officeStartTime;
+        private String officeEndTime;
+
         public ApplicationCrudDto() {}
 
         public String getFullName() { return fullName; }
@@ -172,5 +175,9 @@ public class SecurityValidationDtos {
         public void setCompletionDate(String completionDate) { this.completionDate = completionDate; }
         public String getStatus() { return status; }
         public void setStatus(String status) { this.status = status; }
+        public String getOfficeStartTime() { return officeStartTime; }
+        public void setOfficeStartTime(String officeStartTime) { this.officeStartTime = officeStartTime; }
+        public String getOfficeEndTime() { return officeEndTime; }
+        public void setOfficeEndTime(String officeEndTime) { this.officeEndTime = officeEndTime; }
     }
 }

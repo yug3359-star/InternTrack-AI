@@ -47,7 +47,14 @@ public class PopupService {
         Double simulatedScore = null;
 
         // Resolve the pending popup to prevent the sweeper from marking it as missed
-        engagementPopupJob.resolvePendingPopup(uid, popupId);
+        boolean resolved = engagementPopupJob.resolvePendingPopup(uid, popupId);
+        if (!resolved && !popupId.startsWith("test-checkin-")) {
+            Map<String, Object> errResponse = new HashMap<>();
+            errResponse.put("error", true);
+            errResponse.put("matchStatus", "EXPIRED");
+            errResponse.put("message", "This check-in has already expired and was marked as missed.");
+            return errResponse;
+        }
 
         if (payload.get("simulatedScore") instanceof Number) {
             simulatedScore = ((Number) payload.get("simulatedScore")).doubleValue();
@@ -56,8 +63,21 @@ public class PopupService {
         log.info("Processing engagement popup response for student [{}], action [{}], popupId [{}]", uid, action,
                 popupId);
 
+        if ("TIMEOUT_MISSED".equals(action)) {
+            log.warn("Student [{}] missed popup [{}]. Registering failed attendance attempt.", uid, popupId);
+            engagementPopupJob.incrementMissedPopup(uid);
+            Map<String, Object> response = new HashMap<>();
+            response.put("matchStatus", "EXPIRED");
+            response.put("popupId", popupId);
+            response.put("action", action);
+            response.put("processedAt", System.currentTimeMillis());
+            return response;
+        }
+
         if ("IN_MEETING".equals(action)) {
-            return claimMeetingOverride(uid, popupId);
+            Map<String, Object> result = claimMeetingOverride(uid, popupId);
+            engagementPopupJob.incrementCompletedPopup(uid);
+            return result;
         }
 
         // Client-side provided similarity score
@@ -66,12 +86,11 @@ public class PopupService {
                 : 100.0; // fallback to pass if not provided
 
         String matchStatus;
-        if (similarityScore >= 75.0) {
+        if (similarityScore >= 40.0) {
             matchStatus = "APPROVED";
-        } else if (similarityScore >= 40.0) {
-            matchStatus = "BORDERLINE";
+            engagementPopupJob.incrementCompletedPopup(uid);
         } else {
-            matchStatus = "REJECTED";
+            matchStatus = "BORDERLINE";
         }
 
         if ("BORDERLINE".equals(matchStatus)) {
@@ -113,6 +132,21 @@ public class PopupService {
         String today = LocalDate.now(applicationZoneId).toString();
         dailyStatusService.recordAttendanceResult(uid, today, "excused_meeting",
                 "Claimed whole day meeting exemption token.");
+                
+        // Ensure the source attendance document itself is explicitly updated so it survives AI/Mentor recalculations
+        try {
+            com.google.cloud.firestore.Firestore db = com.google.firebase.cloud.FirestoreClient.getFirestore();
+            String docId = uid + "_" + today;
+            Map<String, Object> update = new HashMap<>();
+            update.put("id", docId);
+            update.put("uid", uid);
+            update.put("date", today);
+            update.put("status", "excused_meeting");
+            update.put("absenceReason", "Claimed whole day meeting exemption token.");
+            db.collection("attendance").document(docId).set(update, com.google.cloud.firestore.SetOptions.merge()).get();
+        } catch (Exception e) {
+            log.warn("Error updating source attendance doc for meeting exemption: {}", e.getMessage());
+        }
 
         Map<String, Object> currentQuota = quotaService.getStudentMeetingQuota(uid);
         int used = ((Number) currentQuota.getOrDefault("used", 0)).intValue();

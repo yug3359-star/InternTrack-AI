@@ -30,20 +30,61 @@ public class MentorSuspiciousService {
         log.info("Querying suspicious student diary logs for mentor evaluation [{}]", mentorName);
         List<Map<String, Object>> results = new ArrayList<>();
 
-        if (firestore != null) {
+        Firestore firestoreLocal = null;
+        try {
+            firestoreLocal = com.google.firebase.cloud.FirestoreClient.getFirestore();
+        } catch (Exception e) {
+            log.error("Failed to get FirestoreClient instance: {}", e.getMessage());
+        }
+
+        if (firestoreLocal != null) {
             try {
-                List<QueryDocumentSnapshot> docs = firestore.collection("suspicious_diaries").get().get().getDocuments();
+                List<QueryDocumentSnapshot> docs = firestoreLocal.collection("suspicious_diaries").get().get().getDocuments();
                 for (QueryDocumentSnapshot d : docs) {
                     Map<String, Object> data = d.getData();
                     if (data != null) {
                         String studentUid = (String) data.get("uid");
                         if (studentUid != null) {
                             if (isHod) {
+                                data.put("id", d.getId());
+                                
+                                try {
+                                    DocumentSnapshot userDoc = firestoreLocal.collection("users").document(studentUid).get().get();
+                                    if (userDoc.exists() && userDoc.getString("fullName") != null) {
+                                        data.put("studentName", userDoc.getString("fullName"));
+                                    }
+                                } catch (Exception ignored) {}
+                                
                                 results.add(data);
                             } else {
-                                DocumentSnapshot internDoc = firestore.collection("internships").document(studentUid).get().get();
-                                if (internDoc.exists() && mentorName.equals(internDoc.getString("collegeMentor"))) {
-                                    results.add(data);
+                                DocumentSnapshot internDoc = firestoreLocal.collection("internships").document(studentUid).get().get();
+                                if (internDoc.exists()) {
+                                    String cMentor = internDoc.getString("collegeMentor");
+                                    String aMentor = internDoc.getString("assignedMentor");
+                                    
+                                    // Sanitize inputs by trimming trailing whitespaces that can break matching
+                                    String cleanCMentor = cMentor != null ? cMentor.trim() : "";
+                                    String cleanAMentor = aMentor != null ? aMentor.trim() : "";
+                                    String cleanMentorName = mentorName != null ? mentorName.trim() : "";
+                                    
+                                    log.info("Checking diary for student {}. Mentor assigned in DB: collegeMentor='{}', assignedMentor='{}'. Mentor logging in: '{}'", studentUid, cleanCMentor, cleanAMentor, cleanMentorName);
+                                    
+                                    if (cleanMentorName.equalsIgnoreCase(cleanCMentor) || cleanMentorName.equalsIgnoreCase(cleanAMentor)) {
+                                        data.put("id", d.getId());
+                                        
+                                        try {
+                                            DocumentSnapshot userDoc = firestoreLocal.collection("users").document(studentUid).get().get();
+                                            if (userDoc.exists() && userDoc.getString("fullName") != null) {
+                                                data.put("studentName", userDoc.getString("fullName"));
+                                            }
+                                        } catch (Exception ignored) {}
+                                        
+                                        results.add(data);
+                                    } else {
+                                        log.info("Diary skipped. Mentor mismatch.");
+                                    }
+                                } else {
+                                    log.warn("Internship doc not found for student {}", studentUid);
                                 }
                             }
                         }
@@ -54,13 +95,27 @@ public class MentorSuspiciousService {
             }
         }
 
-        // Sort descending by flaggedAt or submittedAt timestamp
+        // Sort descending by flaggedAt or submittedAt timestamp safely
         results.sort((a, b) -> {
-            Long tA = (Long) a.getOrDefault("flaggedAt", a.getOrDefault("submittedAt", 0L));
-            Long tB = (Long) b.getOrDefault("flaggedAt", b.getOrDefault("submittedAt", 0L));
-            return tB.compareTo(tA);
+            long tA = 0L;
+            long tB = 0L;
+            
+            if (a.get("flaggedAt") instanceof Number) {
+                tA = ((Number) a.get("flaggedAt")).longValue();
+            } else if (a.get("submittedAt") instanceof Number) {
+                tA = ((Number) a.get("submittedAt")).longValue();
+            }
+            
+            if (b.get("flaggedAt") instanceof Number) {
+                tB = ((Number) b.get("flaggedAt")).longValue();
+            } else if (b.get("submittedAt") instanceof Number) {
+                tB = ((Number) b.get("submittedAt")).longValue();
+            }
+            
+            return Long.compare(tB, tA);
         });
 
+        log.info("Successfully fetched {} suspicious diaries for mentor [{}]", results.size(), mentorName);
         return results;
     }
 
@@ -75,10 +130,15 @@ public class MentorSuspiciousService {
         response.put("docId", docId);
         response.put("action", action);
 
+        Firestore firestoreLocal = null;
+        try {
+            firestoreLocal = com.google.firebase.cloud.FirestoreClient.getFirestore();
+        } catch (Exception e) {}
+
         if ("accept".equalsIgnoreCase(action)) {
-            if (firestore != null) {
+            if (firestoreLocal != null) {
                 try {
-                    DocumentReference sRef = firestore.collection("suspicious_diaries").document(docId);
+                    DocumentReference sRef = firestoreLocal.collection("suspicious_diaries").document(docId);
                     DocumentSnapshot sDoc = sRef.get().get();
                     if (sDoc.exists()) {
                         Map<String, Object> record = new HashMap<>(sDoc.getData());
@@ -87,8 +147,8 @@ public class MentorSuspiciousService {
                         record.put("overriddenBy", mentorUid != null ? mentorUid : "Faculty Mentor");
                         record.put("reviewReason", "Faculty Mentor Overrode AI Rejection (Verified compliance by " + (mentorUid != null ? mentorUid : "Faculty") + ")");
                         
-                        firestore.collection("diaries").document(docId).set(record);
-                        sRef.delete();
+                        firestoreLocal.collection("diaries").document(docId).set(record).get();
+                        sRef.delete().get();
                         log.info("Transferred suspicious doc [{}] to accepted diaries collection in Firestore.", docId);
                     }
                 } catch (Exception e) {
@@ -99,9 +159,9 @@ public class MentorSuspiciousService {
             response.put("status", "OVERRIDE_ACCEPTED");
             response.put("message", "Diary log transferred to Accepted ledger under faculty override authority.");
         } else if ("delete".equalsIgnoreCase(action)) {
-            if (firestore != null) {
+            if (firestoreLocal != null) {
                 try {
-                    firestore.collection("suspicious_diaries").document(docId).delete();
+                    firestoreLocal.collection("suspicious_diaries").document(docId).delete().get();
                     log.info("Permanently deleted suspicious doc [{}] from Firestore.", docId);
                 } catch (Exception e) {
                     log.warn("Error deleting suspicious Firestore doc: {}", e.getMessage());
@@ -121,7 +181,12 @@ public class MentorSuspiciousService {
      * Computes count of unreviewed suspicious entries for live sidebar notification badge.
      */
     public int getUnreviewedSuspiciousCount(String mentorName, boolean isHod) {
-        if (firestore != null) {
+        Firestore firestoreLocal = null;
+        try {
+            firestoreLocal = com.google.firebase.cloud.FirestoreClient.getFirestore();
+        } catch (Exception e) {}
+        
+        if (firestoreLocal != null) {
             try {
                 // We reuse the list logic to ensure the badge count exactly matches the list count.
                 return getSuspiciousDiaries(mentorName, isHod).size();

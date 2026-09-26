@@ -53,8 +53,7 @@ public class AiPipelineService {
      * Features enterprise rate-limit safety: automatically applies exponential backoff retry (up to 3 attempts)
      * upon HTTP 429 (Too Many Requests) or throttling exceptions before executing graceful fallbacks.
      */
-    @Async
-    public CompletableFuture<Map<String, Object>> reviewAndExtractTopics(String uid, String entryText, String todayDate) {
+    public Map<String, Object> reviewAndExtractTopics(String uid, String entryText, String todayDate) {
         log.info("[CONSOLIDATED AI PIPELINE] Starting unified review and topic extraction for student [{}]", uid);
 
         String internshipDomain = fetchStudentDomain(uid);
@@ -74,21 +73,23 @@ public class AiPipelineService {
                 "Past 2 Weeks' Summary Logs: " + (pastEntries.isEmpty() ? "None (First active log submitted)" : String.join(" | ", pastEntries)) + "\n\n" +
                 "Today's Submitted Entry Text: \"" + entryText + "\"\n\n" +
                 "Evaluate if today's entry genuinely relates to the internship domain AND makes logical technical sense. " +
-                "You must strictly REJECT the entry if it contains:\n" +
-                "1. Off-topic content (e.g., recipes, cooking, vacations, sports).\n" +
-                "2. Nonsensical 'buzzword salads' or technically contradictory statements (e.g., writing SQL for MongoDB, using Java as a frontend browser rendering engine, etc.).\n" +
-                "Only accept if the technical description is coherent and logically sound.";
+                "You must strictly REJECT the entry if any of the following apply:\n" +
+                "1. It contains off-topic content (e.g., recipes, cooking, vacations, sports, casual hobbies).\n" +
+                "2. The technical content belongs to a DIFFERENT engineering domain (e.g., if the domain is Cybersecurity, but they write about Data Science or IoT hardware, REJECT IT).\n" +
+                "3. The entry completely breaks technical continuity from their past 2 weeks of logs without any logical transition.\n" +
+                "4. It contains nonsensical 'buzzword salads' or contradictory statements.\n" +
+                "Only ACCEPT if the technical description is coherent, directly aligned with the specific declared domain, and aligns with their past work.";
 
         Map<String, Object> result;
-        if (llmApiKey != null && !llmApiKey.trim().isEmpty() && !llmApiKey.equalsIgnoreCase("AIzaSyDemoPlaceholderKeyReplaceWithLive") && !llmApiKey.equalsIgnoreCase("your_groq_api_key_here")) {
-            result = executeWithRateLimitBackoff(systemPrompt, userPrompt, internshipDomain, entryText, pastEntries);
-        } else {
-            log.info("[DEV MODE FALLBACK] External LLM API key not configured. Executing localized semantic domain-matching evaluation.");
-            result = executeLocalSemanticEvaluation(internshipDomain, entryText, pastEntries);
+        if (llmApiKey == null || llmApiKey.trim().isEmpty() || llmApiKey.equalsIgnoreCase("AIzaSyDemoPlaceholderKeyReplaceWithLive") || llmApiKey.equalsIgnoreCase("your_groq_api_key_here")) {
+            log.error("[CRITICAL ERROR] Missing Groq API Key! Cannot perform industry-level AI diary verification.");
+            throw new IllegalStateException("Groq API key is not configured properly in application.yml. AI verification is mandatory for production.");
         }
+        
+        result = executeWithRateLimitBackoff(systemPrompt, userPrompt, internshipDomain, entryText, pastEntries);
 
         log.info("[CONSOLIDATED AI PIPELINE COMPLETED] Decision: [{}], Reason: [{}]", result.get("decision"), result.get("reason"));
-        return CompletableFuture.completedFuture(result);
+        return result;
     }
 
     /**
@@ -114,13 +115,13 @@ public class AiPipelineService {
                     DailyDigestJob.recordAiPipelineError();
                 }
             } catch (Exception e) {
-                log.error("Non-retriable exception executing remote LLM REST request: {}. Recording anomaly and executing local fallback.", e.getMessage());
+                log.error("Non-retriable exception executing remote LLM REST request: {}. AI Verification aborted.", e.getMessage());
                 DailyDigestJob.recordAiPipelineError();
                 break;
             }
         }
-        log.warn("Reserving student activity status via graceful localized semantic domain evaluation fallback after API timeout.");
-        return executeLocalSemanticEvaluation(domain, entryText, pastEntries);
+        log.error("Exceeded max retry limit or encountered fatal error. AI verification failed.");
+        throw new IllegalStateException("Failed to verify diary with Groq AI API. Please try again later.");
     }
 
     private String fetchStudentDomain(String uid) {
@@ -237,35 +238,7 @@ public class AiPipelineService {
         }
     }
 
-    private Map<String, Object> executeLocalSemanticEvaluation(String domain, String entryText, List<String> pastEntries) {
-        Map<String, Object> result = new HashMap<>();
-        String lower = entryText.toLowerCase();
-
-        List<String> suspiciousKeywords = List.of("cook", "recipe", "kitchen", "baking", "flour", "oven", "sauce", "pasta", "soccer", "movie", "gaming", "holiday vacation");
-        boolean isOffTopic = suspiciousKeywords.stream().anyMatch(lower::contains);
-
-        if (isOffTopic) {
-            result.put("decision", "reject");
-            result.put("reason", "Automated AI Review: Entry discusses culinary recipes or non-engineering hobbies, showing zero domain relevance to declared specialization [" + domain + "]. Potential compliance evasion flagged.");
-            result.put("topics", List.of("Off-Topic Submission", "Non-Engineering Content"));
-        } else {
-            result.put("decision", "accept");
-            String continuityText = pastEntries.isEmpty() ? "Initial work log matches required engineering competencies." : "Demonstrates consistent technological continuity with past 2 weeks of engineering ledger entries.";
-            result.put("reason", "Automated AI Review: Entry discusses core technical implementations directly aligned with declared domain [" + domain + "]. " + continuityText);
-
-            List<String> topics = new ArrayList<>();
-            if (lower.contains("react") || lower.contains("frontend") || lower.contains("component")) topics.add("React UI Development");
-            if (lower.contains("spring") || lower.contains("java") || lower.contains("backend") || lower.contains("api")) topics.add("Spring Boot REST APIs");
-            if (lower.contains("database") || lower.contains("firestore") || lower.contains("sql")) topics.add("Database Schema Architecture");
-            if (lower.contains("test") || lower.contains("bug") || lower.contains("debug") || lower.contains("fix")) topics.add("System Verification & Testing");
-            if (topics.isEmpty()) {
-                topics.add("System Architecture Design");
-                topics.add("Agile Development Ledger");
-            }
-            result.put("topics", topics);
-        }
-        return result;
-    }
+    // Removed local semantic evaluation mock data to enforce industry-standard AI verification
 
     /**
      * MODULE 6: AUTOMATED WEEKLY AI EXAM QUESTION GENERATION
@@ -299,14 +272,13 @@ public class AiPipelineService {
 
         List<Map<String, Object>> generatedQuestions;
         String source;
-        if (llmApiKey != null && !llmApiKey.trim().isEmpty() && !llmApiKey.equalsIgnoreCase("AIzaSyDemoPlaceholderKeyReplaceWithLive") && !llmApiKey.equalsIgnoreCase("your_groq_api_key_here")) {
-            generatedQuestions = executeQuestionGenWithBackoff(systemPrompt, userPrompt, uid, domain, pastEntries);
-            source = "REAL_AI_OPENAI";
-        } else {
-            log.info("[AI STUB FALLBACK] Live LLM API key absent. Synthesized localized examination bank based on domain text matching.");
-            generatedQuestions = buildLocalQuestionBank(domain, pastEntries);
-            source = "SEMANTIC_LOCAL_BANK";
+        if (llmApiKey == null || llmApiKey.trim().isEmpty() || llmApiKey.equalsIgnoreCase("AIzaSyDemoPlaceholderKeyReplaceWithLive") || llmApiKey.equalsIgnoreCase("your_groq_api_key_here")) {
+            log.error("[CRITICAL ERROR] Missing Groq API Key! Cannot generate industry-level AI test questions.");
+            throw new IllegalStateException("Groq API key is not configured properly. AI generation is mandatory for production.");
         }
+        
+        generatedQuestions = executeQuestionGenWithBackoff(systemPrompt, userPrompt, uid, domain, pastEntries);
+        source = "REAL_AI_GROQ";
 
         Map<String, Object> record = new HashMap<>();
         record.put("uid", uid);
@@ -352,42 +324,11 @@ public class AiPipelineService {
                 break;
             }
         }
-        log.warn("Executing localized question synthesis fallback after LLM API timeout.");
-        return buildLocalQuestionBank(domain, pastEntries);
+        log.error("Exceeded max retry limit or encountered fatal error. AI test generation failed.");
+        throw new IllegalStateException("Failed to generate test questions with Groq AI API.");
     }
 
-    private List<Map<String, Object>> buildLocalQuestionBank(String domain, List<String> logs) {
-        List<Map<String, Object>> questions = new ArrayList<>();
-        String topicHint = logs.isEmpty() ? "Stateless Cloud Architecture" : "Recent Work Ledger Implementations";
-        
-        String[] fallbackQuestions = {
-            "In the context of your reported [%s] tasks, which architectural approach ensures fault-tolerant state recovery?",
-            "Based on [%s], what is the most secure method for transmitting authentication tokens?",
-            "When dealing with [%s], how can you best optimize database query performance for large datasets?",
-            "In your [%s] implementation, which design pattern best decouples business logic from data access?",
-            "Considering your work on [%s], what is the primary benefit of deploying applications in containerized microservices?"
-        };
-
-        String[][] fallbackOptions = {
-            {"Synchronous blocking loops on single-threaded workers", "Idempotent event-driven message queuing with Dead Letter Queues (DLQ)", "Disabling database constraints to increase read throughput", "Statically archiving live user credentials in unencrypted browser storage"},
-            {"In the URL query string", "HTTP-only Secure Cookies / Authorization Bearer Headers", "Unencrypted in LocalStorage", "Embedded in the HTML DOM"},
-            {"Using SELECT * for all queries", "Adding indexes to frequently queried columns", "Storing all data in a single massive table", "Processing data completely in memory instead of the database"},
-            {"Repository Pattern", "Singleton Pattern", "Observer Pattern", "God Object Pattern"},
-            {"It allows all services to share the exact same memory space", "It isolates dependencies and allows independent scaling", "It completely eliminates the need for network security", "It prevents you from using version control"}
-        };
-        
-        int[] fallbackAnswers = {1, 1, 1, 0, 1};
-
-        for (int i = 0; i < 5; i++) {
-            Map<String, Object> q = new HashMap<>();
-            q.put("questionId", i);
-            q.put("questionText", String.format("[AI Synthetic Exam - %s] " + fallbackQuestions[i], domain, topicHint));
-            q.put("options", Arrays.asList(fallbackOptions[i]));
-            q.put("correctOptionIndex", fallbackAnswers[i]);
-            questions.add(q);
-        }
-        return questions;
-    }
+    // Removed local question bank mock data to enforce industry-standard AI synthesis
 
     private static class RateLimitExceededException extends RuntimeException {
         public RateLimitExceededException(String message) {

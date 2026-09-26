@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useBrowserNotification } from './useBrowserNotification';
 import { useNotification } from './useNotification';
+import { useRealtimeSubscription } from './useRealtimeSubscription';
 import api from '../services/api';
 
 /**
@@ -29,26 +30,10 @@ export const usePopupListener = (userUid, role = 'STUDENT', isDevMode = true) =>
     }
   }, [userUid]);
 
-  const fetchPopupStatus = useCallback(async () => {
-    try {
-      const response = await api.get(`/popups/${userUid}/status`);
-      if (response.data) {
-        setPopupStatus(response.data);
-      }
-    } catch (err) {
-      console.warn('Failed to fetch popup status');
-    }
-  }, [userUid]);
-
-  useEffect(() => {
-    if (role === 'STUDENT' || role === 'student') {
-      fetchMeetingQuota();
-      fetchPopupStatus();
-    }
-  }, [role, fetchMeetingQuota, fetchPopupStatus]);
-
   // Method called when a popup document arrives from Firestore onSnapshot or testing simulation
   const handleNewPopupDetected = useCallback((popupData) => {
+    if (activePopup && activePopup.id === popupData.id) return; // Prevent duplicate triggers for the same popup
+    
     console.log('[Module 5a Engagement Audit] Check-in popup triggered:', popupData);
     setActivePopup(popupData);
 
@@ -62,7 +47,35 @@ export const usePopupListener = (userUid, role = 'STUDENT', isDevMode = true) =>
         setActivePopup(prev => prev || popupData);
       }
     );
-  }, [showNotification]);
+  }, [showNotification, activePopup]);
+
+  const fetchPopupStatus = useCallback(async () => {
+    try {
+      const response = await api.get(`/popups/${userUid}/status`);
+      if (response.data) {
+        setPopupStatus(response.data);
+        if (response.data.activePopup && !activePopup) {
+          handleNewPopupDetected(response.data.activePopup);
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to fetch popup status');
+    }
+  }, [userUid, activePopup, handleNewPopupDetected]);
+
+  useEffect(() => {
+    if (role === 'STUDENT' || role === 'student') {
+      fetchMeetingQuota();
+      fetchPopupStatus();
+      
+      // Robust Automated Polling: Continuously check backend every 10s for newly generated popups
+      const interval = setInterval(() => {
+        fetchPopupStatus();
+      }, 10000);
+      
+      return () => clearInterval(interval);
+    }
+  }, [role, fetchMeetingQuota, fetchPopupStatus]);
 
   const respondToPopup = useCallback(async (action, photoBase64 = null, similarityScore = 100.0) => {
     if (!activePopup) return;
@@ -84,6 +97,8 @@ export const usePopupListener = (userUid, role = 'STUDENT', isDevMode = true) =>
         notify("Check-in excused: 1 monthly meeting override deducted from departmental quota.", "info", 5000);
       } else if (response.data && response.data.matchStatus === 'APPROVED') {
         notify("Optical Face-Match successful (>75%)! Working attendance verified in institutional ledger.", "success", 6000);
+      } else if (response.data && response.data.matchStatus === 'EXPIRED') {
+        notify("Check-in Expired: You responded too late and this check-in was permanently marked as missed by the server.", "error", 7000);
       } else if (response.data && response.data.matchStatus === 'REJECTED') {
         notify("Biometric Match Failed (<40%). Attendance check-in rejected due to identity discrepancy.", "error", 7000);
       } else {
@@ -130,10 +145,11 @@ export const usePopupListener = (userUid, role = 'STUDENT', isDevMode = true) =>
         timestamp: Date.now(),
         deadline: Date.now() + 120000,
         domain: 'test',
-        studentUid: userUid
+        studentUid: userUid,
+        requiresBiometric: Math.random() > 0.5 // 50% chance for testing
       });
     }
-  }, [handleNewPopupDetected, notify]);
+  }, [handleNewPopupDetected, notify, userUid]);
 
   return {
     activePopup,

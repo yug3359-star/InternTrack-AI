@@ -6,10 +6,12 @@ import { useNotification } from '../hooks/useNotification';
 import styles from './Login.module.css';
 
 const Login = () => {
-  const { login } = useAuth();
+  const { login, logout } = useAuth();
   const { notify } = useNotification();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [unverifiedEmail, setUnverifiedEmail] = useState(null);
+  const [resending, setResending] = useState(false);
 
   const { register, handleSubmit, formState: { errors } } = useForm({
     defaultValues: {
@@ -19,16 +21,41 @@ const Login = () => {
     }
   });
 
+  const handleResend = async () => {
+    if (!unverifiedEmail) return;
+    setResending(true);
+    try {
+      const { resendVerificationEmail } = await import('../services/api');
+      await resendVerificationEmail(unverifiedEmail);
+      notify("Verification email sent! Please check your inbox.", "success");
+    } catch (err) {
+      notify("Failed to resend verification email. Please try again.", "error");
+    } finally {
+      setResending(false);
+    }
+  };
+
   const onSubmit = async (data) => {
     setIsSubmitting(true);
+    setUnverifiedEmail(null);
     try {
-      if (!data.email.includes('.edu') && !data.email.includes('@')) {
-        notify("Authentication failed: institutional college email address required.", "error", 5000);
+      // if (!data.email.includes('.edu') && !data.email.includes('@')) {
+      //   notify("Authentication failed: institutional college email address required.", "error", 5000);
+      //   setIsSubmitting(false);
+      //   return;
+      // }
+
+      const authResult = await login(data.email, data.password, data.role);
+      
+      // Check if email is verified for live Firebase auth users
+      if (authResult?.user && authResult.user.emailVerified === false && !authResult.user.uid.includes('dev-')) {
+        await logout();
+        setUnverifiedEmail(data.email);
+        notify("Please verify your email address before logging in.", "error", 7000);
         setIsSubmitting(false);
         return;
       }
 
-      const authResult = await login(data.email, data.password, data.role);
       notify("Authentication verified: accessing academic departmental records.", "success");
 
       // Redirect to assigned institutional role dashboard
@@ -51,7 +78,7 @@ const Login = () => {
         }
       }
     } catch (err) {
-      notify("Sign-in rejected: institutional credentials unrecognized or directory session timed out.", "error", 5000);
+      notify(err.message || "Sign-in rejected: institutional credentials unrecognized or directory session timed out.", "error", 5000);
     } finally {
       setIsSubmitting(false);
     }
@@ -111,12 +138,26 @@ const Login = () => {
           <div className={styles.actionRow}>
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || resending}
               className={styles.submitBtn}
             >
               {isSubmitting ? "Verifying Credentials..." : "Submit Credentials"}
             </button>
           </div>
+          
+          {unverifiedEmail && (
+            <div className={styles.actionRow} style={{ marginTop: '10px' }}>
+              <button
+                type="button"
+                onClick={handleResend}
+                disabled={resending || isSubmitting}
+                className={styles.submitBtn}
+                style={{ backgroundColor: '#2B5C8A', border: '1px solid #1c3c5e' }}
+              >
+                {resending ? "Sending..." : "Resend Verification Email"}
+              </button>
+            </div>
+          )}
 
           <footer className={styles.cardFooter}>
             <span>New user?</span>

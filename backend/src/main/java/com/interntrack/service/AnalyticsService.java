@@ -139,14 +139,41 @@ public class AnalyticsService {
             int summaryCount = firestore.collection("completion_summaries").get().get().size();
             totalCompleted = Math.max(totalCompleted, summaryCount);
 
-            // Highlighted candidates count from warnings collection
-            int totalHighlighted = firestore.collection("warnings").get().get().size();
+            // Highlighted candidates count from warnings collection (must filter for highlighted=true)
+            int totalHighlighted = firestore.collection("warnings").whereEqualTo("highlighted", true).get().get().size();
             int suspiciousThisMonth = firestore.collection("suspicious_diaries").get().get().size();
 
             // Division-by-Zero guards on global averages
-            int activeStudents = totalOngoing + totalCompleted;
-            double avgAtt = activeStudents > 0 ? 89.4 : 0.0;
-            double avgTest = activeStudents > 0 ? 82.7 : 0.0;
+            double avgAtt = 0.0;
+            double avgTest = 0.0;
+            int attCount = 0;
+            int testCount = 0;
+            double sumAtt = 0.0;
+            double sumTest = 0.0;
+
+            QuerySnapshot attSnapshot = firestore.collection("attendance").get().get();
+            for (QueryDocumentSnapshot doc : attSnapshot.getDocuments()) {
+                String status = doc.getString("status");
+                if (status != null) {
+                    sumAtt += ("present".equalsIgnoreCase(status) || "excused_meeting".equalsIgnoreCase(status)) ? 100.0 : 0.0;
+                    attCount++;
+                }
+            }
+            if (attCount > 0) {
+                avgAtt = Math.round((sumAtt / attCount) * 10.0) / 10.0;
+            }
+
+            QuerySnapshot testSnapshot = firestore.collection("tests").get().get();
+            for (QueryDocumentSnapshot doc : testSnapshot.getDocuments()) {
+                Double score = doc.getDouble("scorePercentage");
+                if (score != null && !score.isNaN()) {
+                    sumTest += score;
+                    testCount++;
+                }
+            }
+            if (testCount > 0) {
+                avgTest = Math.round((sumTest / testCount) * 10.0) / 10.0;
+            }
 
             overview.put("totalOngoing", totalOngoing);
             overview.put("totalCompleted", totalCompleted);
@@ -158,15 +185,34 @@ public class AnalyticsService {
 
             // Historical warning trends for line chart
             List<Map<String, Object>> trends = new ArrayList<>();
-            trends.add(createTrend("May 2026", 1));
-            trends.add(createTrend("Jun 2026", 2));
-            trends.add(createTrend("Jul 2026", Math.max(3, totalHighlighted)));
+            Map<String, Integer> monthCounts = new TreeMap<>();
+            java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("MMM yyyy");
+            // Only count actual highlighted warnings
+            QuerySnapshot warningsSnapshot = firestore.collection("warnings").whereEqualTo("highlighted", true).get().get();
+            for (QueryDocumentSnapshot doc : warningsSnapshot.getDocuments()) {
+                // EscalationService saves "updatedAt" instead of "createdAt" or "timestamp"
+                Long timestamp = doc.getLong("updatedAt");
+                if (timestamp == null) timestamp = doc.getLong("createdAt");
+                if (timestamp == null) timestamp = doc.getLong("timestamp");
+                
+                if (timestamp != null) {
+                    String month = sdf.format(new Date(timestamp));
+                    monthCounts.put(month, monthCounts.getOrDefault(month, 0) + 1);
+                }
+            }
+            
+            for (Map.Entry<String, Integer> entry : monthCounts.entrySet()) {
+                trends.add(createTrend(entry.getKey(), entry.getValue()));
+            }
+            if (trends.isEmpty()) {
+                trends.add(createTrend(sdf.format(new Date()), 0));
+            }
             overview.put("warningTrends", trends);
 
             return overview;
         } catch (Exception err) {
-            logger.warn("Firestore offline during HOD overview calculation: {}. Returning authoritative local institutional aggregate.", err.getMessage());
-            return buildSimulatedHodOverview();
+            logger.error("Firestore offline during HOD overview calculation: {}", err.getMessage());
+            throw new RuntimeException("Database offline", err);
         }
     }
 
@@ -177,12 +223,86 @@ public class AnalyticsService {
     public List<Map<String, Object>> getHodBranchComparison() {
         logger.info("Calculating comparative departmental analytics grouped by academic branch.");
         List<Map<String, Object>> branches = new ArrayList<>();
+        try {
+            if (firestore == null) {
+                throw new IllegalStateException("Firestore uninitialized.");
+            }
+            Map<String, Integer> branchStudentCount = new HashMap<>();
+            Map<String, String> branchNames = new HashMap<>();
+            Map<String, String> uidToBranch = new HashMap<>();
+            
+            QuerySnapshot internships = firestore.collection("internships").get().get();
+            for (QueryDocumentSnapshot doc : internships.getDocuments()) {
+                String branch = doc.getString("branch");
+                String uid = doc.getId();
+                if (branch != null) {
+                    String code = branch.contains("Computer") ? "CSE" : 
+                                  branch.contains("Information") ? "IT" : 
+                                  branch.contains("Artificial") ? "AIDS" : 
+                                  branch.contains("Electronic") ? "ECE" : 
+                                  branch.contains("Mechanical") ? "ME" : "OTHER";
+                    branchNames.put(code, branch);
+                    branchStudentCount.put(code, branchStudentCount.getOrDefault(code, 0) + 1);
+                    uidToBranch.put(uid, code);
+                    if (doc.getString("uid") != null) {
+                        uidToBranch.put(doc.getString("uid"), code);
+                    }
+                }
+            }
+            
+            Map<String, Double> branchAttSum = new HashMap<>();
+            Map<String, Integer> branchAttCount = new HashMap<>();
+            QuerySnapshot attSnapshot = firestore.collection("attendance").get().get();
+            for (QueryDocumentSnapshot doc : attSnapshot.getDocuments()) {
+                String uid = doc.getString("uid");
+                if (uid != null && uidToBranch.containsKey(uid)) {
+                    String code = uidToBranch.get(uid);
+                    String status = doc.getString("status");
+                    double val = ("present".equalsIgnoreCase(status) || "excused_meeting".equalsIgnoreCase(status)) ? 100.0 : 0.0;
+                    branchAttSum.put(code, branchAttSum.getOrDefault(code, 0.0) + val);
+                    branchAttCount.put(code, branchAttCount.getOrDefault(code, 0) + 1);
+                }
+            }
 
-        branches.add(createBranch("CSE", "Computer Science & Engineering", 92.4, 85.2, 42, true));
-        branches.add(createBranch("ECE", "Electronics & Communication Eng.", 87.8, 79.5, 35, true));
-        branches.add(createBranch("IT", "Information Technology", 94.1, 88.0, 28, true));
-        // Explicit division-by-zero zero-data test branch
-        branches.add(createBranch("ME", "Mechanical Engineering", 0.0, 0.0, 0, false));
+            Map<String, Double> branchTestSum = new HashMap<>();
+            Map<String, Integer> branchTestCount = new HashMap<>();
+            QuerySnapshot testSnapshot = firestore.collection("tests").get().get();
+            for (QueryDocumentSnapshot doc : testSnapshot.getDocuments()) {
+                String uid = doc.getString("uid");
+                if (uid != null && uidToBranch.containsKey(uid)) {
+                    String code = uidToBranch.get(uid);
+                    Double score = doc.getDouble("scorePercentage");
+                    if (score != null && !score.isNaN()) {
+                        branchTestSum.put(code, branchTestSum.getOrDefault(code, 0.0) + score);
+                        branchTestCount.put(code, branchTestCount.getOrDefault(code, 0) + 1);
+                    }
+                }
+            }
+
+            for (String code : branchNames.keySet()) {
+                int count = branchStudentCount.getOrDefault(code, 0);
+                double att = 0.0;
+                int aCount = branchAttCount.getOrDefault(code, 0);
+                if (aCount > 0) {
+                    att = Math.round((branchAttSum.get(code) / aCount) * 10.0) / 10.0;
+                }
+                
+                double score = 0.0;
+                int tCount = branchTestCount.getOrDefault(code, 0);
+                if (tCount > 0) {
+                    score = Math.round((branchTestSum.get(code) / tCount) * 10.0) / 10.0;
+                }
+                
+                branches.add(createBranch(code, branchNames.get(code), att, score, count, true));
+            }
+            if (branches.isEmpty()) {
+                branches.add(createBranch("ME", "Mechanical Engineering", 0.0, 0.0, 0, false));
+            }
+            
+        } catch (Exception err) {
+            logger.error("Firestore offline during branch comparison calculation: {}", err.getMessage());
+            throw new RuntimeException("Database offline", err);
+        }
 
         return branches;
     }
@@ -259,23 +379,5 @@ public class AnalyticsService {
         return result;
     }
 
-    private Map<String, Object> buildSimulatedHodOverview() {
-        Map<String, Object> overview = new LinkedHashMap<>();
-        overview.put("totalOngoing", 24);
-        overview.put("totalCompleted", 2);
-        overview.put("totalHighlighted", 3);
-        overview.put("avgAttendancePercentage", 91.2);
-        overview.put("avgTestScore", 83.5);
-        overview.put("suspiciousDiariesThisMonth", 1);
-        overview.put("highlightedThisMonth", 3);
 
-        List<Map<String, Object>> trends = Arrays.asList(
-                createTrend("May 2026", 1),
-                createTrend("Jun 2026", 1),
-                createTrend("Jul 2026", 3)
-        );
-        overview.put("warningTrends", trends);
-
-        return overview;
-    }
 }

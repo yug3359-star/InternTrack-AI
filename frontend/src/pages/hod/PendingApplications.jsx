@@ -177,7 +177,8 @@ const PendingApplications = () => {
     setCrudMode('create');
     setCrudFormData({
       fullName: '', collegeEmail: '', branch: 'Computer Science & Engineering', internshipDomain: '',
-      mentorName: '', mentorEmail: '', joiningDate: '', completionDate: '', status: 'Applied'
+      mentorName: '', mentorEmail: '', joiningDate: '', completionDate: '', status: 'Applied',
+      officeStartTime: '09:00', officeEndTime: '17:00'
     });
     setShowCrudModal(true);
   };
@@ -191,6 +192,8 @@ const PendingApplications = () => {
       collegeEmail: app.collegeEmail || '',
       branch: app.branch || 'Computer Science & Engineering',
       internshipDomain: app.internshipDomain || '',
+      officeStartTime: app.officeStartTime || '09:00',
+      officeEndTime: app.officeEndTime || '17:00',
       mentorName: app.mentorName || '',
       mentorEmail: app.mentorEmail || '',
       joiningDate: app.joiningDate || '',
@@ -298,7 +301,6 @@ const PendingApplications = () => {
                     <th>Corporate Mentor</th>
                     <th>Joining Date</th>
                     <th>Lifecycle Status</th>
-                    <th>Documents</th>
                     <th>Submitted On</th>
                     <th>Actions</th>
                   </tr>
@@ -325,34 +327,24 @@ const PendingApplications = () => {
                         </td>
                         <td><strong>{app.joiningDate}</strong></td>
                         <td><StatusBadge status={app.status} /></td>
-                        <td onClick={(e) => e.stopPropagation()}>
-                          <div className={styles.docLinksGroup}>
-                            {app.offerLetterUrl && (
-                              <a href={app.offerLetterUrl} target="_blank" rel="noopener noreferrer" className={styles.docLink}>Offer [PDF] ↗</a>
-                            )}
-                            {app.approvalLetterUrl && (
-                              <a href={app.approvalLetterUrl} target="_blank" rel="noopener noreferrer" className={styles.docLink}>Approval [PDF]</a>
-                            )}
-                          </div>
-                        </td>
                         <td>
                           {app.createdAt ? new Date(app.createdAt).toLocaleDateString() : 'N/A'}
                         </td>
                         <td onClick={(e) => e.stopPropagation()}>
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', justifyContent: 'center' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center' }}>
                             {app.status !== 'Ongoing' && (
                               <>
                                 <button
                                   type="button"
                                   onClick={(e) => openEditModal(app, e)}
-                                  className={styles.editBtn}
+                                  className={styles.sharedActionBtn}
                                 >
                                   Edit
                                 </button>
                                 <button
                                   type="button"
                                   onClick={(e) => { e.stopPropagation(); handleDelete(app); }}
-                                  className={styles.deleteBtn}
+                                  className={styles.sharedActionBtn}
                                 >
                                   Delete
                                 </button>
@@ -361,8 +353,7 @@ const PendingApplications = () => {
                             <button
                               type="button"
                               onClick={() => { setSelectedApp(app); setShowRejectBox(false); }}
-                              className={styles.viewBtn}
-                              style={{ width: app.status !== 'Ongoing' ? '100%' : 'auto', marginTop: app.status !== 'Ongoing' ? '4px' : '0' }}
+                              className={styles.sharedActionBtn}
                             >
                               View Details
                             </button>
@@ -409,7 +400,7 @@ const PendingApplications = () => {
               <div className={styles.modalHeader}>
                 <div>
                   <h2 className={styles.modalTitle}>Candidate Profile: {selectedApp.fullName} (Section {selectedApp.section || 'N/A'}, Roll {selectedApp.rollNo || 'N/A'})</h2>
-                  <div className={styles.modalSub}>{selectedApp.collegeEmail} | Enrollment No: {selectedApp.enrollmentNo || 'N/A'}</div>
+                  <div className={styles.modalSub}>{selectedApp.collegeEmail} | Registration No: {selectedApp.registrationNumber || selectedApp.enrollmentNo || 'N/A'}</div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <StatusBadge status={selectedApp.status} />
@@ -655,6 +646,14 @@ const PendingApplications = () => {
                     <div className={styles.formGroup}>
                       <label className={styles.formLabel}>Completion Date</label>
                       <input type="date" required className={styles.formInput} value={crudFormData.completionDate} onChange={e => setCrudFormData({...crudFormData, completionDate: e.target.value})} />
+                    </div>
+                    <div className={styles.formGroup}>
+                      <label className={styles.formLabel}>Office Start Time</label>
+                      <input type="time" required className={styles.formInput} value={crudFormData.officeStartTime} onChange={e => setCrudFormData({...crudFormData, officeStartTime: e.target.value})} />
+                    </div>
+                    <div className={styles.formGroup}>
+                      <label className={styles.formLabel}>Office End Time</label>
+                      <input type="time" required className={styles.formInput} value={crudFormData.officeEndTime} onChange={e => setCrudFormData({...crudFormData, officeEndTime: e.target.value})} />
                     </div>
                     <div className={styles.formGroup} style={{ gridColumn: '1 / -1' }}>
                       <label className={styles.formLabel}>Status</label>

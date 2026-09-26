@@ -59,11 +59,11 @@ public class AttendanceController {
         if (doc == null) {
             log.warn("Attendance record [{}] not found in store. Provisioning on-the-fly for response processing.", attendanceId);
             String[] parts = attendanceId.split("_");
-            String uid = parts.length > 0 ? parts[0] : "dev-stud-107";
+            String uid = parts.length > 0 ? parts[0] : "unknown";
             doc = attendancePopupJob.triggerAttendanceForToday(uid);
         }
 
-        String uid = String.valueOf(doc.getOrDefault("uid", "dev-stud-107"));
+        String uid = String.valueOf(doc.getOrDefault("uid", "unknown"));
         String dateStr = String.valueOf(doc.getOrDefault("date", LocalDate.now(applicationZoneId).format(DATE_FORMATTER)));
         long now = System.currentTimeMillis();
 
@@ -145,7 +145,7 @@ public class AttendanceController {
             String status = String.valueOf(rec.get("status")).toLowerCase();
             if ("present".equals(status)) presentDays++;
             else if ("excused_meeting".equals(status)) excusedDays++;
-            else if ("missed".equals(status)) missedDays++;
+            else if ("missed".equals(status) || "absent".equals(status)) missedDays++;
         }
 
         // Attendance formula: ((present + excused) / total) * 100

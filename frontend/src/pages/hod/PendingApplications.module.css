@@ -709,33 +709,21 @@
   background-color: var(--color-primary-dark, #1e3a8a);
 }
 
-.editBtn {
-  background-color: #f59e0b;
+.sharedActionBtn {
+  background-color: var(--color-primary);
   color: white;
-  border: none;
+  border: 1px solid var(--color-primary);
   padding: 6px 12px;
   border-radius: var(--border-radius-sm);
   font-weight: 600;
   cursor: pointer;
   font-size: 12px;
-  margin-right: 6px;
+  width: 100px;
+  text-align: center;
+  transition: all 0.2s ease;
 }
-.editBtn:hover {
-  background-color: #d97706;
-}
-
-.deleteBtn {
-  background-color: #ef4444;
-  color: white;
-  border: none;
-  padding: 6px 12px;
-  border-radius: var(--border-radius-sm);
-  font-weight: 600;
-  cursor: pointer;
-  font-size: 12px;
-}
-.deleteBtn:hover {
-  background-color: #dc2626;
+.sharedActionBtn:hover {
+  background-color: var(--color-primary-dark, #1e3a8a);
 }
 
 .formGroup {

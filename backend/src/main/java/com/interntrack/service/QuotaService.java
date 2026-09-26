@@ -105,8 +105,7 @@ public class QuotaService {
         q.put("uid", uid);
         q.put("month", monthDisplay);
         q.put("monthId", monthId);
-        // By default starting with 2 used in demo accounts to show active utilization
-        int initialUsed = uid.startsWith("dev-stud-") ? 2 : 0;
+        int initialUsed = 0;
         q.put("used", initialUsed);
         q.put("limit", MONTHLY_MEETING_QUOTA);
         q.put("remaining", MONTHLY_MEETING_QUOTA - initialUsed);

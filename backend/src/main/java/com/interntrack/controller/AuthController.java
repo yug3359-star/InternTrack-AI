@@ -48,4 +48,13 @@ public class AuthController {
         auditLogger.logAdminAction("BREAK_GLASS_MENTOR_PROMOTION", "EMERGENCY_SETUP_SECRET", targetEmail, "Promoted account to MENTOR administrative status via verified secret challenge");
         return ResponseEntity.ok(result);
     }
+
+    @PostMapping("/resend-verification")
+    public ResponseEntity<Map<String, Object>> resendVerification(@RequestBody Map<String, String> request) {
+        String email = request.get("email");
+        if (email != null && !email.trim().isEmpty()) {
+            authService.resendVerificationEmail(email);
+        }
+        return ResponseEntity.ok(Map.of("message", "If an account with this email exists, a verification link has been sent"));
+    }
 }

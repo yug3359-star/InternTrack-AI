@@ -32,9 +32,12 @@ public class StatusService {
     // In-memory simulation status tracking map for offline presentation evaluations
     private final Map<String, Map<String, Object>> simulatedStatusRegistry = new ConcurrentHashMap<>();
 
-    public StatusService(ZoneId applicationZoneId, HodService hodService) {
+    private final org.springframework.context.ApplicationContext applicationContext;
+
+    public StatusService(ZoneId applicationZoneId, HodService hodService, org.springframework.context.ApplicationContext applicationContext) {
         this.applicationZoneId = applicationZoneId;
         this.hodService = hodService;
+        this.applicationContext = applicationContext;
         initializeMockStatusRecords();
     }
 
@@ -72,16 +75,46 @@ public class StatusService {
                     if (joiningDateStr != null && !joiningDateStr.trim().isEmpty()) {
                         try {
                             LocalDate joinDate = LocalDate.parse(joiningDateStr.trim());
-                            // If joiningDate <= today (not in the future), transition to Ongoing
-                            if (!joinDate.isAfter(today)) {
+                            
+                            boolean shouldTransition = false;
+                            if (joinDate.isBefore(today)) {
+                                shouldTransition = true;
+                            } else if (joinDate.isEqual(today)) {
+                                String officeStartTimeStr = doc.getString("officeStartTime");
+                                if (officeStartTimeStr == null || officeStartTimeStr.isEmpty()) {
+                                    officeStartTimeStr = "09:00"; // default if missing
+                                }
+                                java.time.LocalTime officeStartTime = java.time.LocalTime.parse(officeStartTimeStr);
+                                java.time.LocalTime currentTime = java.time.LocalTime.now(java.time.ZoneId.of("Asia/Kolkata"));
+                                if (!currentTime.isBefore(officeStartTime)) {
+                                    shouldTransition = true;
+                                }
+                            }
+                            
+                            // If it's past the joining date, OR it's the joining date AND past the start time, transition to Ongoing
+                            if (shouldTransition) {
                                 Map<String, Object> updates = new HashMap<>();
                                 updates.put("status", "Ongoing");
                                 updates.put("ongoingSince", nowMs);
                                 db.collection("internships").document(uid).update(updates).get();
 
-                                log.info("Audit Status Transition: Student [{}] transitioned from [Approved] to [Ongoing] (joiningDate [{}] <= serverDate [{}])",
-                                        uid, joiningDateStr, today);
+                                log.info("Audit Status Transition: Student [{}] transitioned from [Approved] to [Ongoing] (joiningDate/Time reached)",
+                                        uid);
                                 transitionedCount++;
+
+                                // Immediately trigger robust scheduler initialization to avoid top-of-hour wait
+                                try {
+                                    com.interntrack.scheduler.EngagementPopupJob popupJob = applicationContext.getBean(com.interntrack.scheduler.EngagementPopupJob.class);
+                                    if (popupJob != null) {
+                                        popupJob.generateScheduleForStudent(uid);
+                                    }
+                                    com.interntrack.scheduler.AttendancePopupJob attendanceJob = applicationContext.getBean(com.interntrack.scheduler.AttendancePopupJob.class);
+                                    if (attendanceJob != null) {
+                                        attendanceJob.triggerAttendanceForToday(uid);
+                                    }
+                                } catch (Exception e) {
+                                    log.warn("Could not dynamically trigger schedule generation for [{}]", uid, e);
+                                }
                             }
                         } catch (DateTimeParseException e) {
                             log.warn("Chronology audit rejected: Malformed joiningDate string [{}] for record ID [{}]", joiningDateStr, uid);
@@ -109,7 +142,23 @@ public class StatusService {
                 if (jStr != null) {
                     try {
                         LocalDate jd = LocalDate.parse(jStr);
-                        if (!jd.isAfter(today)) {
+                        
+                        boolean shouldTransition = false;
+                        if (jd.isBefore(today)) {
+                            shouldTransition = true;
+                        } else if (jd.isEqual(today)) {
+                            String officeStartTimeStr = (String) mock.get("officeStartTime");
+                            if (officeStartTimeStr == null || officeStartTimeStr.isEmpty()) {
+                                officeStartTimeStr = "09:00";
+                            }
+                            java.time.LocalTime officeStartTime = java.time.LocalTime.parse(officeStartTimeStr);
+                            java.time.LocalTime currentTime = java.time.LocalTime.now(java.time.ZoneId.of("Asia/Kolkata"));
+                            if (!currentTime.isBefore(officeStartTime)) {
+                                shouldTransition = true;
+                            }
+                        }
+                        
+                        if (shouldTransition) {
                             mock.put("status", "Ongoing");
                             mock.put("ongoingSince", nowMs);
                             log.info("Audit Dev Simulation Transition: Student [{}] transitioned from [Approved] to [Ongoing]", mock.get("uid"));

@@ -9,8 +9,8 @@ This version incorporates the final implemented technology stack and architectur
 |#|Previous Concept|Final Implementation|
 |-|-|-|
 |1|Cloud-based Face Match (AWS/Azure)|Client-side Face-Match using `@vladmandic/face-api` (saves bandwidth/server load)|
-|2|Strict LLM Dependency for Diary Review|Hybrid AI: OpenAI/Claude with a **Java Local Semantic Engine** fallback mechanism|
-|3|Diary Review / Topic Extraction in 2 Steps|Merged API Pipeline: Single LLM call returns compliance decision + topics JSON|
+|2|Strict LLM Dependency for Diary Review|Groq AI API without local fallback, enforcing industry-standard AI verification|
+|3|Diary Review / Topic Extraction in 2 Steps|Merged API Pipeline: Single Groq AI call returns compliance decision + topics JSON|
 
 ---
 
@@ -27,11 +27,14 @@ This version incorporates the final implemented technology stack and architectur
 |Scheduling|Spring `@Scheduled` (cron-based)|
 |Authentication|Firebase Authentication|
 |Authorization|Role-Based Access Control (RBAC) + JWT (`JwtFilter`)|
-|Database|Firebase Firestore (NoSQL, document-based)|
+|Rate Limiting|Bucket4j|
+|Data Export|Apache POI (Excel)|
+|Database|Firebase Firestore (Primary NoSQL) + H2/JPA (Relational Compliance Logging)|
 |File Storage|Firebase Storage|
 |Face Match (Client-Side)|`@vladmandic/face-api` (v1.7.15)|
-|AI (Diary Review & Topic Extraction)|OpenAI / Claude API (with Java Local Semantic fallback)|
-|AI (Question Generation)|OpenAI / Claude API|
+|AI (Diary Review & Topic Extraction)|Groq AI API (no local fallback)|
+|AI (Question Generation)|Groq AI API|
+|Email Notifications|Brevo API|
 |Webcam Capture|Browser-native `getUserMedia()`|
 |Tab-Switch Detection|Browser-native Page Visibility API|
 |Charts/Analytics|Recharts|
@@ -57,19 +60,23 @@ This version incorporates the final implemented technology stack and architectur
 
 ### Core Frameworks & Libraries
 
-* Spring Boot (Web, Security, Scheduling starters)
+* Spring Boot (Web, Security, Scheduling, Data JPA starters)
 * React 18+
 * Firebase Admin SDK (Java, backend-side)
 * Firebase Client SDK (JavaScript, frontend-side)
+* Bucket4j (Rate Limiting)
+* Apache POI (Excel Generation)
 
 ### Cloud/External Services
 
 * Firebase (Authentication, Firestore, Storage, Hosting)
-* OpenAI / Claude API (LLM processing)
+* Groq AI API (LLM processing)
+* Brevo API (Email Notifications)
 
 ### Database
 
-* Google Cloud Firestore — NoSQL, document-oriented, chosen over a relational DB for schema flexibility during active development and built-in real-time listeners.
+* **Google Cloud Firestore** — Primary NoSQL document-oriented store, chosen over a relational DB for schema flexibility during active development and built-in real-time listeners.
+* **Spring Data JPA & H2** — Used for structured relational compliance logging (`internship_logs`).
 
 ### Operating System Compatibility
 
@@ -230,18 +237,17 @@ Start/Submit photos are auto-compared to the reference photo via Face Match API 
 **What it does:** Student **types** their daily diary entry directly into a text box in the app (no photo upload). This text feeds the AI pipeline that generates that week's test.
 
 **AI Pipeline (Single Consolidated Call):**
-1. **Compliance Decision + Topic Extraction** — typed diary text sent to an LLM (Claude/OpenAI API) via `AiPipelineService`, heavily prompted to return structured JSON. The JSON contains a binary decision (`accept` or `reject` based on domain relevance and continuity), reasoning, and an array of extracted technical topics.
-2. **Defensive Fallback** — If the external LLM API rate-limits (HTTP 429) and fails after exponential backoff retries, a **Java Local Semantic Engine** kicks in to use keyword-matching.
+1. **Compliance Decision + Topic Extraction** — typed diary text sent to an LLM (Groq API) via `AiPipelineService`, heavily prompted to return structured JSON. The JSON contains a binary decision (`accept` or `reject` based on domain relevance and continuity), reasoning, and an array of extracted technical topics.
+2. **Strict Verification** — If the external LLM API rate-limits (HTTP 429), it uses exponential backoff retries. The local fallback was removed to enforce industry-standard AI verification; it throws an error if max retries are exceeded.
 
 **Technology used:**
 * Simple text input field (React).
-* **OpenAI / Claude API** for evaluation and topic extraction.
+* **Groq AI API** for evaluation and topic extraction.
 * Spring Boot `AiPipelineService` with JSON defensive parsing and exponential backoff.
-* Java-based local keyword-matching algorithm.
 
 **Key details a panel may ask about:**
 * *"Doesn't typed text make it easier to fake or copy-paste?"* — This is an accepted trade-off. If a student copy-pastes fake content, the AI generates test questions from that fake content, and the student will fail the proctored, face-verified test because they don't actually know the material.
-* *"How do you handle LLM API rate limits?"* — Implemented an exponential backoff loop in Java (1.5s -> 3s -> 6s). If max retries are exceeded, it fails over gracefully to a local semantic evaluation engine to ensure the student isn't penalized for server issues.
+* *"How do you handle LLM API rate limits?"* — Implemented an exponential backoff loop in Java (1.5s -> 3s -> 6s). If max retries are exceeded, it records a telemetry error and fails to ensure industry-standard verification is not bypassed.
 
 ---
 
@@ -280,6 +286,16 @@ Any diary the AI rejects is moved into a permanent `suspicious_diaries` collecti
 
 ---
 
+## FEATURE 10: Data Export & Reporting
+
+**What it does:** Allows the HOD to export aggregated student compliance and completion data to an Excel spreadsheet for offline university records.
+
+**Technology used:**
+* **Apache POI** (Java backend) to generate `.xlsx` files dynamically.
+* **Spring Boot `ExcelDataService`** aggregates data from Firestore (users, internships, attendance, and completion_summaries) to construct the report.
+
+---
+
 ## FEATURE 9: Internship Completion
 
 **What it does:** Once a student passes their registered Completion Date, status auto-updates to `Completed`, and a final compliance summary (attendance %, diary compliance %, average test score, excuse-usage %) is generated.
@@ -298,7 +314,9 @@ Any diary the AI rejects is moved into a permanent `suspicious_diaries` collecti
 |-|-|-|
 |Notifications|Firestore `onSnapshot` listeners|Real-time in-app alerts|
 |Security|Firebase Auth + RBAC (`JwtFilter`) + Firestore Security Rules|Defense-in-depth: role checks in backend AND database-level rules|
+|Rate Limiting|Bucket4j|Protects APIs against brute-force attacks and abuse|
 |Identity Verification|`@vladmandic/face-api`|Client-side automated confidence-scored face matching|
+|Reporting|Apache POI|Excel generation for offline record keeping|
 |Analytics|Firestore aggregation queries (`AnalyticsService`) + Recharts|Attendance %, diary compliance %, test scores, risk level|
 |Hosting|Firebase Hosting (frontend) + Render/Railway (backend)|Free/low-cost, minimal DevOps overhead|
 
@@ -308,5 +326,4 @@ Any diary the AI rejects is moved into a permanent `suspicious_diaries` collecti
 
 # 5. EXPECTED OUTPUT WHEN BUILDING
 
-Generate, in Feature 1→9 order:
-Complete React Frontend • Java Spring Boot Backend • Firebase Integration (Auth/Firestore/Storage) • Firestore Schema & Security Rules • Client-Side Face-Match API Integration (`@vladmandic/face-api`) • AI Topic Extraction & Diary Evaluator Pipeline (Single API Call + Fallback) • Meeting Quota Logic • Scheduled Jobs (pop-ups, attendance, test windows, warnings, completion checks) • Webcam & Tab-Switch Logic • Mentor & HOD Dashboards (with analytics via Recharts) • Database Design • API Documentation • Folder Structure • Deployment Guide
+Complete React Frontend • Java Spring Boot Backend • Firebase Integration (Auth/Firestore/Storage) • Relational Logging (Spring Data JPA) • Firestore Schema & Security Rules • Client-Side Face-Match API Integration (`@vladmandic/face-api`) • AI Topic Extraction & Diary Evaluator Pipeline (Single Groq API Call, no fallback) • Meeting Quota Logic • Scheduled Jobs (pop-ups, attendance, test windows, warnings, completion checks) • Webcam & Tab-Switch Logic • Mentor & HOD Dashboards (with analytics via Recharts, Excel Export via POI) • Bucket4j Rate Limiting • Database Design • API Documentation • Folder Structure • Deployment Guide

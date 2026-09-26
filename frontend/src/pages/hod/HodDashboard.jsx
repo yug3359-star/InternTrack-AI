@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
 import { useNotification } from '../../hooks/useNotification';
-import { runStatusCheckNow, getPendingApplications } from '../../services/api';
+import { runStatusCheckNow, getPendingApplications, exportExcelReport } from '../../services/api';
 import styles from './HodDashboard.module.css';
 
 const HodDashboard = () => {
@@ -11,6 +11,7 @@ const HodDashboard = () => {
   const [statusLoading, setStatusLoading] = useState(false);
   const [studentData, setStudentData] = useState([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
+  const [isGeneratingExcel, setIsGeneratingExcel] = useState(false);
 
   useEffect(() => {
     const fetchStudents = async () => {
@@ -40,8 +41,24 @@ const HodDashboard = () => {
 
   const totalStudents = studentData.length;
 
-  const handleExport = () => {
-    notify("Generating accreditation compliance CSV spreadsheet for regional education review...", "info", 4000);
+  const handleExport = async () => {
+    setIsGeneratingExcel(true);
+    try {
+      const blob = await exportExcelReport();
+      const url = window.URL.createObjectURL(new Blob([blob]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `Internship_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+      notify("Excel report generated successfully.", "success");
+    } catch (error) {
+      console.error(error);
+      notify("Failed to generate Excel report.", "error");
+    } finally {
+      setIsGeneratingExcel(false);
+    }
   };
 
   const handleAuditTrigger = () => {
@@ -95,8 +112,8 @@ const HodDashboard = () => {
             <option value="Spring 2026">Semester VI (Spring 2026)</option>
             <option value="Fall 2025">Semester V (Fall 2025)</option>
           </select> */}
-          <button type="button" onClick={handleExport} className={styles.exportBtn}>
-            Export Accreditation Ledger
+          <button type="button" onClick={handleExport} className={styles.exportBtn} disabled={isGeneratingExcel}>
+            {isGeneratingExcel ? 'Generating...' : 'Generate Excel Report'}
           </button>
         </div>
       </header>

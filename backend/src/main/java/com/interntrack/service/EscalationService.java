@@ -23,12 +23,7 @@ public class EscalationService {
     private static final Logger log = LoggerFactory.getLogger(EscalationService.class);
     private static final DateTimeFormatter MONTH_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM");
 
-    // In-memory fallback simulated ledgers for development verification or when Firestore offline
-    private final Map<String, Map<String, Object>> devWarningsLedger = new ConcurrentHashMap<>();
-    private final Map<String, Map<String, Object>> devStudentProfiles = new ConcurrentHashMap<>();
-
     public EscalationService() {
-        initializeDevSimulationRecords();
     }
 
     /**
@@ -71,8 +66,11 @@ public class EscalationService {
                     futureIntern.get().getDocuments().forEach(d -> studentUids.add(d.getId()));
                 }
 
-                // Query all daily_status docs for efficient in-memory aggregation for the active month
-                List<QueryDocumentSnapshot> dailyStatusDocs = db.collection("daily_status").get().get().getDocuments();
+                // Query daily_status docs for efficient in-memory aggregation strictly bounded to the active month
+                Query activeMonthQuery = db.collection("daily_status")
+                        .whereGreaterThanOrEqualTo("date", activeMonth + "-01")
+                        .whereLessThanOrEqualTo("date", activeMonth + "-31");
+                List<QueryDocumentSnapshot> dailyStatusDocs = activeMonthQuery.get().get().getDocuments();
 
                 for (String uid : studentUids) {
                     String warnId = uid + "_" + activeMonth;
@@ -127,30 +125,31 @@ public class EscalationService {
                     double excuseAbusePercentage = totalChecks > 0 ? ((double) excusedCount / (double) totalChecks) * 100.0 : 0.0;
 
                     // Evaluate institutional escalation criteria
-                    boolean isHighlighted = (diaryRejectionCount >= 3) || (absenceCount >= 3) || (excuseAbusePercentage >= 25.0);
+                    boolean isHighlighted = (absenceCount >= 3);
                     List<String> reasons = new ArrayList<>();
-                    if (diaryRejectionCount >= 3) {
-                        reasons.add("3+ diary rejections");
-                    }
                     if (absenceCount >= 3) {
                         reasons.add("3+ absences");
                     }
-                    if (excuseAbusePercentage >= 25.0) {
-                        reasons.add("excuse abuse " + Math.round(excuseAbusePercentage) + "%");
+
+                    boolean hasWarningIndicators = absenceCount > 0;
+                    
+                    if (hasWarningIndicators || isHighlighted) {
+                        // Persist authoritative evaluation to warnings/{uid}_{yyyy-MM}
+                        Map<String, Object> warnUpdate = new HashMap<>();
+                        warnUpdate.put("uid", uid);
+                        warnUpdate.put("month", activeMonth);
+                        warnUpdate.put("diaryRejectionCount", diaryRejectionCount);
+                        warnUpdate.put("absenceCount", absenceCount);
+                        warnUpdate.put("excuseAbusePercentage", Math.round(excuseAbusePercentage * 10.0) / 10.0);
+                        warnUpdate.put("highlighted", isHighlighted);
+                        warnUpdate.put("reasons", reasons);
+                        warnUpdate.put("updatedAt", System.currentTimeMillis());
+
+                        warnRef.set(warnUpdate, SetOptions.merge());
+                    } else if (warnDoc.exists()) {
+                        // Clean up zero-data warning documents to prevent database flooding
+                        warnRef.delete();
                     }
-
-                    // Persist authoritative evaluation to warnings/{uid}_{yyyy-MM}
-                    Map<String, Object> warnUpdate = new HashMap<>();
-                    warnUpdate.put("uid", uid);
-                    warnUpdate.put("month", activeMonth);
-                    warnUpdate.put("diaryRejectionCount", diaryRejectionCount);
-                    warnUpdate.put("absenceCount", absenceCount);
-                    warnUpdate.put("excuseAbusePercentage", Math.round(excuseAbusePercentage * 10.0) / 10.0);
-                    warnUpdate.put("highlighted", isHighlighted);
-                    warnUpdate.put("reasons", reasons);
-                    warnUpdate.put("updatedAt", System.currentTimeMillis());
-
-                    warnRef.set(warnUpdate, SetOptions.merge());
 
                     if (isHighlighted) {
                         highlightedCount++;
@@ -158,14 +157,11 @@ public class EscalationService {
                     }
                 }
             } else {
-                highlightedCount = executeDevFallbackAudit(activeMonth);
+                log.error("Firebase runtime uninitialized. Cannot execute escalation audit.");
             }
-        } catch (IllegalStateException | NoClassDefFoundError e) {
-            log.warn("Firebase runtime uninitialized. Executing in-memory local simulated escalation audit.");
-            highlightedCount = executeDevFallbackAudit(activeMonth);
         } catch (Exception e) {
             log.error("Error connecting to cloud Firestore during escalation check: {}", e.getMessage(), e);
-            highlightedCount = executeDevFallbackAudit(activeMonth);
+            throw new RuntimeException("Firestore unavailable", e);
         }
 
         log.info("Escalation check completed for month [{}]. Total candidates highlighted: [{}]", activeMonth, highlightedCount);
@@ -177,32 +173,57 @@ public class EscalationService {
      */
     public List<Map<String, Object>> getHighlightedStudents() {
         String currentMonth = YearMonth.now().format(MONTH_FORMATTER);
+        String previousMonth = YearMonth.now().minusMonths(1).format(MONTH_FORMATTER);
         List<Map<String, Object>> results = new ArrayList<>();
 
         try {
             Firestore db = FirestoreClient.getFirestore();
             if (db != null) {
-                // Query warnings for current month where highlighted is true
+                // Query warnings for current AND previous month where highlighted is true
                 Query query = db.collection("warnings")
-                        .whereEqualTo("month", currentMonth)
+                        .whereIn("month", Arrays.asList(currentMonth, previousMonth))
                         .whereEqualTo("highlighted", true);
 
                 List<QueryDocumentSnapshot> documents = query.get().get().getDocuments();
+                if (documents.isEmpty()) return results;
+
+                // Collect all UIDs using a Set to prevent duplicate references (fixes 500 Error)
+                java.util.Set<String> uniqueUids = new java.util.HashSet<>();
+                for (QueryDocumentSnapshot warnDoc : documents) {
+                    String uid = warnDoc.getString("uid");
+                    if (uid == null) uid = warnDoc.getId().split("_")[0];
+                    uniqueUids.add(uid);
+                }
+
+                // Batch fetch users
+                DocumentReference[] userRefs = uniqueUids.stream().map(uid -> db.collection("users").document(uid)).toArray(DocumentReference[]::new);
+                List<DocumentSnapshot> userDocs = db.getAll(userRefs).get();
+                Map<String, DocumentSnapshot> userDocMap = new HashMap<>();
+                for (DocumentSnapshot doc : userDocs) {
+                    userDocMap.put(doc.getId(), doc);
+                }
+
+                // Batch fetch internships
+                DocumentReference[] internRefs = uniqueUids.stream().map(uid -> db.collection("internships").document(uid)).toArray(DocumentReference[]::new);
+                List<DocumentSnapshot> internDocs = db.getAll(internRefs).get();
+                Map<String, DocumentSnapshot> internDocMap = new HashMap<>();
+                for (DocumentSnapshot doc : internDocs) {
+                    internDocMap.put(doc.getId(), doc);
+                }
+
                 for (QueryDocumentSnapshot warnDoc : documents) {
                     Map<String, Object> data = new HashMap<>(warnDoc.getData());
                     String uid = warnDoc.getString("uid");
                     if (uid == null) uid = warnDoc.getId().split("_")[0];
                     data.put("uid", uid);
 
-                    // Join with users collection for student details
-                    DocumentSnapshot userDoc = db.collection("users").document(uid).get().get();
-                    if (userDoc.exists() && userDoc.getData() != null) {
+                    DocumentSnapshot userDoc = userDocMap.get(uid);
+                    if (userDoc != null && userDoc.exists() && userDoc.getData() != null) {
                         data.put("studentName", userDoc.getString("fullName") != null ? userDoc.getString("fullName") : "Student Profile (" + uid + ")");
                         data.put("branch", userDoc.getString("branch") != null ? userDoc.getString("branch") : "Computer Science & Engineering");
                     } else {
-                        // Attempt fallback join with internships collection
-                        DocumentSnapshot internDoc = db.collection("internships").document(uid).get().get();
-                        if (internDoc.exists() && internDoc.getData() != null) {
+                        DocumentSnapshot internDoc = internDocMap.get(uid);
+                        if (internDoc != null && internDoc.exists() && internDoc.getData() != null) {
                             data.put("studentName", internDoc.getString("fullName") != null ? internDoc.getString("fullName") : "Student Profile (" + uid + ")");
                             data.put("branch", internDoc.getString("branch") != null ? internDoc.getString("branch") : "Computer Science & Engineering");
                             data.put("mentor", internDoc.getString("assignedMentor") != null ? internDoc.getString("assignedMentor") : "Dr. Rajesh K.");
@@ -214,8 +235,8 @@ public class EscalationService {
                     }
 
                     if (!data.containsKey("mentor")) {
-                        DocumentSnapshot internDoc = db.collection("internships").document(uid).get().get();
-                        if (internDoc.exists() && internDoc.getString("assignedMentor") != null) {
+                        DocumentSnapshot internDoc = internDocMap.get(uid);
+                        if (internDoc != null && internDoc.exists() && internDoc.getString("assignedMentor") != null) {
                             data.put("mentor", internDoc.getString("assignedMentor"));
                         } else {
                             data.put("mentor", "Dr. Rajesh K.");
@@ -225,11 +246,11 @@ public class EscalationService {
                     results.add(data);
                 }
             } else {
-                results = getDevHighlightedStudents(currentMonth);
+                log.error("Cloud Firestore unreachable during getHighlightedStudents query.");
             }
         } catch (Exception e) {
-            log.warn("Cloud Firestore unreachable during getHighlightedStudents query: {}", e.getMessage());
-            results = getDevHighlightedStudents(currentMonth);
+            log.error("Cloud Firestore unreachable during getHighlightedStudents query: {}", e.getMessage());
+            throw new RuntimeException("Firestore unavailable", e);
         }
 
         return results;
@@ -258,11 +279,11 @@ public class EscalationService {
                     return mB.compareTo(mA);
                 });
             } else {
-                history = getDevWarningHistory(uid);
+                log.error("Cloud Firestore unreachable during getStudentWarningHistory query for [{}]", uid);
             }
         } catch (Exception e) {
-            log.warn("Cloud Firestore unreachable during getStudentWarningHistory query for [{}]", uid);
-            history = getDevWarningHistory(uid);
+            log.error("Cloud Firestore unreachable during getStudentWarningHistory query for [{}]: {}", uid, e.getMessage());
+            throw new RuntimeException("Firestore unavailable", e);
         }
         return history;
     }
@@ -276,98 +297,5 @@ public class EscalationService {
         response.put("count", count);
         response.put("status", "SUCCESS");
         return response;
-    }
-
-    // --- Dev Simulation & Fallback Methods ---
-
-    private void initializeDevSimulationRecords() {
-        String currentMonth = YearMonth.now().format(MONTH_FORMATTER);
-        String lastMonth = YearMonth.now().minusMonths(1).format(MONTH_FORMATTER);
-        String twoMonthsAgo = YearMonth.now().minusMonths(2).format(MONTH_FORMATTER);
-
-        // Seed profile descriptions for offline institutional evaluation review
-        devStudentProfiles.put("CS001", createProfile("Aditya Sharma", "Computer Science & Engineering", "Dr. Rajesh K."));
-        devStudentProfiles.put("CS002", createProfile("Priya Patel", "Information Technology", "Dr. Meenakshi S."));
-        devStudentProfiles.put("CS003", createProfile("Rohan Verma", "Artificial Intelligence & DS", "Prof. Suresh B."));
-        devStudentProfiles.put("CS004", createProfile("Siddharth Nair", "Computer Science & Engineering", "Dr. Rajesh K."));
-
-        // Candidate 1: Excessive absences & excuse usage in current month
-        devWarningsLedger.put("CS001_" + currentMonth, createWarnRecord("CS001", currentMonth, 1, 4, 32.5, true, Arrays.asList("3+ absences", "excuse abuse 33%")));
-        devWarningsLedger.put("CS001_" + lastMonth, createWarnRecord("CS001", lastMonth, 0, 1, 12.0, false, Collections.emptyList()));
-
-        // Candidate 2: Repeated diary rejections & face mismatch failures
-        devWarningsLedger.put("CS002_" + currentMonth, createWarnRecord("CS002", currentMonth, 4, 3, 10.0, true, Arrays.asList("3+ diary rejections", "3+ absences")));
-        devWarningsLedger.put("CS002_" + lastMonth, createWarnRecord("CS002", lastMonth, 3, 0, 0.0, true, Arrays.asList("3+ diary rejections")));
-        devWarningsLedger.put("CS002_" + twoMonthsAgo, createWarnRecord("CS002", twoMonthsAgo, 1, 0, 5.0, false, Collections.emptyList()));
-
-        // Candidate 3: Excuse abuse loophole threshold
-        devWarningsLedger.put("CS003_" + currentMonth, createWarnRecord("CS003", currentMonth, 0, 1, 40.0, true, Arrays.asList("excuse abuse 40%")));
-    }
-
-    private Map<String, Object> createProfile(String name, String branch, String mentor) {
-        Map<String, Object> map = new HashMap<>();
-        map.put("studentName", name);
-        map.put("branch", branch);
-        map.put("mentor", mentor);
-        return map;
-    }
-
-    private Map<String, Object> createWarnRecord(String uid, String month, long rejections, long absences, double excusePct, boolean highlighted, List<String> reasons) {
-        Map<String, Object> map = new HashMap<>();
-        map.put("uid", uid);
-        map.put("month", month);
-        map.put("diaryRejectionCount", rejections);
-        map.put("absenceCount", absences);
-        map.put("excuseAbusePercentage", excusePct);
-        map.put("highlighted", highlighted);
-        map.put("reasons", reasons);
-        map.put("updatedAt", System.currentTimeMillis());
-        return map;
-    }
-
-    private int executeDevFallbackAudit(String targetMonth) {
-        log.info("Executing in-memory fallback simulated escalation audit for month [{}]", targetMonth);
-        int count = 0;
-        for (Map.Entry<String, Map<String, Object>> entry : devWarningsLedger.entrySet()) {
-            if (entry.getKey().endsWith(targetMonth)) {
-                Map<String, Object> rec = entry.getValue();
-                long rejections = (Long) rec.getOrDefault("diaryRejectionCount", 0L);
-                long absences = (Long) rec.getOrDefault("absenceCount", 0L);
-                double excusePct = (Double) rec.getOrDefault("excuseAbusePercentage", 0.0);
-
-                boolean highlight = rejections >= 3 || absences >= 3 || excusePct >= 25.0;
-                rec.put("highlighted", highlight);
-                if (highlight) {
-                    count++;
-                    log.warn("[DEV ESCALATION FLAGGED] Student [{}] highlighted in dev simulation for month [{}].", rec.get("uid"), targetMonth);
-                }
-            }
-        }
-        return count;
-    }
-
-    private List<Map<String, Object>> getDevHighlightedStudents(String currentMonth) {
-        List<Map<String, Object>> list = new ArrayList<>();
-        for (Map<String, Object> rec : devWarningsLedger.values()) {
-            if (currentMonth.equals(rec.get("month")) && Boolean.TRUE.equals(rec.get("highlighted"))) {
-                Map<String, Object> full = new HashMap<>(rec);
-                String uid = (String) rec.get("uid");
-                Map<String, Object> profile = devStudentProfiles.getOrDefault(uid, createProfile("Student (" + uid + ")", "Computer Science", "Dr. Rajesh K."));
-                full.putAll(profile);
-                list.add(full);
-            }
-        }
-        return list;
-    }
-
-    private List<Map<String, Object>> getDevWarningHistory(String uid) {
-        List<Map<String, Object>> list = new ArrayList<>();
-        for (Map<String, Object> rec : devWarningsLedger.values()) {
-            if (uid.equals(rec.get("uid"))) {
-                list.add(new HashMap<>(rec));
-            }
-        }
-        list.sort((a, b) -> ((String) b.getOrDefault("month", "")).compareTo((String) a.getOrDefault("month", "")));
-        return list;
     }
 }

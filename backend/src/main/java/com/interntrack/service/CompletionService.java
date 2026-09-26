@@ -296,10 +296,7 @@ public class CompletionService {
         if (simulatedCompletionRegistry.containsKey(uid)) {
             return simulatedCompletionRegistry.get(uid);
         }
-        // If requesting a test intern ID during dev mode, return fallback completed profile
-        if ("dev-stud-106".equalsIgnoreCase(uid) || "dev-student-id".equalsIgnoreCase(uid) || "CS001".equalsIgnoreCase(uid)) {
-            return simulatedCompletionRegistry.get("CS001");
-        }
+        // Removed dev simulation fallbacks
 
         return null;
     }

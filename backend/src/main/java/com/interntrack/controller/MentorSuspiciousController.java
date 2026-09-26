@@ -39,6 +39,17 @@ public class MentorSuspiciousController {
         String mentorName = hodService.getMentorNameByUid(uid);
         
         List<Map<String, Object>> queue = mentorSuspiciousService.getSuspiciousDiaries(mentorName, isHod);
+        
+        try {
+            java.io.FileWriter fw = new java.io.FileWriter("suspicious_debug.txt", true);
+            fw.write("=== REQUEST AT " + new java.util.Date() + " ===\n");
+            fw.write("UID: " + uid + "\n");
+            fw.write("isHod: " + isHod + "\n");
+            fw.write("mentorName resolved: '" + mentorName + "'\n");
+            fw.write("queue size returned: " + (queue != null ? queue.size() : "null") + "\n");
+            fw.close();
+        } catch (Exception e) {}
+        
         return ResponseEntity.ok(queue);
     }
 

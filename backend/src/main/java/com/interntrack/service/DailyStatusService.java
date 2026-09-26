@@ -123,8 +123,9 @@ public class DailyStatusService {
             finalStatus = "absent";
         } else {
             // To be completely present, ALL THREE MUST MATCH
-            boolean attPresent = "present".equalsIgnoreCase(attendanceStatus) || "excused_meeting".equalsIgnoreCase(attendanceStatus);
-            if (attPresent && diaryAccepted) {
+            if ("excused_meeting".equalsIgnoreCase(attendanceStatus) && diaryAccepted) {
+                finalStatus = "excused_meeting";
+            } else if ("present".equalsIgnoreCase(attendanceStatus) && diaryAccepted) {
                 finalStatus = "present";
             } else {
                 finalStatus = "in_progress";
@@ -148,6 +149,23 @@ public class DailyStatusService {
         if (db != null) {
             try {
                 db.collection("daily_status").document(docId).set(record);
+                if (isAbsent) {
+                    try {
+                        DocumentSnapshot existingAtt = db.collection("attendance").document(docId).get().get();
+                        if (!existingAtt.exists()) {
+                            // Synthesize a missing attendance document so it appears on the dashboard audit table
+                            Map<String, Object> newAtt = new HashMap<>();
+                            newAtt.put("id", docId);
+                            newAtt.put("uid", uid);
+                            newAtt.put("date", dateStr);
+                            newAtt.put("status", "missed"); // Baseline is missed since they never checked in
+                            if (absenceReason != null) {
+                                newAtt.put("absenceReason", absenceReason);
+                            }
+                            db.collection("attendance").document(docId).set(newAtt);
+                        }
+                    } catch (Exception ignored) {}
+                }
                 log.info("Committed daily compliance record to real Firestore: daily_status/{} -> [{}]", docId, finalStatus.toUpperCase());
             } catch (Exception e) {
                 log.error("Failed to commit daily status to cloud Firestore for doc {}: {}", docId, e.getMessage());

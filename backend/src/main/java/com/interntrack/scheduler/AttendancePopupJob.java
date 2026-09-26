@@ -56,10 +56,11 @@ public class AttendancePopupJob {
     }
 
     /**
-     * Initializes the attendance records at midnight for all ongoing students.
-     * Starts them in 'scheduled' status so they don't appear until exactly shift start time.
+     * Initializes the attendance records. Runs on startup and hourly for all ongoing students.
+     * Skips students who already have a schedule for today.
      */
-    @Scheduled(cron = "0 0 0 * * *")
+    @PostConstruct
+    @Scheduled(cron = "0 * * * * *")
     public void generateDailyAttendanceChecks() {
         log.info("Midnight init: Creating scheduled attendance windows for Ongoing internships.");
         Firestore db = getDb();
@@ -75,15 +76,23 @@ public class AttendancePopupJob {
             log.warn("Cloud Firestore unreachable during ongoing internship query: {}", e.getMessage());
         }
 
-        if (!ongoingDocs.containsKey("dev-stud-107")) ongoingDocs.put("dev-stud-107", null);
-        if (!ongoingDocs.containsKey("dev-stud-102")) ongoingDocs.put("dev-stud-102", null);
+        // Removed dev mock fallbacks
 
         LocalDate today = LocalDate.now(applicationZoneId);
         String todayStr = today.format(DATE_FORMATTER);
         String currentDayName = today.getDayOfWeek().getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.ENGLISH);
 
+        Set<String> existingUids = new HashSet<>();
+        try {
+            ApiFuture<QuerySnapshot> existingFuture = db.collection("attendance").whereEqualTo("date", todayStr).get();
+            for (QueryDocumentSnapshot doc : existingFuture.get().getDocuments()) {
+                existingUids.add(doc.getString("uid"));
+            }
+        } catch (Exception e) {}
+
         for (Map.Entry<String, DocumentSnapshot> entry : ongoingDocs.entrySet()) {
             String uid = entry.getKey();
+            if (existingUids.contains(uid)) continue;
             DocumentSnapshot d = entry.getValue();
 
             if (d != null && d.contains("workingDays")) {
@@ -94,7 +103,7 @@ public class AttendancePopupJob {
                 }
             }
 
-            String startStr = (d != null && d.getString("officeStartTime") != null) ? d.getString("officeStartTime") : (uid.equals("dev-stud-102") ? "08:30" : "09:00");
+            String startStr = (d != null && d.getString("officeStartTime") != null) ? d.getString("officeStartTime") : "09:00";
             String[] parts = startStr.split(":");
             LocalDateTime startDateTime = today.atTime(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]));
             long windowStart = startDateTime.atZone(applicationZoneId).toInstant().toEpochMilli();
@@ -135,12 +144,18 @@ public class AttendancePopupJob {
 
             for (QueryDocumentSnapshot doc : future.get().getDocuments()) {
                 Long windowStart = doc.getLong("windowStart");
+                Long deadline = doc.getLong("deadline");
                 if (windowStart != null && currentMillis >= windowStart) {
-                    log.info("Shift started! Opening 1-hour attendance window for [{}]", doc.getId());
-                    doc.getReference().update(
-                        "status", "awaiting_response",
-                        "triggeredAt", currentMillis
-                    );
+                    if (deadline != null && currentMillis > deadline) {
+                        log.warn("Shift started in the past, but 1-hour window strictly expired for [{}]. Marking MISSED immediately.", doc.getId());
+                        transitionToMissed(doc.getId(), doc.getString("uid"), doc.getString("date"));
+                    } else {
+                        log.info("Shift started! Opening 1-hour attendance window for [{}]", doc.getId());
+                        doc.getReference().update(
+                            "status", "awaiting_response",
+                            "triggeredAt", currentMillis
+                        );
+                    }
                 }
             }
         } catch (Exception ignored) {}
@@ -206,9 +221,9 @@ public class AttendancePopupJob {
             for (QueryDocumentSnapshot d : future.get().getDocuments()) {
                 String uid = d.getId();
                 
-                // Attempt to parse 'startDate', default to 7 days ago if missing
+                // Attempt to parse 'joiningDate', default to 7 days ago if missing
                 LocalDate startDate = today.minusDays(7); 
-                String startDateStr = d.getString("startDate");
+                String startDateStr = d.getString("joiningDate");
                 if (startDateStr != null) {
                     try {
                         startDate = LocalDate.parse(startDateStr, DATE_FORMATTER);
@@ -296,6 +311,20 @@ public class AttendancePopupJob {
                         Map<String, Object> rec = d.getData();
                         // Ignore "scheduled" ones so frontend doesn't show them early
                         if (!"scheduled".equals(rec.get("status"))) {
+                            
+                            // Cross-reference authoritative daily status for compliance overrides (e.g. AI Diary Rejection)
+                            try {
+                                DocumentSnapshot ds = db.collection("daily_status").document(d.getId()).get().get();
+                                if (ds.exists()) {
+                                    String effectiveStatus = ds.getString("status");
+                                    if ("absent".equalsIgnoreCase(effectiveStatus) || "missed".equalsIgnoreCase(effectiveStatus) || "excused_meeting".equalsIgnoreCase(effectiveStatus)) {
+                                        rec.put("status", effectiveStatus);
+                                    } else if ("present".equalsIgnoreCase(effectiveStatus) && !rec.containsKey("respondedAt")) {
+                                        // Optional: if it was somehow strictly overridden to present, though attendance itself is the primary driver
+                                    }
+                                }
+                            } catch (Exception ignored) {}
+
                             list.add(rec);
                         }
                     }
@@ -312,7 +341,27 @@ public class AttendancePopupJob {
         String docId = uid + "_" + todayStr;
         long now = System.currentTimeMillis();
 
-        String startStr = uid.equals("dev-stud-102") ? "08:30" : "09:00";
+        String startStr = "09:00"; // default
+        Firestore db = getDb();
+        if (db != null) {
+            try {
+                DocumentSnapshot internDoc = db.collection("internships").document(uid).get().get();
+                if (internDoc.exists()) {
+                    if (internDoc.getString("officeStartTime") != null) {
+                        startStr = internDoc.getString("officeStartTime");
+                    }
+                    if (internDoc.contains("workingDays")) {
+                        List<String> workingDays = (List<String>) internDoc.get("workingDays");
+                        String currentDayName = LocalDate.now(applicationZoneId).getDayOfWeek().getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.ENGLISH);
+                        if (workingDays != null && !workingDays.isEmpty() && !workingDays.contains(currentDayName)) {
+                            log.info("On-demand attendance trigger aborted for [{}] because today ({}) is a rest day.", uid, currentDayName);
+                            return null;
+                        }
+                    }
+                }
+            } catch (Exception ignored) {}
+        }
+        
         String[] parts = startStr.split(":");
         LocalDateTime startDateTime = LocalDate.now(applicationZoneId).atTime(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]));
         long windowStart = startDateTime.atZone(applicationZoneId).toInstant().toEpochMilli();

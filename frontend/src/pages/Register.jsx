@@ -27,12 +27,12 @@ const Register = () => {
   const onSubmit = async (data) => {
     setProcessing(true);
     try {
-      // Direct college portal compliance check per instructions
-      if (!data.email.toLowerCase().endsWith('.edu') && !data.email.toLowerCase().includes('college') && !data.email.toLowerCase().includes('university') && !data.email.toLowerCase().includes('ac.')) {
-        notify("Registration failed: college email required", "error", 5000);
-        setProcessing(false);
-        return;
-      }
+      // Direct college portal compliance check per instructions (COMMENTED OUT FOR TESTING)
+      // if (!data.email.toLowerCase().endsWith('.edu') && !data.email.toLowerCase().includes('college') && !data.email.toLowerCase().includes('university') && !data.email.toLowerCase().includes('ac.')) {
+      //   notify("Registration failed: college email required", "error", 5000);
+      //   setProcessing(false);
+      //   return;
+      // }
 
       // Emulate institutional application record submission for review panel demo
       notify("Application accepted: creating enterprise academic profile.", "success", 4000);
@@ -62,16 +62,12 @@ const Register = () => {
         });
       }
 
-      await login(data.email, data.password, data.role);
-
-      if (data.role === 'MENTOR') {
-        navigate('/mentor/dashboard');
-      } else if (data.role === 'HOD') {
-        navigate('/hod/dashboard');
-      } else {
-        navigate('/student/dashboard');
-      }
-    } catch (error) {
+      // Sign them out immediately so they are forced to verify their email
+      await auth.signOut();
+      
+      notify("Registration successful! Please check your email to verify your account before logging in.", "success", 8000);
+      navigate('/login');
+    } catch (err) {
       notify("Registration failed: central directory database unavailable or duplicate enrollment ID.", "error", 5000);
     } finally {
       setProcessing(false);

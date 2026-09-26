@@ -62,8 +62,10 @@ const StudentRegister = () => {
       password: '',
       branch: 'Computer Science & Engineering',
       rollNo: '',
-      enrollmentNo: '',
+      registrationNumber: '',
       section: '',
+      semester: '',
+      mobileNumber: '',
       mentorName: '',
       mentorEmail: '',
       internshipDomain: '',
@@ -148,13 +150,17 @@ const StudentRegister = () => {
   const handleNextStep = async (targetStep) => {
     setBackendError(null);
     if (targetStep === 2 && currentStep === 1) {
-      const isStep1Valid = await trigger(['fullName', 'collegeEmail', 'password', 'branch', 'rollNo', 'enrollmentNo', 'section']);
+      const isStep1Valid = await trigger(['fullName', 'collegeEmail', 'password', 'branch', 'rollNo', 'registrationNumber', 'section', 'semester', 'mobileNumber']);
       if (isStep1Valid) setCurrentStep(2);
     } else if (targetStep === 3 && currentStep === 2) {
       const isStep2Valid = await trigger([
         'mentorName',
         'mentorEmail',
         'internshipDomain',
+        'companyName',
+        'modeOfInternship',
+        'companyAddress',
+        'internshipStipend',
         'joiningDate',
         'completionDate',
         'officeStartTime',
@@ -337,33 +343,69 @@ const StudentRegister = () => {
                   </div>
 
                   <div className={styles.fieldCol}>
-                    <label htmlFor="enrollmentNo" className={styles.fieldLabel}>Enrollment Number</label>
+                    <label htmlFor="registrationNumber" className={styles.fieldLabel}>Registration Number</label>
                     <input
-                      id="enrollmentNo"
+                      id="registrationNumber"
                       type="text"
-                      placeholder="Enrollment Number"
-                      {...register("enrollmentNo", { required: "Enrollment Number" })}
-                      className={errors.enrollmentNo ? styles.inputInvalid : styles.inputStandard}
+                      placeholder="e.g. 2023ACSE1101169"
+                      {...register("registrationNumber", { required: "Registration Number is required" })}
+                      className={errors.registrationNumber ? styles.inputInvalid : styles.inputStandard}
                     />
-                    {errors.enrollmentNo && <span className={styles.errorText}>{errors.enrollmentNo.message}</span>}
+                    {errors.registrationNumber && <span className={styles.errorText}>{errors.registrationNumber.message}</span>}
                   </div>
                 </div>
 
                 <div className={styles.fieldRow}>
                   <div className={styles.fieldCol}>
                     <label htmlFor="section" className={styles.fieldLabel}>Class Section</label>
-                    <input
+                    <select
                       id="section"
-                      type="text"
-                      placeholder="e.g., A, B, C"
                       {...register("section", { required: "Section is mandatory." })}
-                      className={errors.section ? styles.inputInvalid : styles.inputStandard}
-                    />
+                      className={styles.selectStandard}
+                    >
+                      <option value="">Select Section</option>
+                      <option value="A">Section A</option>
+                      <option value="B">Section B</option>
+                      <option value="C">Section C</option>
+                    </select>
                     {errors.section && <span className={styles.errorText}>{errors.section.message}</span>}
+                  </div>
+
+                  <div className={styles.fieldCol}>
+                    <label htmlFor="semester" className={styles.fieldLabel}>Semester</label>
+                    <select
+                      id="semester"
+                      {...register("semester", { required: "Semester is mandatory." })}
+                      className={styles.selectStandard}
+                    >
+                      <option value="">Select Semester</option>
+                      {[1, 2, 3, 4, 5, 6, 7, 8].map(num => (
+                        <option key={num} value={num}>Semester {num}</option>
+                      ))}
+                    </select>
+                    {errors.semester && <span className={styles.errorText}>{errors.semester.message}</span>}
                   </div>
                 </div>
 
                 <div className={styles.fieldRow}>
+                  <div className={styles.fieldCol}>
+                    <label htmlFor="mobileNumber" className={styles.fieldLabel}>Mobile Number</label>
+                    <input
+                      id="mobileNumber"
+                      type="tel"
+                      placeholder="10-digit mobile number"
+                      {...register("mobileNumber", {
+                        required: "Mobile number is required",
+                        pattern: {
+                          value: /^[6-9]\d{9}$/,
+                          message: "Enter a valid 10-digit mobile number"
+                        }
+                      })}
+                      className={errors.mobileNumber ? styles.inputInvalid : styles.inputStandard}
+                    />
+                    {errors.mobileNumber && <span className={styles.errorText}>{errors.mobileNumber.message}</span>}
+                  </div>
+
                   <div className={styles.fieldCol}>
                     <label htmlFor="collegeEmail" className={styles.fieldLabel}>College Email Address</label>
                     <input
@@ -381,7 +423,9 @@ const StudentRegister = () => {
                     />
                     {errors.collegeEmail && <span className={styles.errorText}>{errors.collegeEmail.message}</span>}
                   </div>
+                </div>
 
+                <div className={styles.fieldRow}>
                   <div className={styles.fieldCol}>
                     <label htmlFor="password" className={styles.fieldLabel}>New Password</label>
                     <input
@@ -399,9 +443,7 @@ const StudentRegister = () => {
                     />
                     {errors.password && <span className={styles.errorText}>{errors.password.message}</span>}
                   </div>
-                </div>
 
-                <div className={styles.fieldRow}>
                   <div className={styles.fieldCol}>
                     <label htmlFor="confirmPassword" className={styles.fieldLabel}>Confirm Password</label>
                     <input
@@ -416,9 +458,6 @@ const StudentRegister = () => {
                     />
                     {errors.confirmPassword && <span className={styles.errorText}>{errors.confirmPassword.message}</span>}
                   </div>
-
-                  {/* Empty column to maintain grid layout */}
-                  <div className={styles.fieldCol}></div>
                 </div>
 
                 <div className={styles.navRow}>
@@ -437,6 +476,48 @@ const StudentRegister = () => {
 
                 <div className={styles.fieldRow}>
                   <div className={styles.fieldCol}>
+                    <label htmlFor="companyName" className={styles.fieldLabel}>Company Name</label>
+                    <input
+                      id="companyName"
+                      type="text"
+                      placeholder="e.g., Tech Innovations Ltd."
+                      {...register("companyName", { required: "Company Name is required." })}
+                      className={errors.companyName ? styles.inputInvalid : styles.inputStandard}
+                    />
+                    {errors.companyName && <span className={styles.errorText}>{errors.companyName.message}</span>}
+                  </div>
+
+                  <div className={styles.fieldCol}>
+                    <label htmlFor="companyAddress" className={styles.fieldLabel}>City / Company Address</label>
+                    <input
+                      id="companyAddress"
+                      type="text"
+                      placeholder="e.g., Pune, Maharashtra"
+                      autoComplete="off"
+                      {...register("companyAddress", { required: "City/Address is required." })}
+                      className={errors.companyAddress ? styles.inputInvalid : styles.inputStandard}
+                    />
+                    {errors.companyAddress && <span className={styles.errorText}>{errors.companyAddress.message}</span>}
+                  </div>
+                </div>
+
+                <div className={styles.fieldRow}>
+                  <div className={styles.fieldCol}>
+                    <label htmlFor="modeOfInternship" className={styles.fieldLabel}>Mode of Internship</label>
+                    <select
+                      id="modeOfInternship"
+                      {...register("modeOfInternship", { required: "Mode of Internship is required." })}
+                      className={errors.modeOfInternship ? styles.inputInvalid : styles.inputStandard}
+                    >
+                      <option value="">Select Mode</option>
+                      <option value="On-site">On-site</option>
+                      <option value="Remote">Remote</option>
+                      <option value="Hybrid">Hybrid</option>
+                    </select>
+                    {errors.modeOfInternship && <span className={styles.errorText}>{errors.modeOfInternship.message}</span>}
+                  </div>
+
+                  <div className={styles.fieldCol}>
                     <label htmlFor="mentorName" className={styles.fieldLabel}>Mentor Name</label>
                     <input
                       id="mentorName"
@@ -447,7 +528,9 @@ const StudentRegister = () => {
                     />
                     {errors.mentorName && <span className={styles.errorText}>{errors.mentorName.message}</span>}
                   </div>
+                </div>
 
+                <div className={styles.fieldRow}>
                   <div className={styles.fieldCol}>
                     <label htmlFor="mentorEmail" className={styles.fieldLabel}>Industry Mentor Corporate Email</label>
                     <input
@@ -465,9 +548,7 @@ const StudentRegister = () => {
                     />
                     {errors.mentorEmail && <span className={styles.errorText}>{errors.mentorEmail.message}</span>}
                   </div>
-                </div>
 
-                <div className={styles.fieldRow}>
                   <div className={styles.fieldCol}>
                     <label htmlFor="internshipDomain" className={styles.fieldLabel}>Engineering Practice Domain</label>
                     <input
@@ -487,20 +568,22 @@ const StudentRegister = () => {
                     </datalist>
                     {errors.internshipDomain && <span className={styles.errorText}>{errors.internshipDomain.message}</span>}
                   </div>
+                </div>
 
-                  {/* <div className={styles.fieldCol}>
-                    <label className={styles.fieldLabel}>Primary Computing Peripheral</label>
-                    <div className={styles.radioGroup}>
-                      <label className={styles.radioLabel}>
-                        <input type="radio" value="Desktop" {...register("deviceType")} />
-                        <span>Workstation / Laptop (Desktop)</span>
-                      </label>
-                      <label className={styles.radioLabel}>
-                        <input type="radio" value="Mobile" {...register("deviceType")} />
-                        <span>Mobile / Tablet Peripheral</span>
-                      </label>
-                    </div>
-                  </div> */}
+                <div className={styles.fieldRow}>
+                  <div className={styles.fieldCol}>
+                    <label htmlFor="internshipStipend" className={styles.fieldLabel}>Stipend (Monthly)</label>
+                    <input
+                      id="internshipStipend"
+                      type="text"
+                      placeholder="e.g., 15000 INR or Unpaid"
+                      autoComplete="off"
+                      {...register("internshipStipend", { required: "Stipend is required (write Unpaid if none)." })}
+                      className={errors.internshipStipend ? styles.inputInvalid : styles.inputStandard}
+                    />
+                    {errors.internshipStipend && <span className={styles.errorText}>{errors.internshipStipend.message}</span>}
+                  </div>
+                  <div className={styles.fieldCol}></div>
                 </div>
 
                 <div className={styles.fieldRow}>

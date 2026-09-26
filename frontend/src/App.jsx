@@ -5,6 +5,7 @@ import Sidebar from './components/Sidebar';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import StudentRegister from './pages/student/Register';
+import EmailVerified from './pages/EmailVerified';
 import PrivacyNotice from './pages/PrivacyNotice';
 import Unauthorized from './pages/Unauthorized';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -56,6 +57,7 @@ const App = () => {
             <Route path="/" element={<Navigate to="/login" replace />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/email-verified" element={<EmailVerified />} />
             <Route path="/privacy" element={<PrivacyNotice />} />
             <Route path="/unauthorized" element={<Unauthorized />} />
             

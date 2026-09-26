@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import axios from 'axios';
+import { getHighlightedCount } from '../services/api';
+import api from '../services/api';
 import { useAuth } from '../hooks/useAuth';
 import styles from './Sidebar.module.css';
-
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 
 const Sidebar = () => {
   const { role, isAuthenticated } = useAuth();
@@ -23,7 +22,7 @@ const Sidebar = () => {
 
   const fetchSuspiciousCount = async () => {
     try {
-      const resp = await axios.get(`${API_BASE}/api/mentor/suspicious/count`);
+      const resp = await api.get('/mentor/suspicious/count');
       if (resp.data && typeof resp.data.count === 'number') {
         setSuspiciousCount(resp.data.count);
       }
@@ -34,9 +33,9 @@ const Sidebar = () => {
 
   const fetchHighlightedCount = async () => {
     try {
-      const resp = await axios.get(`${API_BASE}/api/hod/highlighted/count`);
-      if (resp.data && typeof resp.data.count === 'number') {
-        setHighlightedCount(resp.data.count);
+      const resp = await getHighlightedCount();
+      if (resp && typeof resp.count === 'number') {
+        setHighlightedCount(resp.count);
       }
     } catch (err) {
       console.warn("Could not load highlighted student badge count, utilizing simulated fallback counter:", err);
