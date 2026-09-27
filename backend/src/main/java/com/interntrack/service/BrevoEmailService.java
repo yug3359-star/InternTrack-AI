@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.springframework.beans.factory.annotation.Value;
 
 @Service
 public class BrevoEmailService implements EmailProvider {
@@ -22,14 +23,12 @@ public class BrevoEmailService implements EmailProvider {
     private static final Logger log = LoggerFactory.getLogger(BrevoEmailService.class);
     private static final String BREVO_API_URL = "https://api.brevo.com/v3/smtp/email";
 
-    @Value("${brevo.api.key}")
+    @Value("${brevo.api.key:}")
     private String apiKey;
-
-    @Value("${brevo.sender.email}")
+    
+    @Value("${brevo.sender.email:yuglodha67@gmail.com}")
     private String senderEmail;
-
-    @Value("${brevo.sender.name}")
-    private String senderName;
+    private String senderName = "InternTrack";
 
     private final RestTemplate restTemplate;
 
@@ -56,6 +55,7 @@ public class BrevoEmailService implements EmailProvider {
             sender.put("email", senderEmail);
             body.put("sender", sender);
 
+            
             List<Map<String, String>> to = new ArrayList<>();
             Map<String, String> recipient = new HashMap<>();
             recipient.put("email", toEmail);

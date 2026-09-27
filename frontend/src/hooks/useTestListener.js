@@ -13,7 +13,7 @@ const API_BASE_URL = 'http://localhost:8080/api';
  * @param {string} studentUid - Active student identifier
  * @param {function} onNavigate - Optional callback to navigate to exam session (e.g. useNavigate hook)
  */
-export function useTestListener(studentUid, onNavigate) {
+export function useTestListener(studentUid, onNavigate, role = 'STUDENT') {
   const [testHistory, setTestHistory] = useState([]);
   const [activeTest, setActiveTest] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -22,7 +22,7 @@ export function useTestListener(studentUid, onNavigate) {
   const notifiedTestIdsRef = useRef(new Set());
 
   const fetchHistoryFromBackend = useCallback(async () => {
-    if (!studentUid) return;
+    if (!studentUid || role === 'DISABLED') return;
     try {
       const resp = await axios.get(`${API_BASE_URL}/test/history/${studentUid}`);
       if (resp.data && resp.data.records) {
@@ -39,7 +39,7 @@ export function useTestListener(studentUid, onNavigate) {
   }, [studentUid]);
 
   useEffect(() => {
-    if (!studentUid) {
+    if (!studentUid || role === 'DISABLED') {
       setLoading(false);
       return;
     }

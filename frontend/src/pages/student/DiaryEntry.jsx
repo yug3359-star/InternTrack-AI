@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../hooks/useAuth';
+import { getStudentStatus } from '../../services/api';
 import styles from './DiaryEntry.module.css';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
@@ -17,9 +18,13 @@ const DiaryEntry = () => {
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState(null);
   const [successMsg, setSuccessMsg] = useState(null);
+  const [appStatus, setAppStatus] = useState(null);
 
   useEffect(() => {
     fetchDiaries();
+    if (studentUid) {
+      getStudentStatus(studentUid).then(data => setAppStatus(data)).catch(console.error);
+    }
   }, [studentUid]);
 
   const fetchDiaries = async () => {
@@ -113,6 +118,15 @@ const DiaryEntry = () => {
         </div>
       )}
 
+      {appStatus?.status === 'Completed' ? (
+        <div className={styles.submissionCard} style={{ textAlign: 'center', padding: '40px' }}>
+          <h2 style={{ color: '#166534', marginBottom: '16px' }}>Internship Completed</h2>
+          <p style={{ color: '#475569', fontSize: '15px' }}>
+            Your internship program has officially concluded. The Daily Work Diary module is now locked and no further entries can be submitted.
+          </p>
+        </div>
+      ) : (
+      <>
       <section className={styles.submissionCard}>
         <div className={styles.formHeader}>
           <span className={styles.formTitle}>Today's Activity</span>
@@ -203,6 +217,8 @@ const DiaryEntry = () => {
           </div>
         )}
       </section>
+      </>
+      )}
     </div>
   );
 };

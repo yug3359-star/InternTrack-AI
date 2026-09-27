@@ -19,6 +19,11 @@ const StudentDashboard = () => {
   const { user } = useAuth();
   const studentUid = user?.uid || 'fallback-uid'; // Should always be available if authenticated
 
+  const [appStatus, setAppStatus] = useState(null);
+
+  const isCompleted = appStatus?.status === 'Completed';
+  const listenerRole = (appStatus === null || isCompleted) ? 'DISABLED' : 'STUDENT';
+
   const {
     activePopup,
     setActivePopup,
@@ -27,7 +32,7 @@ const StudentDashboard = () => {
     loadingResponse,
     respondToPopup,
     triggerDevTestPopup
-  } = usePopupListener(studentUid, 'STUDENT');
+  } = usePopupListener(studentUid, listenerRole);
 
   const {
     activeAttendance,
@@ -37,10 +42,10 @@ const StudentDashboard = () => {
     loadingResponse: loadingAttendance,
     respondToAttendance,
     triggerTestAttendance
-  } = useAttendanceListener(studentUid, 'STUDENT');
+  } = useAttendanceListener(studentUid, listenerRole);
 
   const navigate = useNavigate();
-  const { activeTest, testHistory } = useTestListener(studentUid, navigate);
+  const { activeTest, testHistory } = useTestListener(studentUid, navigate, listenerRole);
 
   const handleTriggerTestNow = async () => {
     try {
@@ -59,7 +64,6 @@ const StudentDashboard = () => {
   };
 
 
-  const [appStatus, setAppStatus] = useState(null);
   const [permissionState, setPermissionState] = useState(permission);
   const [claimingMeeting, setClaimingMeeting] = useState(false);
   const [localClaimedToday, setLocalClaimedToday] = useState(false);
@@ -125,6 +129,14 @@ const StudentDashboard = () => {
     }
   };
 
+  if (!appStatus) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#F8FAFC' }}>
+        <p style={{ color: '#475569', fontSize: '1.2rem', fontWeight: 600 }}>Loading secure dashboard...</p>
+      </div>
+    );
+  }
+
   return (
     <div className={styles.container}>
       {/* Module 5a: Persistent Non-Blocking Notification Permission Banner */}
@@ -179,7 +191,9 @@ const StudentDashboard = () => {
       </section>
 
       {/* Module 5a: Automated Engagement "Are You Working?" Tracking Section */}
-      <section className={styles.engagementSection}>
+      {!isCompleted && (
+        <>
+          <section className={styles.engagementSection}>
         <div className={styles.engagementHeader}>
           <span className={styles.engagementTitle}>Daily Working Popups</span>
           <button
@@ -295,6 +309,8 @@ const StudentDashboard = () => {
           </div>
         </div>
       </section>
+      </>
+      )}
 
       {/* Module 4: Internship Application Status & Chronology Card */}
       {appStatus && (
@@ -363,7 +379,9 @@ const StudentDashboard = () => {
 
 
       {/* Module 5b: Real Attendance History Table */}
-      <section className={styles.tableCard}>
+      {!isCompleted && (
+        <>
+          <section className={styles.tableCard}>
         <h2 className={styles.tableHeading}>Formal Attendance Audit</h2>
         <div className={styles.tableResponsive}>
           <table className={styles.ledgerTable}>
@@ -470,24 +488,36 @@ const StudentDashboard = () => {
           </table>
         </div>
       </section>
+      </>
+      )}
 
       {/* Module 5a: Interactive Working-Hour Engagement Check-In Modal */}
-      <EngagementPopup
+      {!isCompleted && (
+        <EngagementPopup
         activePopup={activePopup}
         meetingQuota={meetingQuota}
         onRespond={respondToPopup}
         onClose={() => setActivePopup(null)}
         loading={loadingResponse}
       />
+      )}
 
       {/* Module 5b: Formal Daily Attendance Modal */}
-      <AttendanceCheckIn
+      {!isCompleted && (
+        <AttendanceCheckIn
         activeAttendance={activeAttendance}
         meetingQuota={meetingQuota}
         onRespond={respondToAttendance}
-        onClose={() => setActiveAttendance(null)}
+        onClose={(reason) => {
+          if (reason === 'TIMEOUT') {
+            respondToAttendance('missed');
+          } else {
+            setActiveAttendance(null);
+          }
+        }}
         loading={loadingAttendance}
       />
+      )}
     </div>
   );
 };

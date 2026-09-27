@@ -78,10 +78,24 @@ public class AttendanceController {
         if (deadlineObj instanceof Number) {
             long deadline = ((Number) deadlineObj).longValue();
             if (now > deadline) {
-                log.warn("Student [{}] attempted to mark attendance for [{}] but deadline expired.", uid, attendanceId);
+                log.warn("Student [{}] attempted to mark attendance for [{}] but deadline expired. Marking missed.", uid, attendanceId);
+                doc.put("status", "missed");
+                doc.put("respondedAt", now);
                 doc.put("error", "Attendance time window has strictly expired.");
+                attendancePopupJob.saveAttendanceRecord(attendanceId, doc);
+                updateDailyCompliance(uid, dateStr);
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body(doc);
             }
+        }
+        
+        if ("missed".equalsIgnoreCase(action) || "timeout_missed".equalsIgnoreCase(action)) {
+            log.info("Student [{}] missed attendance for [{}]. Marking missed.", uid, attendanceId);
+            doc.put("status", "missed");
+            doc.put("respondedAt", now);
+            doc.put("message", "Attendance marked as missed.");
+            attendancePopupJob.saveAttendanceRecord(attendanceId, doc);
+            updateDailyCompliance(uid, dateStr);
+            return ResponseEntity.ok(doc);
         }
 
         if ("meeting".equals(action) || "in_meeting".equals(action)) {

@@ -162,7 +162,7 @@ const Analytics = () => {
             </div>
           </main>
 
-          {/* Module 10: Interactive Cloud Firestore Security Rules Verification & Audit Console */}
+          {/* Module 10: Interactive Cloud Firestore Security Rules Verification & Audit Console
           <section className={styles.notificationCard} style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: '16px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
               <div>
@@ -193,7 +193,7 @@ const Analytics = () => {
                 ))}
               </div>
             )}
-          </section>
+          </section> */}
         </>
       )}
     </div>

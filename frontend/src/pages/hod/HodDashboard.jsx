@@ -87,7 +87,7 @@ const HodDashboard = () => {
         </div>
 
         <div className={styles.controls} style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'flex-end' }}>
-          <button
+          {/* <button
             type="button"
             onClick={handleRunStatusJob}
             disabled={statusLoading}
@@ -95,7 +95,7 @@ const HodDashboard = () => {
             style={{ backgroundColor: '#2F7A4F', color: '#FFF', borderColor: '#266340', fontWeight: 700 }}
           >
             {statusLoading ? 'Executing Audit...' : 'Run Status Check Now'}
-          </button>
+          </button> */}
           <Link
             to="/hod/pending-applications"
             className={styles.exportBtn}
@@ -131,7 +131,7 @@ const HodDashboard = () => {
 
       {/* Student Internship Overview Table */}
       <section className={styles.tableSection}>
-        <h2 className={styles.tableHeading}>VII Semester Internship Overview</h2>
+        <h2 className={styles.tableHeading}>Internship Students Data</h2>
         <div className={styles.tableOverflow}>
           <table className={styles.deptTable}>
             <thead>

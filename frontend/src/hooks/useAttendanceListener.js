@@ -113,7 +113,7 @@ export const useAttendanceListener = (userUid, role = 'STUDENT') => {
           id: `${userUid}_${todayStr}`,
           uid: userUid,
           date: todayStr,
-          status: action === 'meeting' ? 'excused_meeting' : 'present',
+          status: action === 'meeting' ? 'excused_meeting' : (action === 'missed' || action === 'TIMEOUT_MISSED' || action === 'TIMEOUT' ? 'missed' : 'present'),
           respondedAt: Date.now()
         };
         
@@ -121,7 +121,7 @@ export const useAttendanceListener = (userUid, role = 'STUDENT') => {
         setActiveAttendance(null);
         notify(action === 'meeting' 
           ? "Attendance check excused (Local evaluation mode). Meeting pass used ✓"
-          : "Daily attendance confirmed Present (Local evaluation mode) ✓", "success", 5000);
+          : (action === 'missed' || action === 'TIMEOUT_MISSED' || action === 'TIMEOUT' ? "Attendance missed due to timeout (Local evaluation mode)." : "Daily attendance confirmed Present (Local evaluation mode) ✓"), "success", 5000);
       }
     } finally {
       setLoadingResponse(false);

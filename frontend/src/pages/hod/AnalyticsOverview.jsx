@@ -156,7 +156,7 @@ const AnalyticsOverview = () => {
             </div>
           </main>
 
-          {/* Module 10: Interactive Cloud Firestore Security Rules Verification & Audit Console */}
+          {/* Module 10: Interactive Cloud Firestore Security Rules Verification & Audit Console
           <section style={{ marginTop: '24px', background: '#FFFFFF', border: '1px solid #E2E5EA', borderRadius: '4px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px', borderTop: '4px solid #2B5C8A' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
               <div>
@@ -186,7 +186,7 @@ const AnalyticsOverview = () => {
                 ))}
               </div>
             )}
-          </section>
+          </section> */}
         </>
       )}
     </div>

@@ -174,7 +174,38 @@ public class DailyStatusService {
             log.warn("Offline fallback mode: Recorded daily compliance status for doc {} as [{}]", docId, finalStatus);
         }
 
+        java.util.concurrent.CompletableFuture.runAsync(() -> syncOverallAttendancePercentage(uid));
+
         return record;
+    }
+
+    private void syncOverallAttendancePercentage(String uid) {
+        Firestore db = getDb();
+        if (db == null) return;
+        try {
+            com.google.api.core.ApiFuture<com.google.cloud.firestore.QuerySnapshot> future = db.collection("daily_status").whereEqualTo("uid", uid).get();
+            java.util.List<? extends com.google.cloud.firestore.DocumentSnapshot> docs = future.get().getDocuments();
+            
+            int totalWorkingDays = docs.size();
+            if (totalWorkingDays == 0) return;
+
+            int presentDays = 0;
+            int excusedDays = 0;
+            
+            for (com.google.cloud.firestore.DocumentSnapshot doc : docs) {
+                String status = doc.getString("status");
+                if ("present".equalsIgnoreCase(status)) presentDays++;
+                else if ("excused_meeting".equalsIgnoreCase(status)) excusedDays++;
+            }
+            
+            double percentage = ((double) (presentDays + excusedDays) / totalWorkingDays) * 100.0;
+            percentage = Math.round(percentage * 10.0) / 10.0;
+            
+            db.collection("internships").document(uid).update("attendancePercentage", percentage);
+            log.info("Synced overall attendance percentage for {}: {}%", uid, percentage);
+        } catch (Exception e) {
+            log.warn("Failed to sync overall attendance percentage for {}: {}", uid, e.getMessage());
+        }
     }
 
     /**

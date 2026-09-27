@@ -1,24 +1,40 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { getHighlightedCount } from '../services/api';
+import { getHighlightedCount, getStudentStatus } from '../services/api';
 import api from '../services/api';
 import { useAuth } from '../hooks/useAuth';
 import styles from './Sidebar.module.css';
 
 const Sidebar = () => {
-  const { role, isAuthenticated } = useAuth();
+  const { role, isAuthenticated, user } = useAuth();
   const location = useLocation();
   const [suspiciousCount, setSuspiciousCount] = useState(0);
   const [highlightedCount, setHighlightedCount] = useState(0);
+  const [studentStatus, setStudentStatus] = useState('Ongoing');
 
   useEffect(() => {
+    if (role === 'STUDENT' && isAuthenticated && user?.uid) {
+      fetchStudentStatus();
+    }
     if (role === 'MENTOR' || role === 'HOD' || location.pathname.includes('/mentor') || location.pathname.includes('/hod')) {
       fetchSuspiciousCount();
     }
     if (role === 'HOD' || location.pathname.includes('/hod')) {
       fetchHighlightedCount();
     }
-  }, [role, location.pathname]);
+  }, [role, location.pathname, isAuthenticated, user?.uid]);
+
+  const fetchStudentStatus = async () => {
+    if (!user?.uid) return;
+    try {
+      const data = await getStudentStatus(user.uid);
+      if (data && data.status) {
+        setStudentStatus(data.status);
+      }
+    } catch (err) {
+      console.warn("Could not load student status:", err);
+    }
+  };
 
   const fetchSuspiciousCount = async () => {
     try {
@@ -53,16 +69,20 @@ const Sidebar = () => {
         return (
           <>
             <li className={styles.categoryHeader}>Student Services</li>
-            <li>
-              <NavLink to="/student/dashboard" className={({ isActive }) => isActive ? styles.itemActive : styles.itemLink}>
-                Dashboard
-              </NavLink>
-            </li>
-            <li>
-              <NavLink to="/student/diaries" className={({ isActive }) => isActive ? styles.itemActive : styles.itemLink}>
-                Daily Diary
-              </NavLink>
-            </li>
+            {studentStatus !== 'Completed' && (
+              <>
+                <li>
+                  <NavLink to="/student/dashboard" className={({ isActive }) => isActive ? styles.itemActive : styles.itemLink}>
+                    Dashboard
+                  </NavLink>
+                </li>
+                <li>
+                  <NavLink to="/student/diaries" className={({ isActive }) => isActive ? styles.itemActive : styles.itemLink}>
+                    Daily Diary
+                  </NavLink>
+                </li>
+              </>
+            )}
             <li>
               <NavLink to="/student/completion-summary" className={({ isActive }) => isActive ? styles.itemActive : styles.itemLink}>
                 Completion Report
@@ -73,7 +93,7 @@ const Sidebar = () => {
                 Academic Analytics
               </NavLink>
             </li>
-            <li>
+            {/* <li>
               <a href="#compliance-guidelines" className={styles.itemLink} onClick={(e) => { e.preventDefault(); alert("University Internship Bylaws: Minimum 160 verified logged hours required prior to final exam review."); }}>
                 Academic Bylaws
               </a>
@@ -82,7 +102,7 @@ const Sidebar = () => {
               <a href="#advisor-contact" className={styles.itemLink} onClick={(e) => { e.preventDefault(); alert("Your Faculty Mentor details can be viewed in your dashboard."); }}>
                 Assigned Advisor
               </a>
-            </li>
+            </li> */}
           </>
         );
 
@@ -105,7 +125,7 @@ const Sidebar = () => {
                 )}
               </NavLink>
             </li>
-            <li>
+            {/* <li>
               <a href="#roster" className={styles.itemLink} onClick={(e) => { e.preventDefault(); alert("Assigned Roster: Please view your allocated mentees on the Dashboard."); }}>
                 Student Roster
               </a>
@@ -114,7 +134,7 @@ const Sidebar = () => {
               <a href="#attendance-flags" className={styles.itemLink} onClick={(e) => { e.preventDefault(); alert("Discrepancy Alerts: Review flagged students on your dashboard."); }}>
                 Discrepancy Alerts
               </a>
-            </li>
+            </li> */}
           </>
         );
 
@@ -162,7 +182,7 @@ const Sidebar = () => {
                 Completed Students
               </NavLink>
             </li>
-            <li>
+            {/* <li>
               <a href="#cohort-status" className={styles.itemLink} onClick={(e) => { e.preventDefault(); alert("Department Completion Summary: 142/180 students aligned with semester targets."); }}>
                 Cohort Compliance
               </a>
@@ -171,7 +191,7 @@ const Sidebar = () => {
               <a href="#export-report" className={styles.itemLink} onClick={(e) => { e.preventDefault(); alert("Exporting accreditation compliance audit spreadsheet to regional CSV ledger."); }}>
                 Accreditation Ledgers
               </a>
-            </li>
+            </li> */}
           </>
         );
 
