@@ -68,16 +68,6 @@ const HighlightedStudents = () => {
           </span>
         </div>
 
-        <div className={styles.actions}>
-          <button
-            type="button"
-            onClick={handleRunAudit}
-            disabled={executing || loading}
-            className={styles.actionButton}
-          >
-            {executing ? "Executing Monthly Audit..." : "Run escalation check now"}
-          </button>
-        </div>
       </header>
 
       {errorMsg && (

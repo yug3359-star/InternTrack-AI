@@ -31,6 +31,9 @@ public class DailyStatusService {
     @Autowired(required = false)
     private Firestore firestore;
 
+    @Autowired
+    private org.springframework.context.ApplicationContext context;
+
     private final ZoneId applicationZoneId = ZoneId.of("Asia/Kolkata");
     private final Map<String, Map<String, Object>> localDailyStatusLedger = new ConcurrentHashMap<>();
 
@@ -174,7 +177,17 @@ public class DailyStatusService {
             log.warn("Offline fallback mode: Recorded daily compliance status for doc {} as [{}]", docId, finalStatus);
         }
 
-        java.util.concurrent.CompletableFuture.runAsync(() -> syncOverallAttendancePercentage(uid));
+        java.util.concurrent.CompletableFuture.runAsync(() -> {
+            syncOverallAttendancePercentage(uid);
+            try {
+                EscalationService escalationService = context.getBean(EscalationService.class);
+                if (escalationService != null) {
+                    escalationService.evaluateStudentEscalation(uid);
+                }
+            } catch (Exception e) {
+                log.warn("Could not trigger real-time escalation check: {}", e.getMessage());
+            }
+        });
 
         return record;
     }

@@ -28,7 +28,7 @@ public class EscalationJob {
     /**
      * Scheduled automated execution running DAILY at 01:00 AM (cron = "0 0 1 * * *").
      */
-    @Scheduled(cron = "0 0 1 * * *")
+    // @Scheduled(cron = "0 0 1 * * *")
     public void executeDailyEscalationAudit() {
         java.time.LocalDate today = java.time.LocalDate.now();
         String targetMonth;

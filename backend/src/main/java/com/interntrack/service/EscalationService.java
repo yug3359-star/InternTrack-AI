@@ -128,7 +128,7 @@ public class EscalationService {
                     boolean isHighlighted = (absenceCount >= 3);
                     List<String> reasons = new ArrayList<>();
                     if (absenceCount >= 3) {
-                        reasons.add("3+ absences");
+                        reasons.add(absenceCount + " absences");
                     }
 
                     boolean hasWarningIndicators = absenceCount > 0;
@@ -226,20 +226,20 @@ public class EscalationService {
                         if (internDoc != null && internDoc.exists() && internDoc.getData() != null) {
                             data.put("studentName", internDoc.getString("fullName") != null ? internDoc.getString("fullName") : "Student Profile (" + uid + ")");
                             data.put("branch", internDoc.getString("branch") != null ? internDoc.getString("branch") : "Computer Science & Engineering");
-                            data.put("mentor", internDoc.getString("assignedMentor") != null ? internDoc.getString("assignedMentor") : "Dr. Rajesh K.");
+                            data.put("mentor", internDoc.getString("collegeMentor") != null ? internDoc.getString("collegeMentor") : "Unassigned");
                         } else {
                             data.put("studentName", "Student Profile (" + uid + ")");
                             data.put("branch", "Computer Science & Engineering");
-                            data.put("mentor", "Dr. Rajesh K.");
+                            data.put("mentor", "Unassigned");
                         }
                     }
 
                     if (!data.containsKey("mentor")) {
                         DocumentSnapshot internDoc = internDocMap.get(uid);
-                        if (internDoc != null && internDoc.exists() && internDoc.getString("assignedMentor") != null) {
-                            data.put("mentor", internDoc.getString("assignedMentor"));
+                        if (internDoc != null && internDoc.exists() && internDoc.getString("collegeMentor") != null) {
+                            data.put("mentor", internDoc.getString("collegeMentor"));
                         } else {
-                            data.put("mentor", "Dr. Rajesh K.");
+                            data.put("mentor", "Unassigned");
                         }
                     }
 
@@ -297,5 +297,97 @@ public class EscalationService {
         response.put("count", count);
         response.put("status", "SUCCESS");
         return response;
+    }
+
+    /**
+     * Real-time escalation evaluation for a single student triggered on status change.
+     */
+    public void evaluateStudentEscalation(String uid) {
+        String activeMonth = YearMonth.now().format(MONTH_FORMATTER);
+        try {
+            Firestore db = FirestoreClient.getFirestore();
+            if (db != null) {
+                // Query daily_status docs for this student in the active month
+                Query activeMonthQuery = db.collection("daily_status")
+                        .whereGreaterThanOrEqualTo("date", activeMonth + "-01")
+                        .whereLessThanOrEqualTo("date", activeMonth + "-31");
+                List<QueryDocumentSnapshot> dailyStatusDocs = activeMonthQuery.get().get().getDocuments();
+
+                String warnId = uid + "_" + activeMonth;
+                DocumentReference warnRef = db.collection("warnings").document(warnId);
+                DocumentSnapshot warnDoc = warnRef.get().get();
+
+                long diaryRejectionCount = 0;
+                if (warnDoc.exists() && warnDoc.contains("diaryRejectionCount")) {
+                    Long countVal = warnDoc.getLong("diaryRejectionCount");
+                    if (countVal != null) diaryRejectionCount = countVal;
+                }
+
+                long absenceCount = 0;
+                long excusedCount = 0;
+                long totalChecks = 0;
+
+                for (QueryDocumentSnapshot ds : dailyStatusDocs) {
+                    String docUid = ds.getString("uid");
+                    String dateStr = ds.getString("date");
+
+                    boolean matchesStudent = uid.equals(docUid) || ds.getId().startsWith(uid + "_");
+                    boolean matchesMonth = (dateStr != null && dateStr.startsWith(activeMonth)) || ds.getId().contains("_" + activeMonth);
+
+                    if (matchesStudent && matchesMonth) {
+                        totalChecks++;
+                        String status = ds.getString("status");
+                        String attendanceStatus = ds.getString("attendanceStatus");
+                        String absenceReason = ds.getString("absenceReason");
+
+                        if ("excused_meeting".equalsIgnoreCase(status) || "excused_meeting".equalsIgnoreCase(attendanceStatus)) {
+                            excusedCount++;
+                        }
+
+                        boolean isAbsentStatus = "absent".equalsIgnoreCase(status) || "missed".equalsIgnoreCase(status);
+                        boolean isFaceMismatch = absenceReason != null && (
+                            absenceReason.toLowerCase().contains("face") || 
+                            absenceReason.toLowerCase().contains("mismatch") ||
+                            absenceReason.toLowerCase().contains("contradiction")
+                        );
+
+                        if (isAbsentStatus || isFaceMismatch) {
+                            absenceCount++;
+                        }
+                    }
+                }
+
+                double excuseAbusePercentage = totalChecks > 0 ? ((double) excusedCount / (double) totalChecks) * 100.0 : 0.0;
+                boolean isHighlighted = (absenceCount >= 3);
+                List<String> reasons = new ArrayList<>();
+                if (absenceCount >= 3) {
+                    reasons.add(absenceCount + " absences");
+                }
+
+                boolean hasWarningIndicators = absenceCount > 0;
+                
+                if (hasWarningIndicators || isHighlighted) {
+                    Map<String, Object> warnUpdate = new HashMap<>();
+                    warnUpdate.put("uid", uid);
+                    warnUpdate.put("month", activeMonth);
+                    warnUpdate.put("diaryRejectionCount", diaryRejectionCount);
+                    warnUpdate.put("absenceCount", absenceCount);
+                    warnUpdate.put("excuseAbusePercentage", Math.round(excuseAbusePercentage * 10.0) / 10.0);
+                    warnUpdate.put("highlighted", isHighlighted);
+                    warnUpdate.put("reasons", reasons);
+                    warnUpdate.put("updatedAt", System.currentTimeMillis());
+
+                    warnRef.set(warnUpdate, com.google.cloud.firestore.SetOptions.merge());
+                    
+                    if (isHighlighted) {
+                        log.warn("[REALTIME ESCALATION] Student [{}] immediately flagged as HIGHLIGHTED. Absences: {}", uid, absenceCount);
+                    }
+                } else if (warnDoc.exists()) {
+                    warnRef.delete();
+                }
+            }
+        } catch (Exception e) {
+            log.error("Failed real-time escalation check for student [{}]: {}", uid, e.getMessage());
+        }
     }
 }
