@@ -38,8 +38,14 @@ export const useAttendanceListener = (userUid, role = 'STUDENT') => {
 
         // Check if there is an active check-in awaiting student confirmation today
         const activeDoc = (res.data.records || []).find(r => r.status === 'awaiting_response');
-        if (activeDoc && !activeAttendance) {
-          handleNewAttendanceDetected(activeDoc);
+        if (activeDoc) {
+          setActiveAttendance(prev => {
+            if (!prev) {
+              handleNewAttendanceDetected(activeDoc);
+              return activeDoc;
+            }
+            return prev;
+          });
         }
       }
     } catch (err) {
@@ -57,7 +63,7 @@ export const useAttendanceListener = (userUid, role = 'STUDENT') => {
         ]);
       }
     }
-  }, [userUid, activeAttendance]);
+  }, [userUid, handleNewAttendanceDetected]);
 
   useEffect(() => {
     if (role === 'STUDENT' || role === 'student') {
@@ -81,7 +87,6 @@ export const useAttendanceListener = (userUid, role = 'STUDENT') => {
       "You have 1 hour to confirm you're present today.",
       () => {
         window.focus();
-        setActiveAttendance(prev => prev || attData);
       }
     );
   }, [showNotification]);
