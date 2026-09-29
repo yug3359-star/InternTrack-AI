@@ -53,12 +53,23 @@ const TestSession = () => {
       // Fetch from history list or create baseline test if not yet existing
       const resp = await axios.get(`${API_BASE_URL}/test/history/${uid}`);
       if (resp.data && resp.data.records && resp.data.records.length > 0) {
-        doc = resp.data.records.find(r => r.id === targetId || r.status === 'awaiting_start' || r.status === 'in_progress');
+        // Look for the exact requested ID first
+        doc = resp.data.records.find(r => r.id === targetId);
+        
+        // If not found, look for any active session
         if (!doc) {
-          doc = resp.data.records[0]; // Fallback to most recent test
+          doc = resp.data.records.find(r => r.status === 'awaiting_start' || r.status === 'in_progress');
+        }
+        
+        // Fallback to the most recent record
+        if (!doc) {
+          doc = resp.data.records[0];
         }
       }
-      if (!doc || (doc.status !== 'awaiting_start' && doc.status !== 'in_progress')) {
+
+      // ONLY auto-trigger a new test if no document exists AT ALL,
+      // OR if we are explicitly not trying to review a completed test.
+      if (!doc) {
         // Auto-trigger test document if none active in this session
         const trigResp = await axios.post(`${API_BASE_URL}/test/trigger/${uid}`, {
           internshipDomain: 'Software Architecture & Microservices'
