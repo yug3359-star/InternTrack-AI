@@ -98,9 +98,16 @@ public class AnalyticsService {
             List<Map<String, Object>> testSeries = new ArrayList<>();
             int testIdx = 1;
             for (QueryDocumentSnapshot td : testDocs) {
-                Double score = td.getDouble("scorePercentage");
-                if (score != null && !score.isNaN()) {
-                    testSeries.add(createPoint("Exam " + testIdx++, Math.round(score * 10.0) / 10.0));
+                Double scorePercentage = td.getDouble("scorePercentage");
+                if (scorePercentage == null) {
+                    Double rawScore = td.getDouble("score");
+                    if (rawScore != null) {
+                        scorePercentage = (rawScore / 5.0) * 100.0;
+                    }
+                }
+                
+                if (scorePercentage != null && !scorePercentage.isNaN()) {
+                    testSeries.add(createPoint("Exam " + testIdx++, Math.round(scorePercentage * 10.0) / 10.0));
                 }
             }
 
