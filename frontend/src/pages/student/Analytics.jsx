@@ -94,9 +94,7 @@ const Analytics = () => {
             <div className={styles.kpiItem}>
               <span className={styles.kpiLabel}>Current Attendance Rate</span>
               <span className={styles.kpiVal}>
-                {data.attendanceOverTime && data.attendanceOverTime.length > 0
-                  ? `${data.attendanceOverTime[data.attendanceOverTime.length - 1].value}%`
-                  : "0%"}
+                {data.currentAttendanceRate ?? 0}%
               </span>
             </div>
 
@@ -107,30 +105,42 @@ const Analytics = () => {
           </div>
 
           <main className={styles.grid}>
-            {/* Attendance % Over Time */}
-            <div className={styles.chartCard}>
-              <div className={styles.chartHeader}>Biometric Attendance Rate Over Time (%)</div>
-              {!data.attendanceOverTime || data.attendanceOverTime.length === 0 ? (
-                renderEmptyState()
+            {/* Detailed Day-Wise Attendance Ledger */}
+            <div className={styles.chartCard} style={{ gridColumn: '1 / -1' }}>
+              <div className={styles.chartHeader}>Day-Wise Attendance Ledger</div>
+              {!data.dailyStatusHistory || data.dailyStatusHistory.length === 0 ? (
+                renderEmptyState("No attendance records found.")
               ) : (
-                <ResponsiveContainer width="100%" height={260}>
-                  <LineChart data={data.attendanceOverTime} margin={{ top: 10, right: 20, bottom: 20, left: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#E2E5EA" />
-                    <XAxis dataKey="date" stroke="#5A626A" tick={{ fontSize: 12 }} />
-                    <YAxis domain={[0, 100]} stroke="#5A626A" tick={{ fontSize: 12 }} />
-                    <Tooltip contentStyle={{ background: '#FFF', border: '1px solid #2B5C8A', borderRadius: '4px' }} />
-                    <Legend verticalAlign="top" height={36} />
-                    <Line
-                      type="monotone"
-                      dataKey="value"
-                      name="Attendance %"
-                      stroke="#2B5C8A"
-                      strokeWidth={3}
-                      dot={{ r: 5, fill: '#2B5C8A' }}
-                      isAnimationActive={false}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
+                <div className={styles.tableWrapper} style={{ maxHeight: '400px', overflowY: 'auto', border: '1px solid #E2E5EA', borderRadius: '8px' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                    <thead style={{ position: 'sticky', top: 0, backgroundColor: '#F8F9FA', zIndex: 1 }}>
+                      <tr>
+                        <th style={{ padding: '12px 16px', borderBottom: '2px solid #E2E5EA', color: '#5A626A', fontSize: '12px', textTransform: 'uppercase' }}>Date</th>
+                        <th style={{ padding: '12px 16px', borderBottom: '2px solid #E2E5EA', color: '#5A626A', fontSize: '12px', textTransform: 'uppercase' }}>Status</th>
+                        <th style={{ padding: '12px 16px', borderBottom: '2px solid #E2E5EA', color: '#5A626A', fontSize: '12px', textTransform: 'uppercase' }}>Reason / Notes</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {data.dailyStatusHistory.map((row, idx) => {
+                        const statusRaw = row.status || 'unknown';
+                        const isAbsent = statusRaw.toLowerCase() === 'absent' || statusRaw.toLowerCase() === 'missed';
+                        const isExcused = statusRaw.toLowerCase().includes('excuse');
+                        const statusColor = isAbsent ? '#E74C3C' : (isExcused ? '#F39C12' : '#27AE60');
+                        return (
+                          <tr key={idx} style={{ borderBottom: '1px solid #E2E5EA' }}>
+                            <td style={{ padding: '12px 16px', fontWeight: '500' }}>{row.date}</td>
+                            <td style={{ padding: '12px 16px', color: statusColor, fontWeight: '600', textTransform: 'capitalize' }}>
+                              {statusRaw.replace('_', ' ')}
+                            </td>
+                            <td style={{ padding: '12px 16px', color: '#5A626A', fontSize: '14px' }}>
+                              {row.absenceReason || row.notes || '—'}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </div>
 

@@ -40,26 +40,39 @@ public class AnalyticsService {
                 throw new IllegalStateException("Firestore runtime connection uninitialized.");
             }
 
-            // 1. Query real attendance documents
-            QuerySnapshot attSnapshot = firestore.collection("attendance").get().get();
-            List<QueryDocumentSnapshot> attDocs = new ArrayList<>();
-            for (QueryDocumentSnapshot doc : attSnapshot.getDocuments()) {
+            // 1. Query real daily_status documents
+            QuerySnapshot dsSnapshot = firestore.collection("daily_status").get().get();
+            List<Map<String, Object>> dailyStatusDocs = new ArrayList<>();
+            int totalAtt = 0;
+            int presentCount = 0;
+            int excusedCount = 0;
+            for (QueryDocumentSnapshot doc : dsSnapshot.getDocuments()) {
                 String dUid = doc.getString("uid");
                 if (uid.equals(dUid) || doc.getId().startsWith(uid + "_")) {
-                    attDocs.add(doc);
+                    Map<String, Object> dsData = new HashMap<>(doc.getData());
+                    dailyStatusDocs.add(dsData);
+                    
+                    String status = doc.getString("status");
+                    String attStatus = doc.getString("attendanceStatus");
+                    totalAtt++;
+                    if ("present".equalsIgnoreCase(status) || "excused_meeting".equalsIgnoreCase(status) || "present".equalsIgnoreCase(attStatus)) {
+                        presentCount++;
+                    }
+                    if ("excused_meeting".equalsIgnoreCase(status) || "excused_meeting".equalsIgnoreCase(attStatus)) {
+                        excusedCount++;
+                    }
                 }
             }
 
-            // 2. Query real diary documents
-            QuerySnapshot diarySnapshot = firestore.collection("diaries").get().get();
-            List<QueryDocumentSnapshot> diaryDocs = new ArrayList<>();
-            for (QueryDocumentSnapshot doc : diarySnapshot.getDocuments()) {
-                if (uid.equals(doc.getString("uid")) || uid.equals(doc.getString("studentId"))) {
-                    diaryDocs.add(doc);
-                }
-            }
+            dailyStatusDocs.sort((a, b) -> {
+                String dateA = (String) a.get("date");
+                String dateB = (String) b.get("date");
+                if (dateA == null) dateA = "";
+                if (dateB == null) dateB = "";
+                return dateA.compareTo(dateB);
+            });
 
-            // 3. Query real proctored exam documents
+            // 2. Query real proctored exam documents
             QuerySnapshot testSnapshot = firestore.collection("tests").get().get();
             List<QueryDocumentSnapshot> testDocs = new ArrayList<>();
             for (QueryDocumentSnapshot doc : testSnapshot.getDocuments()) {
@@ -68,26 +81,18 @@ public class AnalyticsService {
                 }
             }
 
-            if (attDocs.isEmpty() && diaryDocs.isEmpty() && testDocs.isEmpty()) {
-                // Return real empty state with division-by-zero guard
+            if (dailyStatusDocs.isEmpty() && testDocs.isEmpty()) {
                 result.put("hasData", false);
                 result.put("message", "Not enough data to display yet");
-                result.put("attendanceOverTime", Collections.emptyList());
+                result.put("dailyStatusHistory", Collections.emptyList());
                 result.put("testScoresOverTime", Collections.emptyList());
+                result.put("currentAttendanceRate", 0.0);
                 result.put("excuseUsagePercentage", 0.0);
                 return result;
             }
 
-            // Aggregate Attendance % Over Time into weekly buckets
-            List<Map<String, Object>> attendanceSeries = new ArrayList<>();
-            int totalAtt = attDocs.size();
-            int presentCount = (int) attDocs.stream().filter(d -> "present".equalsIgnoreCase(d.getString("status")) || "excused_meeting".equalsIgnoreCase(d.getString("status"))).count();
-            // Division-by-Zero guard
             double overallAttRate = totalAtt > 0 ? Math.round(((double) presentCount / totalAtt) * 1000.0) / 10.0 : 0.0;
-            attendanceSeries.add(createPoint("Week 1", Math.max(75.0, overallAttRate - 5.0)));
-            attendanceSeries.add(createPoint("Week 2", overallAttRate));
-
-
+            double excuseUsagePercentage = totalAtt > 0 ? Math.round(((double) excusedCount / totalAtt) * 1000.0) / 10.0 : 0.0;
 
             // Aggregate Proctored Exam Scores Over Time
             List<Map<String, Object>> testSeries = new ArrayList<>();
@@ -100,10 +105,10 @@ public class AnalyticsService {
             }
 
             result.put("hasData", true);
-            result.put("attendanceOverTime", attendanceSeries);
-
+            result.put("dailyStatusHistory", dailyStatusDocs);
+            result.put("currentAttendanceRate", overallAttRate);
             result.put("testScoresOverTime", testSeries);
-            result.put("excuseUsagePercentage", 40.0); // E.g., 2 / 5 meetings used
+            result.put("excuseUsagePercentage", excuseUsagePercentage);
             return result;
 
         } catch (Exception err) {
@@ -345,37 +350,12 @@ public class AnalyticsService {
     private Map<String, Object> buildSimulatedStudentAnalytics(String uid) {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("uid", uid);
-
-        // Treat brand new unverified guest ids as zero-data test accounts
-        if (uid != null && uid.startsWith("empty-")) {
-            result.put("hasData", false);
-            result.put("message", "Not enough data to display yet");
-            result.put("attendanceOverTime", Collections.emptyList());
-            result.put("testScoresOverTime", Collections.emptyList());
-            result.put("excuseUsagePercentage", 0.0);
-            return result;
-        }
-
-        result.put("hasData", true);
-        
-        List<Map<String, Object>> attSeries = Arrays.asList(
-                createPoint("Wk 1 (Jul 04)", 100.0),
-                createPoint("Wk 2 (Jul 11)", 85.0),
-                createPoint("Wk 3 (Jul 18)", 92.0),
-                createPoint("Wk 4 (Jul 25)", 96.5)
-        );
-        result.put("attendanceOverTime", attSeries);
-
-
-
-        List<Map<String, Object>> testSeries = Arrays.asList(
-                createPoint("Midterm 1", 78.5),
-                createPoint("Weekly Quiz 2", 88.0),
-                createPoint("Proctored Exam 3", 92.0)
-        );
-        result.put("testScoresOverTime", testSeries);
-        result.put("excuseUsagePercentage", 40.0); // 2 of 5 meeting excuses utilized
-
+        result.put("hasData", false);
+        result.put("message", "Not enough data to display yet");
+        result.put("dailyStatusHistory", Collections.emptyList());
+        result.put("testScoresOverTime", Collections.emptyList());
+        result.put("currentAttendanceRate", 0.0);
+        result.put("excuseUsagePercentage", 0.0);
         return result;
     }
 
