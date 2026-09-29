@@ -40,29 +40,26 @@ public class AnalyticsService {
                 throw new IllegalStateException("Firestore runtime connection uninitialized.");
             }
 
-            // 1. Query real daily_status documents
-            QuerySnapshot dsSnapshot = firestore.collection("daily_status").get().get();
+            // 1. Query real daily_status documents efficiently using database filtering
+            QuerySnapshot dsSnapshot = firestore.collection("daily_status").whereEqualTo("uid", uid).get().get();
             List<Map<String, Object>> dailyStatusDocs = new ArrayList<>();
             int totalAtt = 0;
             int presentCount = 0;
             int excusedCount = 0;
             for (QueryDocumentSnapshot doc : dsSnapshot.getDocuments()) {
-                String dUid = doc.getString("uid");
-                if (uid.equals(dUid) || doc.getId().startsWith(uid + "_")) {
-                    Map<String, Object> dsData = new HashMap<>(doc.getData());
-                    dailyStatusDocs.add(dsData);
-                    
-                    String status = doc.getString("status");
-                    String attStatus = doc.getString("attendanceStatus");
-                    String finalStatus = (status != null) ? status : attStatus;
-                    
-                    totalAtt++;
-                    if ("present".equalsIgnoreCase(finalStatus) || "excused_meeting".equalsIgnoreCase(finalStatus)) {
-                        presentCount++;
-                    }
-                    if ("excused_meeting".equalsIgnoreCase(finalStatus)) {
-                        excusedCount++;
-                    }
+                Map<String, Object> dsData = new HashMap<>(doc.getData());
+                dailyStatusDocs.add(dsData);
+                
+                String status = doc.getString("status");
+                String attStatus = doc.getString("attendanceStatus");
+                String finalStatus = (status != null) ? status : attStatus;
+                
+                totalAtt++;
+                if ("present".equalsIgnoreCase(finalStatus) || "excused_meeting".equalsIgnoreCase(finalStatus)) {
+                    presentCount++;
+                }
+                if ("excused_meeting".equalsIgnoreCase(finalStatus)) {
+                    excusedCount++;
                 }
             }
 
@@ -74,11 +71,11 @@ public class AnalyticsService {
                 return dateA.compareTo(dateB);
             });
 
-            // 2. Query real proctored exam documents
-            QuerySnapshot testSnapshot = firestore.collection("tests").get().get();
+            // 2. Query real proctored exam documents efficiently using database filtering
+            QuerySnapshot testSnapshot = firestore.collection("tests").whereEqualTo("uid", uid).get().get();
             List<QueryDocumentSnapshot> testDocs = new ArrayList<>();
             for (QueryDocumentSnapshot doc : testSnapshot.getDocuments()) {
-                if (uid.equals(doc.getString("uid")) && "completed".equalsIgnoreCase(doc.getString("status"))) {
+                if ("completed".equalsIgnoreCase(doc.getString("status"))) {
                     testDocs.add(doc);
                 }
             }
