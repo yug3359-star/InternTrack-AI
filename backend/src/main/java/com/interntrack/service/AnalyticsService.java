@@ -54,11 +54,13 @@ public class AnalyticsService {
                     
                     String status = doc.getString("status");
                     String attStatus = doc.getString("attendanceStatus");
+                    String finalStatus = (status != null) ? status : attStatus;
+                    
                     totalAtt++;
-                    if ("present".equalsIgnoreCase(status) || "excused_meeting".equalsIgnoreCase(status) || "present".equalsIgnoreCase(attStatus)) {
+                    if ("present".equalsIgnoreCase(finalStatus) || "excused_meeting".equalsIgnoreCase(finalStatus)) {
                         presentCount++;
                     }
-                    if ("excused_meeting".equalsIgnoreCase(status) || "excused_meeting".equalsIgnoreCase(attStatus)) {
+                    if ("excused_meeting".equalsIgnoreCase(finalStatus)) {
                         excusedCount++;
                     }
                 }
