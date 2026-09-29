@@ -148,26 +148,48 @@ const Analytics = () => {
 
             {/* Proctored Test Scores Over Time */}
             <div className={styles.chartCard}>
-              <div className={styles.chartHeader}>Proctored Exam Evaluations</div>
+              <div className={styles.chartHeader}>Proctored Exam Evaluations Audit</div>
               {!data.testScoresOverTime || data.testScoresOverTime.length === 0 ? (
                 renderEmptyState()
               ) : (
-                <ResponsiveContainer width="100%" height={260}>
-                  <BarChart data={data.testScoresOverTime} margin={{ top: 10, right: 20, bottom: 20, left: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#E2E5EA" />
-                    <XAxis dataKey="date" stroke="#5A626A" tick={{ fontSize: 12 }} />
-                    <YAxis domain={[0, 100]} stroke="#5A626A" tick={{ fontSize: 12 }} />
-                    <Tooltip contentStyle={{ background: '#FFF', border: '1px solid #2F7A4F', borderRadius: '4px' }} />
-                    <Legend verticalAlign="top" height={36} />
-                    <Bar
-                      dataKey="value"
-                      name="Exam Score"
-                      fill="#2F7A4F"
-                      radius={[4, 4, 0, 0]}
-                      isAnimationActive={false}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
+                <div className={styles.tableResponsive}>
+                  <table className={styles.analyticsTable}>
+                    <thead>
+                      <tr>
+                        <th>Date</th>
+                        <th>Domain</th>
+                        <th>Status</th>
+                        <th>Score (Out of 5)</th>
+                        <th>Tab Exits</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {data.testScoresOverTime.map((test, index) => {
+                        const isComp = test.status === 'completed';
+                        const isAbs = test.status === 'absent' || test.status === 'rejected_biometric';
+                        return (
+                          <tr key={test.id || index} style={isAbs ? { backgroundColor: '#FEF2F2' } : {}}>
+                            <td><strong>{test.date || 'N/A'}</strong></td>
+                            <td>{test.internshipDomain || 'Software Architecture & Microservices'}</td>
+                            <td>
+                              <span className={isComp ? styles.tagApproved : isAbs ? styles.tagRejected : styles.tagPending}>
+                                {test.status ? test.status.toUpperCase().replace('_', ' ') : 'UNKNOWN'}
+                              </span>
+                            </td>
+                            <td style={{ fontWeight: 800, color: isComp ? '#16A34A' : '#DC2626' }}>
+                              {isComp ? `${test.score} / 5` : '0 / 5'}
+                            </td>
+                            <td>
+                              <span style={test.tabSwitchCount > 0 ? { color: '#D97706', fontWeight: 700 } : { color: '#5A626A' }}>
+                                {test.tabSwitchCount || 0} Exits
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </div>
           </main>

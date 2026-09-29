@@ -94,10 +94,11 @@ public class AnalyticsService {
             double overallAttRate = totalAtt > 0 ? Math.round(((double) presentCount / totalAtt) * 1000.0) / 10.0 : 0.0;
             double excuseUsagePercentage = totalAtt > 0 ? Math.round(((double) excusedCount / totalAtt) * 1000.0) / 10.0 : 0.0;
 
-            // Aggregate Proctored Exam Scores Over Time
-            List<Map<String, Object>> testSeries = new ArrayList<>();
-            int testIdx = 1;
+            // Prepare Proctored Exam Audit Table Data
+            List<Map<String, Object>> testHistory = new ArrayList<>();
             for (QueryDocumentSnapshot td : testDocs) {
+                Map<String, Object> testData = new HashMap<>(td.getData());
+                
                 Double scorePercentage = td.getDouble("scorePercentage");
                 if (scorePercentage == null) {
                     Double rawScore = td.getDouble("score");
@@ -105,16 +106,23 @@ public class AnalyticsService {
                         scorePercentage = (rawScore / 5.0) * 100.0;
                     }
                 }
-                
-                if (scorePercentage != null && !scorePercentage.isNaN()) {
-                    testSeries.add(createPoint("Exam " + testIdx++, Math.round(scorePercentage * 10.0) / 10.0));
-                }
+                testData.put("scorePercentage", scorePercentage);
+                testHistory.add(testData);
             }
+
+            // Sort tests by date descending
+            testHistory.sort((a, b) -> {
+                String dateA = (String) a.get("date");
+                String dateB = (String) b.get("date");
+                if (dateA == null) dateA = "";
+                if (dateB == null) dateB = "";
+                return dateB.compareTo(dateA);
+            });
 
             result.put("hasData", true);
             result.put("dailyStatusHistory", dailyStatusDocs);
             result.put("currentAttendanceRate", overallAttRate);
-            result.put("testScoresOverTime", testSeries);
+            result.put("testScoresOverTime", testHistory); // Passed directly for table rendering
             result.put("excuseUsagePercentage", excuseUsagePercentage);
             return result;
 
