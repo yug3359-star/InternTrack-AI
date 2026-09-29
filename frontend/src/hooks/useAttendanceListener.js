@@ -23,6 +23,19 @@ export const useAttendanceListener = (userUid, role = 'STUDENT') => {
   });
   const [loadingResponse, setLoadingResponse] = useState(false);
 
+  const handleNewAttendanceDetected = useCallback((attData) => {
+    console.log('[Module 5b Attendance Audit] Daily attendance check triggered:', attData);
+    setActiveAttendance(attData);
+
+    showNotification(
+      "InternTrack — Mark your attendance",
+      "You have 1 hour to confirm you're present today.",
+      () => {
+        window.focus();
+      }
+    );
+  }, [showNotification]);
+
   const fetchAttendanceHistory = useCallback(async () => {
     try {
       const res = await api.get(`/attendance/history/${userUid}`);
@@ -77,19 +90,6 @@ export const useAttendanceListener = (userUid, role = 'STUDENT') => {
       return () => clearInterval(interval);
     }
   }, [role, fetchAttendanceHistory]);
-
-  const handleNewAttendanceDetected = useCallback((attData) => {
-    console.log('[Module 5b Attendance Audit] Daily attendance check triggered:', attData);
-    setActiveAttendance(attData);
-
-    showNotification(
-      "InternTrack — Mark your attendance",
-      "You have 1 hour to confirm you're present today.",
-      () => {
-        window.focus();
-      }
-    );
-  }, [showNotification]);
 
   const respondToAttendance = useCallback(async (action) => {
     if (!activeAttendance) return;
