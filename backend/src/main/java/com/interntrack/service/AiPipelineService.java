@@ -148,14 +148,15 @@ public class AiPipelineService {
         if (firestore == null) return entries;
         try {
             long twoWeeksAgo = System.currentTimeMillis() - (14L * 24 * 60 * 60 * 1000);
+            // Fetch all diaries for uid to avoid Firestore composite index requirement, then filter locally
             Query query = firestore.collection("diaries")
-                    .whereEqualTo("uid", uid)
-                    .whereGreaterThanOrEqualTo("submittedAt", twoWeeksAgo);
+                    .whereEqualTo("uid", uid);
 
             ApiFuture<QuerySnapshot> future = query.get();
             List<QueryDocumentSnapshot> docs = future.get().getDocuments();
             for (QueryDocumentSnapshot doc : docs) {
-                if (!doc.getId().endsWith(excludeDate) && doc.getString("entryText") != null) {
+                Long submittedAt = doc.getLong("submittedAt");
+                if (submittedAt != null && submittedAt >= twoWeeksAgo && !doc.getId().endsWith(excludeDate) && doc.getString("entryText") != null) {
                     String text = doc.getString("entryText");
                     entries.add(text.length() > 100 ? text.substring(0, 100) + "..." : text);
                 }
