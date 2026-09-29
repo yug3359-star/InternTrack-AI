@@ -46,10 +46,10 @@ public class BiometricRetentionJob {
                     .whereLessThanOrEqualTo("timestamp", sevenDaysAgo);
                     
             ApiFuture<QuerySnapshot> future = query.get();
-            List<DocumentSnapshot> docs = future.get().getDocuments();
+            List<com.google.cloud.firestore.QueryDocumentSnapshot> docs = future.get().getDocuments();
             
             int deletedCount = 0;
-            for (DocumentSnapshot doc : docs) {
+            for (com.google.cloud.firestore.QueryDocumentSnapshot doc : docs) {
                 String checkInPhotoUrl = doc.getString("checkInPhotoUrl");
                 deleteFromStorageIfPossible(checkInPhotoUrl);
                 
