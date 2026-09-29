@@ -109,7 +109,7 @@ public class TestService {
             Firestore db = getDb();
             if (db != null) {
                 try {
-                    db.collection("tests").document(testId).set(doc);
+                    db.collection("tests").document(testId).set(doc).get();
                     log.info("Created real proctored test document in Firestore: tests/{}", testId);
                 } catch (Exception e) {
                     log.error("Error writing test doc tests/{} to cloud Firestore: {}", testId, e.getMessage());
@@ -328,6 +328,7 @@ public class TestService {
             }
             test.put("status", "completed");
             test.put("score", correctCount);
+            test.put("scorePercentage", (correctCount / 5.0) * 100.0);
             log.info("Test [{}] successfully completed. Computed score: [{}/5]. Tab switches observed: [{}]", testId,
                     correctCount, tabSwitchCount);
         }
@@ -540,7 +541,7 @@ public class TestService {
         Firestore db = getDb();
         if (db != null) {
             try {
-                db.collection("tests").document(testId).set(test);
+                db.collection("tests").document(testId).set(test).get();
             } catch (Exception e) {
                 log.error("Could not save test doc [{}] to Firestore: {}", testId, e.getMessage());
             }
