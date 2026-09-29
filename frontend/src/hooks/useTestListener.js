@@ -36,7 +36,7 @@ export function useTestListener(studentUid, onNavigate, role = 'STUDENT') {
     } finally {
       setLoading(false);
     }
-  }, [studentUid]);
+  }, [studentUid, role]);
 
   useEffect(() => {
     if (!studentUid || role === 'DISABLED') {
@@ -98,7 +98,7 @@ export function useTestListener(studentUid, onNavigate, role = 'STUDENT') {
         unsubscribe();
       }
     };
-  }, [studentUid, showNotification, onNavigate, fetchHistoryFromBackend]);
+  }, [studentUid, role, showNotification, onNavigate, fetchHistoryFromBackend]);
 
   return { activeTest, testHistory, loading, refreshHistory: fetchHistoryFromBackend };
 }
