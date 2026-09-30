@@ -12,6 +12,7 @@ const EngagementPopup = ({ activePopup, meetingQuota, onRespond, onClose, loadin
   const [secondsLeft, setSecondsLeft] = useState(120); // 2-minute compliance window
   const [showWebcam, setShowWebcam] = useState(false);
   const [capturedPhoto, setCapturedPhoto] = useState(null);
+  const [matchResult, setMatchResult] = useState(null);
 
   const { modelsLoaded, compareFaces } = useFaceMatch();
 
@@ -30,6 +31,7 @@ const EngagementPopup = ({ activePopup, meetingQuota, onRespond, onClose, loadin
     setSecondsLeft(initialSeconds);
     setShowWebcam(false);
     setCapturedPhoto(null);
+    setMatchResult(null);
 
     const timer = setInterval(() => {
       setSecondsLeft((prev) => {
@@ -79,6 +81,16 @@ const EngagementPopup = ({ activePopup, meetingQuota, onRespond, onClose, loadin
       try {
         similarityScore = await compareFaces(referenceUrl, photoDataUrl);
         console.log(`[Frontend Biometric] Popup face similarity calculated locally: ${similarityScore.toFixed(2)}%`);
+        
+        let status = 'REJECTED';
+        if (similarityScore >= 40.0) status = 'APPROVED';
+        
+        setMatchResult({ score: similarityScore.toFixed(2), status });
+        
+        setTimeout(() => {
+          onRespond('WORKING', photoDataUrl, similarityScore);
+        }, 3000);
+        return; // Wait for the timeout before submitting
       } catch (err) {
         console.error("Local face match failed:", err);
         alert(`Face Match Failed: ${err.message}. Please ensure your face is clearly visible and well-lit, then try again.`);
@@ -120,25 +132,38 @@ const EngagementPopup = ({ activePopup, meetingQuota, onRespond, onClose, loadin
                 onPhotoCaptured={(photo) => setCapturedPhoto(photo)}
                 required={true}
               />
-              <div style={{ display: 'flex', gap: '8px', width: '100%', marginTop: '8px' }}>
-                <button
-                  type="button"
-                  className={styles.primaryBtn}
-                  style={{ flex: 1 }}
-                  onClick={handleWebcamSubmit}
-                  disabled={!capturedPhoto || loading || !modelsLoaded}
-                >
-                  {loading || !modelsLoaded ? 'Loading Biometrics...' : 'Verify Identity & Submit Attendance '}
-                </button>
-                <button
-                  type="button"
-                  className={styles.secondaryBtn}
-                  onClick={() => setShowWebcam(false)}
-                  disabled={loading}
-                >
-                  Cancel
-                </button>
-              </div>
+              
+              {matchResult ? (
+                <div style={{ padding: '16px', marginTop: '16px', borderRadius: '8px', textAlign: 'center', backgroundColor: matchResult.status === 'APPROVED' ? '#F0FDF4' : '#FEF2F2', border: `1px solid ${matchResult.status === 'APPROVED' ? '#22C55E' : '#DC2626'}` }}>
+                  <h3 style={{ margin: '0 0 8px 0', color: matchResult.status === 'APPROVED' ? '#166534' : '#991B1B' }}>
+                    {matchResult.status === 'APPROVED' ? 'Face Match Accepted! ✅' : 'Face Match Failed ❌'}
+                  </h3>
+                  <p style={{ margin: 0, fontWeight: 'bold', fontSize: '1.2rem', color: matchResult.status === 'APPROVED' ? '#15803D' : '#B91C1C' }}>
+                    Similarity: {matchResult.score}%
+                  </p>
+                  <p style={{ margin: '8px 0 0 0', fontSize: '0.9rem', color: '#475569' }}>Submitting response in a few seconds...</p>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', gap: '8px', width: '100%', marginTop: '8px' }}>
+                  <button
+                    type="button"
+                    className={styles.primaryBtn}
+                    style={{ flex: 1 }}
+                    onClick={handleWebcamSubmit}
+                    disabled={!capturedPhoto || loading || !modelsLoaded}
+                  >
+                    {loading || !modelsLoaded ? 'Loading Biometrics...' : 'Verify Identity & Submit Attendance '}
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.secondaryBtn}
+                    onClick={() => setShowWebcam(false)}
+                    disabled={loading}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
             <div className={styles.buttonGroup}>
